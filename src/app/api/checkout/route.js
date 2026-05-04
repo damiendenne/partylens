@@ -19,12 +19,12 @@ export async function POST(req) {
     } = body;
 
     const STRIPE_PRICES = {
-      bronze: "price_1TRgxt0ItzQydPhlf1PbK8Ct",
-      silver: "price_1TRh0m0ItzQydPhlhb9BsdHV",
-      gold_annual: "price_1TRh2m0ItzQydPhloqxB2DwB",
-      gold_monthly: "price_1TRh4X0ItzQydPhlhS1EoLMs",
-      usb: "price_1TRh6E0ItzQydPhlMtwRlR6q",
-      frame: "price_1TRj0Y0ItzQydPhldK9ESCdg"
+      bronze: "price_1TTRIL0kxrnMCRhvsIs6fydu",
+      silver: "price_1TTRII0kxrnMCRhvZF64mAns",
+      gold_annual: "price_1TTRII0kxrnMCRhve2lMO0uE",
+      gold_monthly: "price_1TTRII0kxrnMCRhvd9j5QlZX",
+      usb: "price_1TTRIK0kxrnMCRhvZZGwImVJ",
+      frame: "price_1TTRIN0kxrnMCRhvgN6FPIEI"
     };
 
     if (!userId) {
