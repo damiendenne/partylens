@@ -29,7 +29,8 @@ import {
   Edit2,
   Download,
   CreditCard,
-  AlertTriangle
+  AlertTriangle,
+  Star // <-- J'ai ajouté l'étoile ici
 } from 'lucide-react';
 
 function AdminContent() {
@@ -324,13 +325,21 @@ function AdminContent() {
             <header className="flex justify-between items-center mb-20">
               <img src="/logo-partylens.png" alt="Logo" className="w-48 h-auto" />
 
-              <div className="flex gap-4">
+              <div className="flex flex-wrap items-center justify-end gap-4">
                 <button
                   onClick={handleLogout}
                   className="glass-card px-6 py-3 rounded-2xl flex items-center gap-2 text-[10px] font-black uppercase text-gray-400 hover:text-white border border-white/5 cursor-pointer transition-all hover:bg-white/10"
                 >
                   <LogOut size={16} /> DÉCO
                 </button>
+
+                {/* NOUVEAU BOUTON AVIS ICI */}
+                <Link
+                  href="/avis"
+                  className="bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 px-6 py-3 rounded-2xl flex items-center gap-2 text-[10px] font-black uppercase border border-yellow-500/30 no-underline transition-all"
+                >
+                  <Star size={16} /> AVIS
+                </Link>
 
                 <Link
                   href="/admin/profil"

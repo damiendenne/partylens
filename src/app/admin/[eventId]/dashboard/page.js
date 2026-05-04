@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { db, auth } from '@/lib/firebase';
 import { doc, onSnapshot, getDoc, collection, query, orderBy, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
-import { Music, Image as ImageIcon, ArrowLeft, LoaderCircle, ExternalLink, Trash2, Layout, Lock, Power } from 'lucide-react';
+import { Music, Image as ImageIcon, ArrowLeft, LoaderCircle, ExternalLink, Trash2, Layout, Lock, Power, Star } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DJDashboard() {
@@ -28,7 +28,6 @@ export default function DJDashboard() {
         const uData = uDoc.data();
         setUserData(uData);
 
-        // CORRECTION MAJEURE : On autorise l'Organisateur ET le DJ à entrer
         if (uData?.role !== 'organisateur' && uData?.role !== 'dj') {
           router.push('/admin');
           return;
@@ -41,7 +40,6 @@ export default function DJDashboard() {
         }
         setEventData(eventDoc.data());
 
-        // Écouteurs Firestore
         const qMusic = query(collection(db, "events", eventId, "musicRequests"), orderBy("createdAt", "desc"));
         const unsubMusic = onSnapshot(qMusic, (snap) => setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
 
@@ -60,7 +58,6 @@ export default function DJDashboard() {
     return () => unsubAuth();
   }, [eventId, router]);
 
-  // Actions
   const handleEndEvent = async () => {
     if (!confirm("Voulez-vous vraiment clôturer cette soirée ? L'organisateur pourra télécharger les photos.")) return;
     try {
@@ -93,6 +90,15 @@ export default function DJDashboard() {
       <div className="bg-blobs"><div className="blob blob-pink"></div><div className="blob blob-purple"></div><div className="blob blob-blue"></div></div>
 
       <div className="max-w-7xl mx-auto relative z-10">
+        
+        <div className="mb-6 flex justify-center md:justify-start">
+          <img 
+            src="/logo-partylens.png" 
+            alt="PartyLens" 
+            className="w-48 h-auto drop-shadow-xl" 
+          />
+        </div>
+
         <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="flex items-center gap-5">
             <Link href="/admin" className="p-4 glass-card rounded-2xl text-gray-400 hover:text-white transition-all">
@@ -108,7 +114,13 @@ export default function DJDashboard() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            
+            {/* NOUVEAU BOUTON AVIS ICI */}
+            <Link href="/avis" className="flex items-center gap-3 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 px-6 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all border border-yellow-500/30 no-underline shadow-xl">
+              <Star size={16} /> AVIS
+            </Link>
+
             {!isFinished && (
               <button onClick={handleEndEvent} className="flex items-center gap-3 bg-red-600/20 hover:bg-red-600 text-red-500 hover:text-white px-6 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all border border-red-500/30 cursor-pointer shadow-xl">
                 <Power size={16} /> FIN DE SOIRÉE
@@ -131,7 +143,7 @@ export default function DJDashboard() {
               </button>
             ) : (
               <Link href={`/admin/${eventId}/live`} target="_blank" className="flex items-center gap-3 bg-[#ff0080] hover:bg-[#e60073] text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-[0_0_30px_rgba(255,0,128,0.3)] no-underline">
-                Diaporama <ExternalLink size={16} />
+                DIAPORAMA <ExternalLink size={16} />
               </Link>
             )}
           </div>

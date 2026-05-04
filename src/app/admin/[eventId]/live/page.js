@@ -92,10 +92,19 @@ export default function LiveWall({ params }) {
         <div className="absolute inset-0 bg-black/10"></div>
       </div>
 
+      {/* LOGO PARTYLENS EN HAUT À GAUCHE */}
+      <div className="fixed top-8 left-8 z-40">
+        <img 
+          src="/logo-partylens.png" 
+          alt="PartyLens" 
+          className="w-48 md:w-64 h-auto drop-shadow-[0_0_15px_rgba(0,0,0,0.6)]" 
+        />
+      </div>
+
       {/* Bouton Plein Écran (disparaît si pas de mouvement) */}
       <button 
         onClick={toggleFullscreen}
-        className={`fixed top-8 right-8 z-50 p-4 glass-card rounded-2xl text-white/50 border-none cursor-pointer transition-opacity duration-500 ${showControls ? 'opacity-100' : 'opacity-0'}`}
+        className={`fixed top-8 right-8 z-50 p-4 glass-card rounded-2xl text-white/50 border-none cursor-pointer transition-opacity duration-500 hover:text-white ${showControls ? 'opacity-100' : 'opacity-0'}`}
       >
         {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
       </button>

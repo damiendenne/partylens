@@ -11,7 +11,8 @@ import {
   doc,
   updateDoc,
   getDocs,
-  writeBatch
+  writeBatch,
+  deleteDoc
 } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import JSZip from 'jszip';
@@ -26,7 +27,11 @@ import {
   ShieldCheck,
   User,
   Loader2,
-  Trash2
+  Trash2,
+  MessageSquare,
+  Mail,
+  Star,
+  Calendar
 } from 'lucide-react';
 
 const PRICES = {
@@ -126,6 +131,7 @@ export default function SuperAdmin() {
   const [activeTab, setActiveTab] = useState("logistique");
   const [events, setEvents] = useState([]);
   const [users, setUsers] = useState([]);
+  const [feedbacks, setFeedbacks] = useState([]); // Nouvel état feedbacks
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState(null);
   const [notify, setNotify] = useState({ show: false, msg: "" });
@@ -150,9 +156,18 @@ export default function SuperAdmin() {
           }
         );
 
+        // Écouteur pour les avis
+        const unsubFeedbacks = onSnapshot(
+          query(collection(db, "feedbacks"), orderBy("createdAt", "desc")),
+          (snap) => {
+            setFeedbacks(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+          }
+        );
+
         return () => {
           unsubEvents();
           unsubUsers();
+          unsubFeedbacks();
         };
       }
     });
@@ -262,6 +277,14 @@ export default function SuperAdmin() {
     }
   };
 
+  const deleteFeedback = async (id) => {
+    if(confirm("Supprimer cet avis ?")) {
+      await deleteDoc(doc(db, "feedbacks", id));
+      setNotify({ show: true, msg: "AVIS SUPPRIMÉ" });
+      setTimeout(() => setNotify({ show: false, msg: "" }), 3000);
+    }
+  };
+
   const updateUsbStatus = async (eventId, newStatus, trackingNumber = null) => {
     try {
       const eventData = events.find((e) => e.id === eventId);
@@ -330,7 +353,8 @@ export default function SuperAdmin() {
               { id: "dashboard", label: "STATS", icon: <BarChart3 size={14} /> },
               { id: "organisateurs", label: "CLIENTS", icon: <User size={14} /> },
               { id: "djs", label: "DJS", icon: <ShieldCheck size={14} /> },
-              { id: "logistique", label: "LOGISTIQUE", icon: <Truck size={14} /> }
+              { id: "logistique", label: "LOGISTIQUE", icon: <Truck size={14} /> },
+              { id: "avis", label: "AVIS", icon: <MessageSquare size={14} /> } // Onglet Avis
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -352,6 +376,48 @@ export default function SuperAdmin() {
             <StatCard label="CHIFFRE D'AFFAIRES" value={`${stats.totalCA.toFixed(0)}€`} icon={<Euro className="text-green-500" />} />
             <StatCard label="ABONNEMENTS" value={`${(stats.bronze.ca + stats.silver.ca + stats.gold.ca).toFixed(0)}€`} icon={<Zap className="text-yellow-500" />} />
             <StatCard label="CADRES UNITÉS" value={stats.frames.count} icon={<CheckCircle className="text-blue-500" />} />
+          </div>
+        )}
+
+        {activeTab === "avis" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in">
+            {feedbacks.map((f) => (
+              <div key={f.id} className="glass-card p-8 rounded-[35px] border border-white/5 relative group hover:border-[#ff0080]/30 transition-all">
+                <button 
+                  onClick={() => deleteFeedback(f.id)}
+                  className="absolute top-6 right-6 text-gray-600 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 size={18} />
+                </button>
+
+                <div className="flex items-center gap-1 mb-6">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={14} fill={i < f.rating ? "#ff0080" : "none"} className={i < f.rating ? "text-[#ff0080]" : "text-gray-800"} />
+                  ))}
+                </div>
+
+                <p className="text-lg font-bold italic mb-6 leading-tight">"{f.message}"</p>
+
+                <div className="space-y-3 pt-6 border-t border-white/5">
+                  <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-wider text-gray-400">
+                    <Mail size={14} className="text-[#ff0080]" /> {f.email}
+                  </div>
+                  <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-widest text-gray-600">
+                    <Calendar size={14} /> {f.createdAt?.toDate().toLocaleDateString('fr-FR')}
+                  </div>
+                  <div className="flex items-center gap-3 text-[10px] font-black uppercase text-white">
+                    <User size={14} /> {f.name}
+                  </div>
+                </div>
+
+                <a 
+                  href={`mailto:${f.email}?subject=Votre avis sur PartyLens`}
+                  className="mt-6 block text-center bg-white/5 hover:bg-white text-white hover:text-black py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all no-underline border border-white/10"
+                >
+                  Répondre par Email
+                </a>
+              </div>
+            ))}
           </div>
         )}
 

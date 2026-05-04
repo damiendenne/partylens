@@ -15,7 +15,10 @@ export async function POST(req) {
       eventName,
       eventId,
       frameId,
-      shippingInfo
+      shippingInfo,
+      // On récupère les URLs envoyées par le front (optionnel)
+      success_url: customSuccessUrl,
+      cancel_url: customCancelUrl
     } = body;
 
     const STRIPE_PRICES = {
@@ -34,77 +37,38 @@ export async function POST(req) {
       );
     }
 
+    // ... (tes vérifications restent les mêmes) ...
     if (planId === 'usb_only' && !eventId) {
-      return NextResponse.json(
-        { error: "eventId manquant pour la commande USB." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "eventId manquant pour la commande USB." }, { status: 400 });
     }
-
     if (planId === 'frame_unlock' && (!eventId || !frameId)) {
-      return NextResponse.json(
-        { error: "eventId ou frameId manquant pour le déblocage du cadre." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "eventId ou frameId manquant pour le déblocage du cadre." }, { status: 400 });
     }
 
     const lineItems = [];
     let isRecurring = false;
 
+    // Logique de sélection des prix (inchangée)
     if (planId === 'usb_only') {
-      lineItems.push({
-        price: STRIPE_PRICES.usb,
-        quantity: 1
-      });
+      lineItems.push({ price: STRIPE_PRICES.usb, quantity: 1 });
     } else if (planId === 'frame_unlock') {
-      lineItems.push({
-        price: STRIPE_PRICES.frame,
-        quantity: 1
-      });
+      lineItems.push({ price: STRIPE_PRICES.frame, quantity: 1 });
     } else {
-      if (planId === 'bronze') {
-        lineItems.push({
-          price: STRIPE_PRICES.bronze,
-          quantity: 1
-        });
-      }
-
-      if (planId === 'silver') {
-        lineItems.push({
-          price: STRIPE_PRICES.silver,
-          quantity: 1
-        });
-      }
-
+      if (planId === 'bronze') lineItems.push({ price: STRIPE_PRICES.bronze, quantity: 1 });
+      if (planId === 'silver') lineItems.push({ price: STRIPE_PRICES.silver, quantity: 1 });
       if (planId === 'gold') {
         if (billingCycle === 'Annuel') {
-          lineItems.push({
-            price: STRIPE_PRICES.gold_annual,
-            quantity: 1
-          });
+          lineItems.push({ price: STRIPE_PRICES.gold_annual, quantity: 1 });
         } else {
-          lineItems.push({
-            price: STRIPE_PRICES.gold_monthly,
-            quantity: 1
-          });
-
+          lineItems.push({ price: STRIPE_PRICES.gold_monthly, quantity: 1 });
           isRecurring = true;
         }
       }
-
-      if (usbQty > 0) {
-        lineItems.push({
-          price: STRIPE_PRICES.usb,
-          quantity: usbQty
-        });
-      }
+      if (usbQty > 0) lineItems.push({ price: STRIPE_PRICES.usb, quantity: usbQty });
     }
 
     if (lineItems.length === 0) {
-      return NextResponse.json(
-        { error: "Aucun produit Stripe sélectionné." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Aucun produit Stripe sélectionné." }, { status: 400 });
     }
 
     const sessionMode = isRecurring ? 'subscription' : 'payment';
@@ -116,27 +80,37 @@ export async function POST(req) {
           ? 'extra_usb_event'
           : 'subscription_upgrade';
 
+    // --- LOGIQUE D'URL DYNAMIQUE ---
+    // Par défaut, on va vers l'admin
+    let finalSuccessUrl = `https://partylens.fr/admin?success=true&session_id={CHECKOUT_SESSION_ID}`;
+    let finalCancelUrl = `https://partylens.fr/admin?canceled=true`;
+
+    // Si c'est un déblocage de cadre, on veut revenir sur le catalogue pour voir le bouton "Sélectionner"
+    if (planId === 'frame_unlock' && eventId) {
+      finalSuccessUrl = `https://partylens.fr/admin/catalogue-cadres?eventId=${eventId}&success=true`;
+      finalCancelUrl = `https://partylens.fr/admin/catalogue-cadres?eventId=${eventId}`;
+    }
+    
+    // Si le front nous a envoyé des URLs spécifiques (comme dans le code précédent), on les utilise en priorité
+    if (customSuccessUrl) finalSuccessUrl = customSuccessUrl + (customSuccessUrl.includes('?') ? '&' : '?') + "session_id={CHECKOUT_SESSION_ID}";
+    if (customCancelUrl) finalCancelUrl = customCancelUrl;
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: sessionMode,
       allow_promotion_codes: true,
-
-      success_url: `https://partylens.fr/admin?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `https://partylens.fr/admin?canceled=true`,
-
+      success_url: finalSuccessUrl,
+      cancel_url: finalCancelUrl,
       client_reference_id: userId,
-
       metadata: {
         purchaseType,
         planName: planId === 'gold' ? 'VIP GOLD' : (planId ? planId.toUpperCase() : ''),
         billingCycle: billingCycle || 'Unique',
-
         userId: userId || '',
         eventId: eventId || '',
         eventName: eventName || '',
         frameId: frameId || '',
-
         shippingName: shippingInfo?.name || '',
         shippingAddress: shippingInfo?.address || '',
         shippingZip: shippingInfo?.zip || '',
@@ -145,16 +119,10 @@ export async function POST(req) {
       }
     });
 
-    return NextResponse.json({
-      url: session.url
-    });
+    return NextResponse.json({ url: session.url });
 
   } catch (error) {
     console.error("Erreur Stripe :", error);
-
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

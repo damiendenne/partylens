@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { db, auth } from "@/lib/firebase"; // Ajout de auth
+import { db, auth } from "@/lib/firebase";
 import { doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { ArrowLeft, Baby, Cake, Check, Heart, Lock, Star, Loader2, CreditCard } from "lucide-react";
@@ -68,7 +68,6 @@ function CatalogueContent() {
   const [filter, setFilter] = useState("all");
   const [loadingId, setLoadingId] = useState(null);
 
-  // 1. Écouter l'utilisateur et les données de l'événement (pour les cadres débloqués)
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -88,7 +87,6 @@ function CatalogueContent() {
     return filter === "all" ? DATA : DATA.filter((item) => item.cat === filter);
   }, [filter]);
 
-  // 2. Fonction pour sélectionner un cadre (gratuit ou déjà débloqué)
   const handleSelect = async (item) => {
     if (!eventId) return;
     setLoadingId(item.id);
@@ -107,7 +105,7 @@ function CatalogueContent() {
     }
   };
 
-  // 3. Fonction pour débloquer un cadre via Stripe
+  // --- FONCTION CORRIGÉE ICI ---
   const handleUnlockFrame = async (item) => {
     if (!user || !eventId) {
       alert("Erreur: session ou événement manquant");
@@ -115,6 +113,9 @@ function CatalogueContent() {
     }
     setLoadingId(item.id);
     try {
+      // On définit les URLs de retour basées sur l'URL actuelle
+      const origin = window.location.origin;
+
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -122,13 +123,16 @@ function CatalogueContent() {
           planId: 'frame_unlock',
           frameId: item.id,
           eventId: eventId,
-          userId: user.uid
+          userId: user.uid,
+          // On passe ces URLs à ton API Checkout
+          success_url: `${origin}/admin/catalogue-cadres?eventId=${eventId}&success=true`,
+          cancel_url: `${origin}/admin/catalogue-cadres?eventId=${eventId}`
         }),
       });
 
       const data = await response.json();
       if (data.url) {
-        window.location.href = data.url; // Redirection vers Stripe
+        window.location.href = data.url; 
       } else {
         throw new Error(data.error);
       }
@@ -146,6 +150,14 @@ function CatalogueContent() {
       </Link>
 
       <header className="mb-10 text-left">
+        <div className="mb-6">
+          <img 
+            src="/logo-partylens.png" 
+            alt="PartyLens" 
+            className="w-48 h-auto drop-shadow-xl" 
+          />
+        </div>
+        
         <h1 className="text-5xl font-black uppercase italic md:text-7xl">
           Catalogue cadres
         </h1>
@@ -170,7 +182,6 @@ function CatalogueContent() {
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {items.map((item) => {
-          // VÉRIFICATION : Est-ce que le cadre est disponible ? (Gratuit OU déjà débloqué par le Webhook)
           const isUnlocked = eventData?.unlockedFrames?.includes(item.id);
           const canSelect = !item.isLocked || isUnlocked;
 
