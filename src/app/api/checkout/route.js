@@ -122,8 +122,8 @@ export async function POST(req) {
       mode: sessionMode,
       allow_promotion_codes: true,
 
-      success_url: `http://localhost:3000/admin?success=true&eventId=${eventId || ''}`,
-      cancel_url: `http://localhost:3000/admin?canceled=true&eventId=${eventId || ''}`,
+      success_url: `https://partylens.fr/admin?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `https://partylens.fr/admin?canceled=true`,
 
       client_reference_id: userId,
 
