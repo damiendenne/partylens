@@ -24,7 +24,9 @@ export default function GuestPage({ params }) {
 
   useEffect(() => {
     setMounted(true);
-    setCurrentUrl(window.location.href); // On récupère l'URL proprement ici
+    if (typeof window !== "undefined") {
+      setCurrentUrl(window.location.href);
+    }
 
     const fetchEvent = async () => {
       const snap = await getDoc(doc(db, "events", eventId));
@@ -63,7 +65,7 @@ export default function GuestPage({ params }) {
   };
 
   return (
-    <main className="min-h-screen p-6 flex flex-col items-center relative overflow-hidden">
+    <main className="min-h-screen p-6 flex flex-col items-center relative overflow-hidden bg-black text-white">
       <div className="bg-blobs">
         <div className="blob blob-purple"></div>
         <div className="blob blob-pink"></div>
@@ -85,25 +87,36 @@ export default function GuestPage({ params }) {
           </div>
 
           <div className="bg-white p-6 rounded-[40px] inline-block shadow-[0_0_50px_rgba(255,255,255,0.1)] mb-6 border-8 border-white/5">
-            {/* --- MODIFICATION ICI : On n'affiche le QR que si monté --- */}
             {mounted ? (
               <QRCodeSVG value={currentUrl} size={180} />
             ) : (
-              <div style={{ width: 180, height: 180 }} className="bg-gray-100 animate-pulse rounded-lg" />
+              <div style={{ width: 180, height: 180 }} className="bg-gray-800 animate-pulse rounded-lg" />
             )}
           </div>
-          <p className="text-[9px] text-gray-500 font-bold uppercase tracking-[0.4em]">Partagez ce QR Code avec vos amis</p>
+          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.4em]">Partagez ce QR Code avec vos amis</p>
         </section>
 
         <section className="glass-card p-8 rounded-[40px]">
           <h2 className="text-lg font-black italic uppercase mb-6 flex items-center gap-3"><Camera size={20} className="text-pink-500" /> Photo en direct</h2>
           <form onSubmit={handlePhotoUpload} className="space-y-4">
             <label className="block border-2 border-dashed border-white/10 rounded-[30px] p-10 text-center bg-white/[0.02] cursor-pointer hover:bg-white/[0.05] transition relative">
-              <input type="file" accept="image/*" capture="environment" onChange={(e) => setFile(e.target.files[0])} className="hidden" />
+              {/* FIX ICI : Retrait de capture="environment" pour activer la galerie */}
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={(e) => setFile(e.target.files[0])} 
+                className="hidden" 
+              />
               <Camera size={32} className="text-gray-700 mx-auto mb-3" />
-              <span className="text-[11px] text-gray-500 font-bold uppercase tracking-widest">{file ? file.name : "Prendre une photo"}</span>
+              <span className="text-[11px] text-gray-500 font-bold uppercase tracking-widest">
+                {file ? file.name : "Choisir ou prendre une photo"}
+              </span>
             </label>
-            {file && <button type="submit" disabled={loading} className="w-full py-5 bg-pink-600 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-pink-600/20">{loading ? "Envoi..." : "Publier sur le mur 🚀"}</button>}
+            {file && (
+              <button type="submit" disabled={loading} className="w-full py-5 bg-pink-600 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-pink-600/20">
+                {loading ? "Envoi..." : "Publier sur le mur 🚀"}
+              </button>
+            )}
           </form>
         </section>
 
@@ -112,18 +125,28 @@ export default function GuestPage({ params }) {
           <form onSubmit={handleMusicRequest} className="space-y-4">
             <input type="text" placeholder="Artiste" value={artist} onChange={(e) => setArtist(e.target.value)} className="w-full bg-black border border-white/10 p-5 rounded-2xl outline-none focus:border-purple-500 transition text-sm text-white font-bold" />
             <input type="text" placeholder="Titre" value={song} onChange={(e) => setSong(e.target.value)} className="w-full bg-black border border-white/10 p-5 rounded-2xl outline-none focus:border-purple-500 transition text-sm text-white font-bold" />
-            <button type="submit" disabled={loading} className="w-full py-5 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-purple-600/20">{loading ? "Envoi..." : "Envoyer au DJ"}</button>
+            <button type="submit" disabled={loading} className="w-full py-5 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-purple-600/20">
+              {loading ? "Envoi..." : "Envoyer au DJ"}
+            </button>
           </form>
         </section>
       </div>
 
       {notify.show && (
         <div className="fixed bottom-10 z-[100] animate-in slide-in-from-bottom-5 duration-300">
-          <div className="flex items-center gap-3 px-10 py-4 rounded-full border border-pink-500/50 bg-pink-500/10 text-pink-500 backdrop-blur-xl shadow-2xl">
+          <div className="flex items-center gap-3 px-10 py-4 rounded-full border border-pink-500/50 bg-black/80 text-pink-500 backdrop-blur-xl shadow-2xl">
             <CheckCircle2 size={18}/><span className="text-[10px] font-black uppercase italic tracking-widest">{notify.msg}</span>
           </div>
         </div>
       )}
+
+      <style jsx>{`
+        .bg-blobs { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
+        .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.15; }
+        .blob-purple { top: -10%; left: -10%; width: 400px; height: 400px; background: #7c3aed; }
+        .blob-pink { bottom: -10%; right: -10%; width: 400px; height: 400px; background: #db2777; }
+        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
+      `}</style>
     </main>
   );
 }
