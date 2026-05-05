@@ -12,9 +12,26 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// CONFIGURATION SEO POUR ÊTRE EN HAUT DES RECHERCHES
 export const metadata = {
-  title: "PartyLens",
-  description: "Live Photo Sharing",
+  title: "PartyLens | Animation Photo Interactive & Diaporama Live",
+  description: "Boostez vos événements avec PartyLens : Diaporama en direct sur écran géant, demandes DJ par smartphone et souvenirs sur clé USB livrée à domicile. Contact : 07 87 01 60 77.",
+  keywords: ["PartyLens", "animation mariage", "diaporama live", "partage photo événement", "clé USB souvenirs", "animation soirée"],
+  authors: [{ name: "PartyLens" }],
+  creator: "PartyLens",
+  publisher: "PartyLens",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: true, // Permet aux clients de cliquer sur ton numéro pour t'appeler direct
+  },
+  alternates: {
+    canonical: 'https://www.partylens.fr',
+  },
+  // À REMPLACER PAR TON CODE QUAND TU AURAS CRÉÉ TA SEARCH CONSOLE
+  verification: {
+    google: "TON_CODE_DE_VERIFICATION_GOOGLE", 
+  },
 };
 
 export default function RootLayout({ children }) {
@@ -29,15 +46,23 @@ export default function RootLayout({ children }) {
         </div>
 
         {/* CONTENU DES PAGES */}
-        <div className="relative z-10 flex-1 flex flex-col">
+        <main className="relative z-10 flex-1 flex flex-col">
           {children}
-        </div>
+        </main>
 
-        {/* LE PIED DE PAGE GLOBAL (CGU / CGV) */}
+        {/* LE PIED DE PAGE GLOBAL */}
         <footer className="w-full border-t border-white/5 bg-transparent py-8 text-center relative z-10 mt-auto">
+          <div className="mb-4">
+            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">
+              PartyLens — Animation Interactive partout en France
+            </p>
+          </div>
           <Link href="/legal" className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 hover:text-white transition-colors no-underline italic">
             CGU / CGV & Mentions Légales
           </Link>
+          <div className="mt-2 text-[9px] text-gray-700">
+            SIRET : 10456039600012
+          </div>
         </footer>
 
         {/* BOUTON CONTACT GLOBAL FLOTTANT */}
