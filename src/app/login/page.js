@@ -4,22 +4,23 @@ import { auth, db } from '@/lib/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { Loader2, MapPin, Phone, Lock, Mail, User, Music, Hash } from 'lucide-react';
+import { Loader2, MapPin, Phone, Lock, Mail, User, Music, Hash, Edit3 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const [isRegister, setIsRegister] = useState(false); 
   const [loading, setLoading] = useState(false);
-  const [role, setRole] = useState('organisateur'); // 'organisateur' ou 'dj'
+  const [role, setRole] = useState('organisateur');
 
   // Formulaire base
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phone, setPhone] = useState('');
-  const [djCodeInput, setDjCodeInput] = useState(''); // Champ Code DJ pour l'organisateur client
+  const [djCodeInput, setDjCodeInput] = useState('');
   
-  // Adresse auto
+  // Adresse auto & Manuel
+  const [isManualAddress, setIsManualAddress] = useState(false);
   const [addressSearch, setAddressSearch] = useState('');
   const [street, setStreet] = useState('');
   const [zip, setZip] = useState('');
@@ -27,7 +28,7 @@ export default function LoginPage() {
   const [suggestions, setSuggestions] = useState([]);
 
   useEffect(() => {
-    if (isRegister && addressSearch.length > 5 && street === '') {
+    if (isRegister && !isManualAddress && addressSearch.length > 5 && street === '') {
       const timer = setTimeout(async () => {
         try {
           const res = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(addressSearch)}&limit=5`);
@@ -37,7 +38,7 @@ export default function LoginPage() {
       }, 300);
       return () => clearTimeout(timer);
     } else { setSuggestions([]); }
-  }, [addressSearch, street, isRegister]);
+  }, [addressSearch, street, isRegister, isManualAddress]);
 
   const handleSelectAddress = (s) => {
     setStreet(s.properties.name);
@@ -47,6 +48,15 @@ export default function LoginPage() {
     setSuggestions([]);
   };
 
+  const toggleManualAddress = () => {
+    setIsManualAddress(!isManualAddress);
+    // On réinitialise pour éviter les conflits
+    setStreet('');
+    setZip('');
+    setCity('');
+    setAddressSearch('');
+  };
+
   const handleAuth = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -54,18 +64,17 @@ export default function LoginPage() {
     try {
       if (isRegister) {
         if (password !== confirmPassword) throw new Error("Les mots de passe ne correspondent pas");
-        if (!city) throw new Error("Veuillez sélectionner une adresse valide dans la liste");
+        
+        const finalStreet = isManualAddress ? addressSearch : street;
+        if (!finalStreet || !city || !zip) throw new Error("Veuillez renseigner une adresse complète");
 
-        // LOGIQUE MÉTIER : 
-        // Si Organisateur sans Code DJ ou si DJ => isStandalone: true (Payant)
-        // Si Organisateur avec Code DJ => isStandalone: false (Gratuit)
         const isStandalone = role === 'dj' || (role === 'organisateur' && !djCodeInput);
 
         const res = await createUserWithEmailAndPassword(auth, email, password);
         await setDoc(doc(db, "users", res.user.uid), {
           email, 
           phone, 
-          address: { street, zip, city }, 
+          address: { street: finalStreet, zip, city }, 
           role: role, 
           isStandalone: isStandalone,
           linkedDjCode: djCodeInput || null,
@@ -73,7 +82,6 @@ export default function LoginPage() {
           createdAt: new Date()
         });
 
-        // REDIRECTION INSCRIPTION
         if (role === 'dj') {
           window.location.href = '/admin';
         } else {
@@ -85,8 +93,6 @@ export default function LoginPage() {
         
         if (userDoc.exists()) {
           const data = userDoc.data();
-          
-          // REDIRECTION CONNEXION
           if (data.role === 'dj') {
             window.location.href = '/admin';
           } else {
@@ -116,7 +122,6 @@ export default function LoginPage() {
           </h1>
         </div>
 
-        {/* --- NOUVEAU : CHOIX DU RÔLE (Uniquement à l'inscription) --- */}
         {isRegister && (
           <div className="flex justify-center gap-4 mb-8 animate-in slide-in-from-top-4">
             <button 
@@ -162,13 +167,12 @@ export default function LoginPage() {
                 <input type="tel" placeholder="TÉLÉPHONE" required className="input-style" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </div>
 
-              {/* --- NOUVEAU : CODE DJ (Si Organisateur) --- */}
               {role === 'organisateur' && (
                 <div className="relative animate-in slide-in-from-top-2">
                   <Hash className="absolute left-5 top-5 text-[#ff0080]" size={18} />
                   <input 
                     type="text" 
-                    placeholder="CODE DJ (OPTIONNEL - POUR COMPTE GRATUIT)" 
+                    placeholder="CODE DJ (OPTIONNEL)" 
                     className="input-style border-[#ff0080]/30" 
                     value={djCodeInput} 
                     onChange={(e) => setDjCodeInput(e.target.value)} 
@@ -176,20 +180,61 @@ export default function LoginPage() {
                 </div>
               )}
 
-              <div className="relative">
-                <MapPin className="absolute left-5 top-5 text-gray-500" size={18} />
-                <input type="text" placeholder="RECHERCHE TON ADRESSE" required className="input-style" value={addressSearch} onChange={(e) => { setAddressSearch(e.target.value); setStreet(''); }} />
-                {suggestions.length > 0 && (
-                  <div className="absolute z-50 w-full mt-2 bg-[#0a0a0a] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-                    {suggestions.map((s, i) => (
-                      <div key={i} onClick={() => handleSelectAddress(s)} className="p-4 hover:bg-[#ff0080]/20 cursor-pointer text-[10px] font-bold uppercase border-b border-white/5">{s.properties.label}</div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <input type="text" placeholder="CP" required className="input-style bg-white/5" value={zip} readOnly />
-                <input type="text" placeholder="VILLE" required className="input-style bg-white/5" value={city} readOnly />
+              {/* --- SECTION ADRESSE ULTRA-VISIBLE --- */}
+              <div className="space-y-3">
+                <div className="relative">
+                  {isManualAddress ? <Edit3 className="absolute left-5 top-5 text-[#ff0080]" size={18} /> : <MapPin className="absolute left-5 top-5 text-gray-500" size={18} />}
+                  <input 
+                    type="text" 
+                    placeholder={isManualAddress ? "NUMÉRO ET NOM DE RUE" : "RECHERCHE TON ADRESSE"} 
+                    required 
+                    className="input-style" 
+                    value={addressSearch} 
+                    onChange={(e) => { setAddressSearch(e.target.value); if(!isManualAddress) setStreet(''); }} 
+                  />
+                  
+                  {!isManualAddress && suggestions.length > 0 && (
+                    <div className="absolute z-50 w-full mt-2 bg-[#0a0a0a] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+                      {suggestions.map((s, i) => (
+                        <div key={i} onClick={() => handleSelectAddress(s)} className="p-4 hover:bg-[#ff0080]/20 cursor-pointer text-[10px] font-bold uppercase border-b border-white/5">{s.properties.label}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* BOUTON D'ALTERNATIVE BIEN VISIBLE */}
+                <button 
+                  type="button" 
+                  onClick={toggleManualAddress}
+                  className={`w-full py-2 px-4 rounded-xl border text-[9px] font-black uppercase tracking-[0.2em] transition-all ${
+                    isManualAddress 
+                    ? 'border-[#ff0080]/50 text-[#ff0080] bg-[#ff0080]/5 shadow-[0_0_15px_rgba(255,0,128,0.1)]' 
+                    : 'border-white/10 text-gray-400 hover:text-white hover:border-white/30 bg-white/5'
+                  }`}
+                >
+                  {isManualAddress ? "← Revenir à la recherche automatique" : "📍 Adresse introuvable ? Cliquez ici"}
+                </button>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <input 
+                    type="text" 
+                    placeholder="CP" 
+                    required 
+                    className={`input-style !pl-5 ${!isManualAddress ? 'opacity-50 cursor-not-allowed bg-white/5' : 'bg-black/60 border-[#ff0080]/20 focus:border-[#ff0080]'}`} 
+                    value={zip} 
+                    readOnly={!isManualAddress}
+                    onChange={(e) => setZip(e.target.value)}
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="VILLE" 
+                    required 
+                    className={`input-style !pl-5 ${!isManualAddress ? 'opacity-50 cursor-not-allowed bg-white/5' : 'bg-black/60 border-[#ff0080]/20 focus:border-[#ff0080]'}`} 
+                    value={city} 
+                    readOnly={!isManualAddress}
+                    onChange={(e) => setCity(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -205,7 +250,7 @@ export default function LoginPage() {
       </div>
 
       <style jsx>{`
-        .input-style { width: 100%; padding: 1.25rem 1.25rem 1.25rem 3.5rem; border-radius: 1rem; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); color: white; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; outline: none; }
+        .input-style { width: 100%; padding: 1.25rem 1.25rem 1.25rem 3.5rem; border-radius: 1rem; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); color: white; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; outline: none; transition: all 0.3s; }
         .input-style:focus { border-color: #ff0080; }
         .glass-card { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(40px); }
       `}</style>
