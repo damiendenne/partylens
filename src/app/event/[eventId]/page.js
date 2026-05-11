@@ -3,7 +3,7 @@ import { useState, useEffect, use } from 'react';
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Camera, Music, Share2, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Camera, Music, Share2, ArrowLeft, CheckCircle2, BookOpen } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import Link from 'next/link';
 
@@ -14,11 +14,12 @@ export default function GuestPage({ params }) {
   const [file, setFile] = useState(null);
   const [song, setSong] = useState("");
   const [artist, setArtist] = useState("");
+  const [guestMsg, setGuestMsg] = useState(""); 
+  const [guestName, setGuestName] = useState(""); // État pour la signature
   const [loading, setLoading] = useState(false);
   const [eventData, setEventData] = useState(null);
   const [notify, setNotify] = useState({ show: false, msg: "" });
   
-  // --- AJOUT : État pour vérifier si on est sur le client ---
   const [mounted, setMounted] = useState(false);
   const [currentUrl, setCurrentUrl] = useState("");
 
@@ -64,6 +65,24 @@ export default function GuestPage({ params }) {
     setLoading(false);
   };
 
+  const handleGuestbookSubmit = async (e) => {
+    e.preventDefault();
+    if (!guestMsg.trim() || !guestName.trim()) return;
+    setLoading(true);
+    try {
+      await addDoc(collection(db, "events", eventId, "guestbook"), { 
+        message: guestMsg, 
+        author: guestName, // Ajout de la signature dans Firestore
+        createdAt: serverTimestamp() 
+      });
+      setNotify({ show: true, msg: "📖 Mot signé et ajouté !" });
+      setGuestMsg("");
+      setGuestName("");
+      setTimeout(() => setNotify({ show: false, msg: "" }), 3000);
+    } catch (err) { console.error(err); }
+    setLoading(false);
+  };
+
   return (
     <main className="min-h-screen p-6 flex flex-col items-center relative overflow-hidden bg-black text-white">
       <div className="bg-blobs">
@@ -100,7 +119,6 @@ export default function GuestPage({ params }) {
           <h2 className="text-lg font-black italic uppercase mb-6 flex items-center gap-3"><Camera size={20} className="text-pink-500" /> Photo en direct</h2>
           <form onSubmit={handlePhotoUpload} className="space-y-4">
             <label className="block border-2 border-dashed border-white/10 rounded-[30px] p-10 text-center bg-white/[0.02] cursor-pointer hover:bg-white/[0.05] transition relative">
-              {/* FIX ICI : Retrait de capture="environment" pour activer la galerie */}
               <input 
                 type="file" 
                 accept="image/*" 
@@ -117,6 +135,28 @@ export default function GuestPage({ params }) {
                 {loading ? "Envoi..." : "Publier sur le mur 🚀"}
               </button>
             )}
+          </form>
+        </section>
+
+        <section className="glass-card p-8 rounded-[40px]">
+          <h2 className="text-lg font-black italic uppercase mb-6 flex items-center gap-3"><BookOpen size={20} className="text-[#ff0080]" /> Livre d'or</h2>
+          <form onSubmit={handleGuestbookSubmit} className="space-y-4">
+            <input 
+              type="text" 
+              placeholder="Ton nom / signature" 
+              value={guestName} 
+              onChange={(e) => setGuestName(e.target.value)} 
+              className="w-full bg-black border border-white/10 p-5 rounded-2xl outline-none focus:border-[#ff0080] transition text-sm text-white font-bold"
+            />
+            <textarea 
+              placeholder="Laissez un petit mot pour le livre d'or..." 
+              value={guestMsg} 
+              onChange={(e) => setGuestMsg(e.target.value)} 
+              className="w-full bg-black border border-white/10 p-5 rounded-2xl outline-none focus:border-[#ff0080] transition text-sm text-white font-bold h-32 resize-none"
+            />
+            <button type="submit" disabled={loading || !guestMsg.trim() || !guestName.trim()} className="w-full py-5 bg-[#ff0080] rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-[#ff0080]/20">
+              {loading ? "Envoi..." : "Envoyer et signer"}
+            </button>
           </form>
         </section>
 

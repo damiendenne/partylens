@@ -5,8 +5,8 @@ import { db, auth } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import Link from 'next/link';
-import { ArrowLeft, Download, Image as ImageIcon, Loader2 } from 'lucide-react';
-import JSZip from 'jszip'; // <-- IMPORT DE LA NOUVELLE LIBRAIRIE
+import { ArrowLeft, Download, Image as ImageIcon, Loader2, BookOpen } from 'lucide-react'; // <-- AJOUT BOOKOPEN
+import JSZip from 'jszip'; 
 
 export default function GaleriePage() {
   const { eventId } = useParams();
@@ -24,13 +24,11 @@ export default function GaleriePage() {
       if (!user) { router.push('/login'); return; }
 
       try {
-        // Récupérer le nom de l'événement
         const eventDoc = await getDoc(doc(db, "events", eventId));
         if (eventDoc.exists()) {
           setEventName(eventDoc.data().eventName);
         }
 
-        // Récupérer les photos
         const qPhotos = query(collection(db, "events", eventId, "photos"), orderBy("createdAt", "desc"));
         const unsubPhotos = onSnapshot(qPhotos, (snap) => {
           setPhotos(snap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -47,7 +45,6 @@ export default function GaleriePage() {
     return () => unsubAuth();
   }, [eventId, router]);
 
-  // Fonction pour télécharger une photo à l'unité
   const downloadSinglePhoto = async (url, index) => {
     try {
       const response = await fetch(url);
@@ -65,37 +62,28 @@ export default function GaleriePage() {
     }
   };
 
-  // NOUVELLE FONCTION : TÉLÉCHARGEMENT EN .ZIP
   const downloadAllPhotos = async () => {
     if (photos.length === 0) return;
     setIsDownloadingAll(true);
     
     try {
       const zip = new JSZip();
-      
-      // On crée un nom de dossier propre (on remplace les espaces par des tirets du bas)
       const folderName = `Souvenirs_${eventName || 'PartyLens'}`.replace(/\s+/g, '_');
       const imgFolder = zip.folder(folderName);
 
-      // On récupère toutes les images en parallèle
       const fetchPromises = photos.map(async (photo, index) => {
         try {
           const response = await fetch(photo.url);
           const blob = await response.blob();
-          // On ajoute l'image dans le dossier ZIP
           imgFolder.file(`photo_${index + 1}.jpg`, blob);
         } catch (err) {
           console.error("Erreur lors de la récupération d'une photo", err);
         }
       });
 
-      // On attend que toutes les images soient téléchargées dans la mémoire
       await Promise.all(fetchPromises);
-
-      // On génère le fichier ZIP
       const zipContent = await zip.generateAsync({ type: 'blob' });
 
-      // On déclenche le téléchargement du fichier ZIP sur le PC de l'utilisateur
       const zipUrl = window.URL.createObjectURL(zipContent);
       const a = document.createElement('a');
       a.href = zipUrl;
@@ -144,14 +132,24 @@ export default function GaleriePage() {
             </div>
           </div>
 
-          <button 
-            onClick={downloadAllPhotos} 
-            disabled={isDownloadingAll || photos.length === 0}
-            className="flex items-center gap-3 bg-green-600 hover:bg-green-500 text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all border-none cursor-pointer shadow-lg shadow-green-500/20 disabled:opacity-50"
-          >
-            {isDownloadingAll ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />} 
-            {isDownloadingAll ? "CRÉATION DU ZIP..." : "TOUT TÉLÉCHARGER (.ZIP)"}
-          </button>
+          <div className="flex flex-wrap gap-4">
+            {/* BOUTON LIVRE D'OR */}
+            <Link 
+              href={`/event/${eventId}/guestbook`}
+              className="flex items-center gap-3 bg-[#ff0080] hover:bg-[#ff0080]/80 text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all border-none cursor-pointer shadow-lg shadow-[#ff0080]/20 no-underline"
+            >
+              <BookOpen size={16} /> LIVRE D'OR
+            </Link>
+
+            <button 
+              onClick={downloadAllPhotos} 
+              disabled={isDownloadingAll || photos.length === 0}
+              className="flex items-center gap-3 bg-green-600 hover:bg-green-500 text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all border-none cursor-pointer shadow-lg shadow-green-500/20 disabled:opacity-50"
+            >
+              {isDownloadingAll ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />} 
+              {isDownloadingAll ? "CRÉATION DU ZIP..." : "TOUT TÉLÉCHARGER (.ZIP)"}
+            </button>
+          </div>
         </header>
 
         <div className="glass-card p-10 rounded-[40px] border border-white/5">
