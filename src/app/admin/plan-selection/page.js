@@ -40,7 +40,6 @@ export default function PlanSelection() {
     setConfirmModal({ show: true, planId, planName, basePrice, billingCycle });
   };
 
-  // --- CHANGEMENT ICI : Envoi vers Stripe au lieu de Firebase ---
   const handleConfirmSubscription = async () => {
     if (!user) {
       alert("Erreur : Utilisateur non détecté.");
@@ -57,7 +56,6 @@ export default function PlanSelection() {
       const { planId, billingCycle } = confirmModal;
       const extraUsb = usbQtys[planId] || 0;
 
-      // Appel à notre API Stripe (le pont)
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -72,7 +70,6 @@ export default function PlanSelection() {
       const data = await response.json();
 
       if (data.url) {
-        // Redirection vers la page de paiement sécurisée Stripe
         window.location.href = data.url;
       } else {
         throw new Error(data.error || "Erreur de création de la session Stripe");
@@ -84,7 +81,6 @@ export default function PlanSelection() {
       setLoading(false);
     } 
   };
-  // --------------------------------------------------------------
 
   const goldPrice = goldBilling === 'annual' ? 299 : 24.99;
   const goldLabel = goldBilling === 'annual' ? '/ AN' : '/ MOIS';
@@ -92,7 +88,6 @@ export default function PlanSelection() {
   return (
     <main className="min-h-screen bg-black text-white p-6 md:p-12 font-sans relative overflow-hidden flex flex-col items-center justify-center">
       
-      {/* BACKGROUND BLOBS */}
       <div className="bg-blobs fixed inset-0 z-0 pointer-events-none">
         <div className="blob blob-pink absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-[#ff0080] opacity-10 blur-[120px] rounded-full"></div>
         <div className="blob blob-blue absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-[#0072ff] opacity-10 blur-[120px] rounded-full"></div>
@@ -107,11 +102,17 @@ export default function PlanSelection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           
           {/* --- PACK BRONZE --- */}
-          <div className="glass-card p-10 rounded-[50px] border border-[#ff9100]/20 bg-white/[0.02] backdrop-blur-3xl flex flex-col relative transition-all hover:border-white/20">
+          <div className="glass-card p-10 rounded-[50px] border border-[#ff9100]/20 bg-white/[0.02] backdrop-blur-3xl flex flex-col relative transition-all hover:border-white/20 overflow-hidden">
+            <div className="absolute top-4 -right-12 bg-[#ff0080] text-white px-12 py-1 rotate-45 text-[9px] font-black uppercase tracking-widest shadow-2xl z-20">
+              -30% OFF
+            </div>
             <h3 className="text-3xl font-black italic mb-6 text-[#ff9100]">BRONZE</h3>
-            <div className="flex items-baseline gap-2 mb-10">
-              <span className="text-7xl font-black tracking-tighter">9.99€</span>
-              <span className="text-gray-500 text-[10px] font-black uppercase">/ MOIS</span>
+            <div className="flex flex-col mb-10">
+              <div className="flex items-baseline gap-2">
+                <span className="text-7xl font-black tracking-tighter">9.99€</span>
+                <span className="text-gray-500 text-[10px] font-black uppercase">/ MOIS</span>
+              </div>
+              <p className="text-[#ff0080] text-[9px] font-black uppercase italic mt-2 tracking-widest">CODE : BIENVENU30</p>
             </div>
             <div className="space-y-5 mb-12">
               <div className="flex items-center gap-4 text-[11px] font-black uppercase tracking-tight"><Check size={16} className="text-[#ff9100]" strokeWidth={4} /> ACCÈS RÉGIE</div>
@@ -141,11 +142,17 @@ export default function PlanSelection() {
           </div>
 
           {/* --- PACK SILVER --- */}
-          <div className="glass-card p-10 rounded-[50px] border border-gray-300/20 bg-white/[0.02] backdrop-blur-3xl flex flex-col relative transition-all hover:border-white/20">
+          <div className="glass-card p-10 rounded-[50px] border border-gray-300/20 bg-white/[0.02] backdrop-blur-3xl flex flex-col relative transition-all hover:border-white/20 overflow-hidden">
+            <div className="absolute top-4 -right-12 bg-[#ff0080] text-white px-12 py-1 rotate-45 text-[9px] font-black uppercase tracking-widest shadow-2xl z-20">
+              -30% OFF
+            </div>
             <h3 className="text-3xl font-black italic mb-6 text-gray-300">SILVER</h3>
-            <div className="flex items-baseline gap-2 mb-10">
-              <span className="text-7xl font-black tracking-tighter">12.99€</span>
-              <span className="text-gray-500 text-[10px] font-black uppercase">/ MOIS</span>
+            <div className="flex flex-col mb-10">
+              <div className="flex items-baseline gap-2">
+                <span className="text-7xl font-black tracking-tighter">12.99€</span>
+                <span className="text-gray-500 text-[10px] font-black uppercase">/ MOIS</span>
+              </div>
+              <p className="text-[#ff0080] text-[9px] font-black uppercase italic mt-2 tracking-widest">CODE : BIENVENU30</p>
             </div>
             <div className="space-y-5 mb-12">
               <div className="flex items-center gap-4 text-[11px] font-black uppercase tracking-tight"><Check size={16} className="text-gray-300" strokeWidth={4} /> TOUT LE BRONZE</div>
@@ -175,7 +182,10 @@ export default function PlanSelection() {
           </div>
 
           {/* --- PACK VIP GOLD --- */}
-          <div className="glass-card p-10 rounded-[50px] border border-[#ffcc00]/30 bg-white/[0.02] backdrop-blur-3xl flex flex-col relative transition-all hover:border-white/20">
+          <div className="glass-card p-10 rounded-[50px] border border-[#ffcc00]/30 bg-white/[0.02] backdrop-blur-3xl flex flex-col relative transition-all hover:border-white/20 overflow-hidden">
+            <div className="absolute top-4 -right-12 bg-[#ff0080] text-white px-12 py-1 rotate-45 text-[9px] font-black uppercase tracking-widest shadow-2xl z-20">
+              -30% OFF
+            </div>
             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#ffcc00] text-black text-[9px] font-black px-5 py-1.5 rounded-full uppercase tracking-widest shadow-xl">
               POPULAIRE
             </div>
@@ -202,6 +212,7 @@ export default function PlanSelection() {
                 <span className="text-7xl font-black tracking-tighter">{goldPrice}€</span>
                 <span className="text-gray-500 text-[10px] font-black uppercase">{goldLabel}</span>
               </div>
+              <p className="text-[#ff0080] text-[9px] font-black uppercase italic mt-2 tracking-widest">CODE : BIENVENU30</p>
               {goldBilling === 'monthly' && <span className="text-[#ffcc00] text-[9px] font-black uppercase tracking-widest mt-1">Engagement 1 an</span>}
             </div>
 
@@ -237,7 +248,6 @@ export default function PlanSelection() {
         </div>
       </div>
 
-      {/* MODALE DE CONFIRMATION ET ACCEPTATION DES CGV */}
       {confirmModal.show && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
           <div className="glass-card w-full max-w-md p-10 rounded-[40px] border border-white/10 relative shadow-2xl bg-[#0a0000]">
@@ -276,7 +286,6 @@ export default function PlanSelection() {
               </div>
             </div>
 
-            {/* CHECKBOX LÉGALE */}
             <label className="flex items-start gap-4 p-4 mb-8 bg-[#ff0080]/5 border border-[#ff0080]/20 rounded-2xl cursor-pointer hover:bg-[#ff0080]/10 transition-colors">
               <div className="relative flex items-center justify-center mt-1">
                 <input 
