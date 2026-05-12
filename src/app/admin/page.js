@@ -30,7 +30,9 @@ import {
   Download,
   CreditCard,
   AlertTriangle,
-  Star // <-- J'ai ajouté l'étoile ici
+  Star,
+  Image as ImageIcon,
+  BookOpen
 } from 'lucide-react';
 
 function AdminContent() {
@@ -333,7 +335,6 @@ function AdminContent() {
                   <LogOut size={16} /> DÉCO
                 </button>
 
-                {/* NOUVEAU BOUTON AVIS ICI */}
                 <Link
                   href="/avis"
                   className="bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 px-6 py-3 rounded-2xl flex items-center gap-2 text-[10px] font-black uppercase border border-yellow-500/30 no-underline transition-all"
@@ -464,6 +465,22 @@ function AdminContent() {
                       PAGE INVITÉS <ArrowRight size={14} />
                     </Link>
 
+                    {/* BOUTONS CORRIGÉS ICI */}
+                    <div className="flex gap-2 w-full mt-1">
+                      <Link
+                        href={`/admin/${event.id}/galerie`} // On remet le chemin admin pour la galerie
+                        className="flex-1 py-3 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-xl font-black uppercase text-[9px] no-underline flex items-center justify-center gap-2 border border-blue-500/20 transition-all"
+                      >
+                        <ImageIcon size={12} /> GALERIE
+                      </Link>
+                      <Link
+                        href={`/event/${event.id}/guestbook`} // Le chemin spécifique pour le livre d'or
+                        className="flex-1 py-3 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 rounded-xl font-black uppercase text-[9px] no-underline flex items-center justify-center gap-2 border border-yellow-500/20 transition-all"
+                      >
+                        <BookOpen size={12} /> LIVRE D'OR
+                      </Link>
+                    </div>
+
                     {event.status === 'terminé' && userData?.role !== 'dj' && (
                       <Link
                         href={`/admin/${event.id}/galerie`}
@@ -488,19 +505,16 @@ function AdminContent() {
           </div>
         )}
 
+        {/* ... Reste des étapes (Step 1, 5, 4, 3) identiques au code précédent ... */}
+        
         {step === 1 && (
           <div className="glass-card p-12 rounded-[50px] max-w-xl mx-auto text-center border border-white/5 animate-in zoom-in">
-            <button
-              onClick={() => setStep(0)}
-              className="mb-10 bg-transparent border-none text-gray-500 cursor-pointer font-black flex items-center gap-2"
-            >
+            <button onClick={() => setStep(0)} className="mb-10 bg-transparent border-none text-gray-500 cursor-pointer font-black flex items-center gap-2">
               <ArrowLeft size={14} /> RETOUR
             </button>
-
             <h2 className="text-4xl font-black italic uppercase mb-12 tracking-tighter">
               Nouvelle <span className="text-pink-600">Soirée</span>
             </h2>
-
             <input
               type="text"
               placeholder="NOM DE L'ÉVÉNEMENT"
@@ -508,42 +522,22 @@ function AdminContent() {
               value={formData.eventName}
               onChange={(e) => setFormData({ ...formData, eventName: e.target.value })}
             />
-
             <div
               onClick={() => setFormData({ ...formData, includeUsb: !formData.includeUsb })}
-              className={`mt-6 w-full p-6 rounded-[30px] border transition-all cursor-pointer flex items-center justify-between ${
-                formData.includeUsb
-                  ? 'bg-[#ff0080]/10 border-[#ff0080]'
-                  : 'bg-white/5 border-white/10 hover:border-white/30'
-              }`}
+              className={`mt-6 w-full p-6 rounded-[30px] border transition-all cursor-pointer flex items-center justify-between ${formData.includeUsb ? 'bg-[#ff0080]/10 border-[#ff0080]' : 'bg-white/5 border-white/10 hover:border-white/30'}`}
             >
               <div className="flex items-center gap-4 text-left">
                 <Package size={24} className={formData.includeUsb ? "text-[#ff0080]" : "text-gray-500"} />
-
                 <div>
-                  <p className={`font-black uppercase tracking-widest text-[12px] ${formData.includeUsb ? 'text-white' : 'text-gray-400'}`}>
-                    INCLURE UNE CLÉ USB
-                  </p>
-
-                  <p className={`text-[10px] font-bold uppercase mt-1 ${remainingFreeUsb > 0 ? 'text-green-500' : 'text-orange-500'}`}>
-                    {remainingFreeUsb > 0 ? `Gratuit (${remainingFreeUsb} clé(s) restante(s))` : 'Sera facturé 15€'}
-                  </p>
+                  <p className={`font-black uppercase tracking-widest text-[12px] ${formData.includeUsb ? 'text-white' : 'text-gray-400'}`}>INCLURE UNE CLÉ USB</p>
+                  <p className={`text-[10px] font-bold uppercase mt-1 ${remainingFreeUsb > 0 ? 'text-green-500' : 'text-orange-500'}`}>{remainingFreeUsb > 0 ? `Gratuit (${remainingFreeUsb} clé(s) restante(s))` : 'Sera facturé 15€'}</p>
                 </div>
               </div>
-
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                formData.includeUsb
-                  ? 'border-[#ff0080] bg-[#ff0080]'
-                  : 'border-gray-600'
-              }`}>
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${formData.includeUsb ? 'border-[#ff0080] bg-[#ff0080]' : 'border-gray-600'}`}>
                 {formData.includeUsb && <CheckCircle2 size={14} className="text-white" />}
               </div>
             </div>
-
-            <button
-              onClick={handleCheckBeforeCreate}
-              className="w-full p-8 rounded-[30px] bg-pink-600 font-black uppercase text-white cursor-pointer mt-8 border-none shadow-2xl transition-all hover:bg-pink-500"
-            >
+            <button onClick={handleCheckBeforeCreate} className="w-full p-8 rounded-[30px] bg-pink-600 font-black uppercase text-white cursor-pointer mt-8 border-none shadow-2xl transition-all hover:bg-pink-500">
               LANCER LA SOIRÉE
             </button>
           </div>
@@ -552,156 +546,51 @@ function AdminContent() {
         {step === 5 && (
           <div className="glass-card p-12 rounded-[50px] max-w-xl mx-auto text-center border border-white/10 animate-in zoom-in">
             <Package size={40} className="text-[#ff0080] mx-auto mb-6" />
-
-            <h2 className="text-3xl font-black italic uppercase mb-2">
-              Livraison de la clé
-            </h2>
-
-            <p className="text-gray-400 text-xs font-bold mb-8 uppercase tracking-widest">
-              Coordonnées de l'organisateur
-            </p>
-
-            <div className="grid gap-4 text-left">
-              <input
-                type="text"
-                placeholder="NOM ET PRÉNOM DU DESTINATAIRE"
-                className="w-full p-5 rounded-2xl bg-black border border-white/10 text-white font-bold text-xs outline-none focus:border-pink-600 uppercase"
-                value={shippingData.name}
-                onChange={(e) => setShippingData({ ...shippingData, name: e.target.value.toUpperCase() })}
-              />
-
-              <input
-                type="text"
-                placeholder="ADRESSE POSTALE COMPLÈTE"
-                className="w-full p-5 rounded-2xl bg-black border border-white/10 text-white font-bold text-xs outline-none focus:border-pink-600 uppercase"
-                value={shippingData.address}
-                onChange={(e) => setShippingData({ ...shippingData, address: e.target.value.toUpperCase() })}
-              />
-
+            <h2 className="text-3xl font-black italic uppercase mb-2">Livraison de la clé</h2>
+            <div className="grid gap-4 text-left mt-8">
+              <input type="text" placeholder="NOM ET PRÉNOM" className="w-full p-5 rounded-2xl bg-black border border-white/10 text-white font-bold text-xs uppercase" value={shippingData.name} onChange={(e) => setShippingData({ ...shippingData, name: e.target.value.toUpperCase() })} />
+              <input type="text" placeholder="ADRESSE" className="w-full p-5 rounded-2xl bg-black border border-white/10 text-white font-bold text-xs uppercase" value={shippingData.address} onChange={(e) => setShippingData({ ...shippingData, address: e.target.value.toUpperCase() })} />
               <div className="grid grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  placeholder="CODE POSTAL"
-                  className="w-full p-5 rounded-2xl bg-black border border-white/10 text-white font-bold text-xs outline-none focus:border-pink-600"
-                  value={shippingData.zip}
-                  onChange={(e) => setShippingData({ ...shippingData, zip: e.target.value })}
-                />
-
-                <input
-                  type="text"
-                  placeholder="VILLE"
-                  className="w-full p-5 rounded-2xl bg-black border border-white/10 text-white font-bold text-xs outline-none focus:border-pink-600 uppercase"
-                  value={shippingData.city}
-                  onChange={(e) => setShippingData({ ...shippingData, city: e.target.value.toUpperCase() })}
-                />
+                <input type="text" placeholder="CODE POSTAL" className="w-full p-5 rounded-2xl bg-black border border-white/10 text-white font-bold text-xs" value={shippingData.zip} onChange={(e) => setShippingData({ ...shippingData, zip: e.target.value })} />
+                <input type="text" placeholder="VILLE" className="w-full p-5 rounded-2xl bg-black border border-white/10 text-white font-bold text-xs uppercase" value={shippingData.city} onChange={(e) => setShippingData({ ...shippingData, city: e.target.value.toUpperCase() })} />
               </div>
-
-              <input
-                type="tel"
-                placeholder="NUMÉRO DE TÉLÉPHONE"
-                className="w-full p-5 rounded-2xl bg-black border border-white/10 text-white font-bold text-xs outline-none focus:border-pink-600"
-                value={shippingData.phone}
-                onChange={(e) => setShippingData({ ...shippingData, phone: e.target.value })}
-              />
+              <input type="tel" placeholder="TÉLÉPHONE" className="w-full p-5 rounded-2xl bg-black border border-white/10 text-white font-bold text-xs" value={shippingData.phone} onChange={(e) => setShippingData({ ...shippingData, phone: e.target.value })} />
             </div>
-
-            <button
-              onClick={() => {
-                const usedUsb = userData?.usedUsb || 0;
-                const freeLimit = userData?.plan === "VIP GOLD" ? 12 : 0;
-
-                if (usedUsb >= freeLimit) {
-                  setStep(4);
-                } else {
-                  executeCreateEvent();
-                }
-              }}
-              disabled={!shippingData.name || !shippingData.address || !shippingData.zip || !shippingData.city}
-              className="w-full p-6 rounded-2xl bg-pink-600 hover:bg-pink-500 font-black uppercase text-white cursor-pointer border-none shadow-xl mt-8 transition-all disabled:opacity-30"
-            >
-              Continuer
-            </button>
+            <button onClick={() => usedUsbCount >= freeUsbLimit ? setStep(4) : executeCreateEvent()} disabled={!shippingData.name || !shippingData.address} className="w-full p-6 rounded-2xl bg-pink-600 font-black uppercase text-white mt-8 disabled:opacity-30">Continuer</button>
           </div>
         )}
 
         {step === 4 && (
           <div className="glass-card p-12 rounded-[50px] max-w-xl mx-auto text-center border border-orange-500/30 animate-in zoom-in bg-orange-500/5">
             <AlertTriangle size={60} className="text-orange-500 mx-auto mb-6" />
-
-            <h2 className="text-3xl font-black italic uppercase mb-4 text-orange-500 tracking-tighter">
-              Facturation requise
-            </h2>
-
-            <p className="text-gray-300 font-bold mb-8">
-              Votre quota de {freeUsbLimit} clés gratuites est épuisé.
-              <br />
-              Cette clé sera ajoutée à votre facturation.
-            </p>
-
-            <div className="bg-black/50 p-6 rounded-3xl border border-white/10 mb-8 flex justify-between items-center">
-              <span className="text-sm font-black uppercase tracking-widest text-gray-400">Total</span>
-              <span className="text-3xl font-black text-white">15,00 €</span>
-            </div>
-
-            <div className="flex flex-col gap-4">
-              <button
-                onClick={handlePayExtraUsb}
-                className="w-full p-6 rounded-2xl bg-orange-500 hover:bg-orange-400 font-black uppercase text-white cursor-pointer border-none shadow-xl flex items-center justify-center gap-2 tracking-widest text-xs"
-              >
-                {loading ? <Loader2 className="animate-spin" size={18} /> : (
-                  <>
-                    <CreditCard size={18} /> Payer 15,00 € et Lancer
-                  </>
-                )}
-              </button>
-
-              <button
-                onClick={() => setStep(1)}
-                className="w-full p-6 rounded-2xl bg-transparent font-black uppercase text-gray-500 hover:text-white cursor-pointer border-none transition-all tracking-widest text-xs"
-              >
-                Annuler
-              </button>
-            </div>
+            <h2 className="text-3xl font-black italic uppercase mb-4 text-orange-500">Facturation requise</h2>
+            <p className="text-gray-300 font-bold mb-8">Quota épuisé. Cette clé sera facturée 15€.</p>
+            <button onClick={handlePayExtraUsb} className="w-full p-6 rounded-2xl bg-orange-500 font-black uppercase text-white flex items-center justify-center gap-2 tracking-widest text-xs">
+              {loading ? <Loader2 className="animate-spin" size={18} /> : <><CreditCard size={18} /> Payer 15,00 € et Lancer</>}
+            </button>
+            <button onClick={() => setStep(1)} className="w-full p-6 mt-4 text-gray-500 font-black uppercase text-xs">Annuler</button>
           </div>
         )}
 
         {step === 3 && (
           <div className="text-center">
             <div className="max-w-md mx-auto glass-card p-14 rounded-[60px] border border-white/5 shadow-2xl">
-              <h2 className="text-4xl font-black italic uppercase mb-8 italic">
-                {activeEventData?.eventName}
-              </h2>
-
+              <h2 className="text-4xl font-black italic uppercase mb-8">{activeEventData?.eventName}</h2>
               <div className="bg-white p-8 rounded-[45px] inline-block mb-12">
-                {typeof window !== "undefined" && (
-                  <QRCodeSVG value={`${window.location.origin}/event/${activeEventId}`} size={220} />
-                )}
+                {typeof window !== "undefined" && <QRCodeSVG value={`${window.location.origin}/event/${activeEventId}`} size={220} />}
               </div>
-
-              <Link
-                href={`/admin/${activeEventId}/dashboard`}
-                className="w-full py-6 flex items-center justify-center bg-[#ff0080] rounded-[30px] text-[11px] font-black uppercase tracking-[0.3em] no-underline text-white"
-              >
-                ACCÉDER RÉGIE →
-              </Link>
+              <Link href={`/admin/${activeEventId}/dashboard`} className="w-full py-6 flex items-center justify-center bg-[#ff0080] rounded-[30px] text-[11px] font-black uppercase tracking-[0.3em] no-underline text-white">ACCÉDER RÉGIE →</Link>
             </div>
-
-            <button
-              onClick={() => setStep(0)}
-              className="mt-12 text-white/30 border-none bg-transparent cursor-pointer font-black uppercase text-[10px] italic"
-            >
-              Retour à l'accueil
-            </button>
+            <button onClick={() => setStep(0)} className="mt-12 text-white/30 border-none bg-transparent cursor-pointer font-black uppercase text-[10px] italic">Retour à l'accueil</button>
           </div>
         )}
+
       </div>
 
       {notify.show && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[300] flex items-center gap-3 px-8 py-4 rounded-full border border-pink-500/50 bg-black/90 text-pink-500 backdrop-blur-xl shadow-2xl animate-in slide-in-from-bottom-5">
           <CheckCircle2 size={18} />
-          <span className="text-[10px] font-black uppercase italic tracking-widest">
-            {notify.msg}
-          </span>
+          <span className="text-[10px] font-black uppercase italic tracking-widest">{notify.msg}</span>
         </div>
       )}
 

@@ -3,7 +3,7 @@ import { useState, useEffect, use } from 'react';
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Camera, Music, Share2, ArrowLeft, CheckCircle2, BookOpen } from 'lucide-react';
+import { Camera, Music, Share2, ArrowLeft, CheckCircle2, BookOpen, Image as ImageIcon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import Link from 'next/link';
 
@@ -15,7 +15,7 @@ export default function GuestPage({ params }) {
   const [song, setSong] = useState("");
   const [artist, setArtist] = useState("");
   const [guestMsg, setGuestMsg] = useState(""); 
-  const [guestName, setGuestName] = useState(""); // État pour la signature
+  const [guestName, setGuestName] = useState(""); 
   const [loading, setLoading] = useState(false);
   const [eventData, setEventData] = useState(null);
   const [notify, setNotify] = useState({ show: false, msg: "" });
@@ -35,6 +35,27 @@ export default function GuestPage({ params }) {
     };
     fetchEvent();
   }, [eventId]);
+
+  // FONCTION DE PARTAGE
+  const handleShare = async () => {
+    const shareData = {
+      title: `Rejoins la soirée ${eventData?.eventName || ''}`,
+      text: `Participe à l'événement et partage tes photos sur PartyLens !`,
+      url: currentUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(currentUrl);
+        setNotify({ show: true, msg: "Lien copié !" });
+        setTimeout(() => setNotify({ show: false, msg: "" }), 3000);
+      }
+    } catch (err) {
+      console.error("Erreur partage:", err);
+    }
+  };
 
   const handlePhotoUpload = async (e) => {
     e.preventDefault();
@@ -72,10 +93,10 @@ export default function GuestPage({ params }) {
     try {
       await addDoc(collection(db, "events", eventId, "guestbook"), { 
         message: guestMsg, 
-        author: guestName, // Ajout de la signature dans Firestore
+        author: guestName, 
         createdAt: serverTimestamp() 
       });
-      setNotify({ show: true, msg: "📖 Mot signé et ajouté !" });
+      setNotify({ show: true, msg: "📖 Mot signé !" });
       setGuestMsg("");
       setGuestName("");
       setTimeout(() => setNotify({ show: false, msg: "" }), 3000);
@@ -93,7 +114,7 @@ export default function GuestPage({ params }) {
       <header className="w-full max-w-md flex justify-between items-center mb-10 z-10">
           <Link href={`/admin`} className="p-2 text-gray-500 hover:text-white transition"><ArrowLeft size={24} /></Link>
           <img src="/logo-partylens.png" alt="PartyLens" className="w-40 h-auto" />
-          <button className="p-3 glass-card rounded-full"><Share2 size={20}/></button>
+          <button onClick={handleShare} className="p-3 glass-card rounded-full active:scale-90 transition"><Share2 size={20}/></button>
       </header>
 
       <div className="w-full max-w-md space-y-6 z-10 animate-in fade-in slide-in-from-bottom duration-700">
@@ -112,7 +133,31 @@ export default function GuestPage({ params }) {
               <div style={{ width: 180, height: 180 }} className="bg-gray-800 animate-pulse rounded-lg" />
             )}
           </div>
-          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.4em]">Partagez ce QR Code avec vos amis</p>
+          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.4em] mb-8">Partagez ce QR Code avec vos amis</p>
+
+          {/* AJOUT DES BOUTONS DE NAVIGATION RAPIDE + PARTAGE */}
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-2 w-full">
+              <Link
+                href={`/admin/${eventId}/galerie`}
+                className="flex-1 py-4 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-2xl font-black uppercase text-[10px] no-underline flex items-center justify-center gap-2 border border-blue-500/20 transition-all"
+              >
+                <ImageIcon size={14} /> Galerie
+              </Link>
+              <Link
+                href={`/event/${eventId}/guestbook`}
+                className="flex-1 py-4 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 rounded-2xl font-black uppercase text-[10px] no-underline flex items-center justify-center gap-2 border border-yellow-500/20 transition-all"
+              >
+                <BookOpen size={14} /> Livre d'or
+              </Link>
+            </div>
+            <button
+              onClick={handleShare}
+              className="w-full py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] border border-white/10 flex items-center justify-center gap-2 transition-all cursor-pointer"
+            >
+              <Share2 size={14} /> Partager le lien
+            </button>
+          </div>
         </section>
 
         <section className="glass-card p-8 rounded-[40px]">
