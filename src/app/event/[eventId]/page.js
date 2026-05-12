@@ -36,7 +36,6 @@ export default function GuestPage({ params }) {
     fetchEvent();
   }, [eventId]);
 
-  // FONCTION DE PARTAGE
   const handleShare = async () => {
     const shareData = {
       title: `Rejoins la soirée ${eventData?.eventName || ''}`,
@@ -112,9 +111,15 @@ export default function GuestPage({ params }) {
       </div>
 
       <header className="w-full max-w-md flex justify-between items-center mb-10 z-10">
-          <Link href={`/admin`} className="p-2 text-gray-500 hover:text-white transition"><ArrowLeft size={24} /></Link>
+          <button 
+            onClick={() => window.history.back()} 
+            className="p-2 text-gray-500 hover:text-white transition cursor-pointer border-none bg-transparent"
+          >
+            <ArrowLeft size={24} />
+          </button>
+          
           <img src="/logo-partylens.png" alt="PartyLens" className="w-40 h-auto" />
-          <button onClick={handleShare} className="p-3 glass-card rounded-full active:scale-90 transition"><Share2 size={20}/></button>
+          <button onClick={handleShare} className="p-3 glass-card rounded-full active:scale-90 transition border-none"><Share2 size={20}/></button>
       </header>
 
       <div className="w-full max-w-md space-y-6 z-10 animate-in fade-in slide-in-from-bottom duration-700">
@@ -135,7 +140,6 @@ export default function GuestPage({ params }) {
           </div>
           <p className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.4em] mb-8">Partagez ce QR Code avec vos amis</p>
 
-          {/* AJOUT DES BOUTONS DE NAVIGATION RAPIDE + PARTAGE */}
           <div className="flex flex-col gap-3">
             <div className="flex gap-2 w-full">
               <Link
