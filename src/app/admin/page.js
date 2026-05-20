@@ -116,7 +116,6 @@ function AdminContent() {
     };
   }, [router]);
 
-  // --- COPIÉ-COLLÉ DU BLOC ICI : TRAITEMENT DU RETOUR DE PAIEMENT STRIPE ---
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -124,15 +123,11 @@ function AdminContent() {
     const success = params.get("success");
 
     if (success === "true") {
-      // On efface les paramètres de l'URL pour faire propre
       window.history.replaceState({}, document.title, window.location.pathname);
-
-      // On affiche la notification de succès sur l'écran
       setNotify({ show: true, msg: "🎉 ABONNEMENT ACTIVÉ ! MERCI POUR VOTRE CONFIANCE." });
       setTimeout(() => setNotify({ show: false, msg: "" }), 5000);
     }
   }, []);
-  // --- FIN DU BLOC AJOUTÉ ---
 
   const handleUpdateDjCode = async () => {
     if (!newDjCode.trim() || !user) return;
@@ -154,8 +149,17 @@ function AdminContent() {
   const isPlanValid = () => {
     if (!userData?.plan) return false;
     
-    if (userData.plan === "DEMO") return true;
+    // Si compte DEMO
+    if (userData.plan === "DEMO") {
+      // S'il y a déjà une soirée créée, la démo est finie -> Invalide
+      if (myEvents && myEvents.length > 0) {
+        return false;
+      }
+      // Sinon, il peut créer sa première et unique soirée démo
+      return true;
+    }
 
+    // Pour les autres plans (BRONZE, VIP GOLD, etc.), on vérifie la date de validité
     if (!userData?.lastPaymentDate) return false;
 
     const lastPay = typeof userData.lastPaymentDate.toDate === 'function'
@@ -194,16 +198,16 @@ function AdminContent() {
   };
 
   const handleStartCreate = () => {
+    if (!isPlanValid()) {
+      router.push('/admin/plan-selection');
+      return; 
+    }
+
     setFormData({ eventName: "", includeUsb: false });
     setShippingData({ name: "", address: "", zip: "", city: "", phone: "" });
 
     if (userData?.role === 'organisateur' && userData?.isStandalone === false) {
       setNotify({ show: true, msg: "SEUL VOTRE DJ PEUT CRÉER UNE SOIRÉE." });
-      return;
-    }
-
-    if (!isPlanValid()) {
-      router.push('/admin/plan-selection');
       return;
     }
 
