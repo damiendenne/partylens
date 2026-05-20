@@ -31,7 +31,7 @@ import {
   CreditCard,
   AlertTriangle,
   Star,
-  ImageIcon,
+  Image as ImageIcon,
   BookOpen
 } from 'lucide-react';
 
@@ -134,12 +134,7 @@ function AdminContent() {
   };
 
   const isPlanValid = () => {
-    if (!userData?.plan) return false;
-    
-    // Ajout pour ton mode démo
-    if (userData.plan === "DEMO") return true;
-
-    if (!userData?.lastPaymentDate) return false;
+    if (!userData?.plan || !userData?.lastPaymentDate) return false;
 
     const lastPay = typeof userData.lastPaymentDate.toDate === 'function'
       ? userData.lastPaymentDate.toDate()
@@ -275,7 +270,7 @@ function AdminContent() {
       console.error(e);
       alert("Erreur création");
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
   };
 
@@ -315,218 +310,305 @@ function AdminContent() {
   const freeUsbLimit = userData?.plan === "VIP GOLD" ? 12 : 0;
   const usedUsbCount = userData?.usedUsb || 0;
   const remainingFreeUsb = Math.max(0, freeUsbLimit - usedUsbCount);
+  const validSubscription = isPlanValid();
 
   return (
-    <main className="min-h-screen bg-black text-white p-6 font-sans relative overflow-hidden">
-      {notify.show && (
-        <div className="fixed top-5 right-5 bg-[#ff0080] text-white font-black uppercase text-xs tracking-widest px-6 py-4 rounded-2xl z-50 shadow-2xl animate-in fade-in slide-in-from-top-4">
-          {notify.msg}
-        </div>
-      )}
-
-      <div className="max-w-7xl mx-auto flex justify-between items-center mb-12 relative z-10">
-        <Link href="/">
-          <img src="/logo-partylens.png" className="w-24 cursor-pointer" alt="Logo" />
-        </Link>
-        <div className="flex items-center gap-4">
-          <div className="text-right hidden sm:block">
-            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Connecté avec</p>
-            <p className="text-xs font-bold text-white uppercase">{userData?.email}</p>
-            <span className="inline-block bg-white/5 border border-white/10 px-3 py-1 rounded-full text-[9px] font-black text-[#ff0080] tracking-widest uppercase mt-1">
-              Plan : {userData?.plan || "Aucun"}
-            </span>
-          </div>
-          <button onClick={handleLogout} className="p-4 bg-white/5 hover:bg-red-500/20 border border-white/5 hover:border-red-500/30 text-gray-400 hover:text-red-500 rounded-2xl transition-all cursor-pointer">
-            <LogOut size={18} />
-          </button>
-        </div>
+    <main className="min-h-screen relative overflow-hidden p-6 md:p-12 font-sans bg-black text-white flex flex-col">
+      <div className="bg-blobs">
+        <div className="blob blob-pink"></div>
+        <div className="blob blob-purple"></div>
+        <div className="blob blob-blue"></div>
       </div>
 
-      <div className="max-w-7xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white/[0.02] backdrop-blur-2xl border border-white/5 p-8 rounded-[35px]">
-            <div className="flex items-center gap-4 mb-6">
-              <UserCircle size={40} className="text-[#ff0080]" />
-              <div>
-                <h2 className="text-xl font-black uppercase italic tracking-tight">Espace {userData?.role}</h2>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Gestion de compte</p>
-              </div>
-            </div>
+      <div className="max-w-6xl mx-auto relative z-10 w-full flex-grow">
 
-            {userData?.role === 'organisateur' && (
-              <div className="mt-4 pt-4 border-t border-white/5">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Code DJ rattaché :</p>
-                {isEditingCode ? (
-                  <div className="flex gap-2">
-                    <input 
-                      type="text" 
-                      className="bg-black border border-[#ff0080]/30 rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider text-white outline-none focus:border-[#ff0080] w-full"
-                      value={newDjCode}
-                      onChange={(e) => setNewDjCode(e.target.value)}
-                      placeholder="EX: DJ-XYZ"
-                    />
-                    <button onClick={handleUpdateDjCode} className="bg-[#ff0080] px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-white">Valider</button>
-                    <button onClick={() => setIsEditingCode(false)} className="bg-white/5 px-3 py-2 rounded-xl text-[10px] font-bold text-gray-400">X</button>
+        {step === 0 && (
+          <div>
+            <header className="flex justify-between items-center mb-20">
+              <img src="/logo-partylens.png" alt="Logo" className="w-48 h-auto" />
+
+              <div className="flex flex-wrap items-center justify-end gap-4">
+                <button
+                  onClick={handleLogout}
+                  className="glass-card px-6 py-3 rounded-2xl flex items-center gap-2 text-[10px] font-black uppercase text-gray-400 hover:text-white border border-white/5 cursor-pointer transition-all hover:bg-white/10"
+                >
+                  <LogOut size={16} /> DÉCO
+                </button>
+
+                <Link
+                  href="/avis"
+                  className="bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 px-6 py-3 rounded-2xl flex items-center gap-2 text-[10px] font-black uppercase border border-yellow-500/30 no-underline transition-all"
+                >
+                  <Star size={16} /> AVIS
+                </Link>
+
+                <Link
+                  href="/admin/profil"
+                  className="glass-card px-8 py-3 rounded-2xl flex items-center gap-2 text-[10px] font-black uppercase text-white border border-white/5 no-underline hover:bg-white/10 transition-all"
+                >
+                  <UserCircle size={18} /> MON COMPTE
+                </Link>
+
+                {!(userData?.role === 'organisateur' && userData?.isStandalone === false) && (
+                  <button
+                    onClick={handleStartCreate}
+                    className={`${validSubscription ? 'bg-[#ff0080]' : 'bg-orange-600'} text-white px-10 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest border-none shadow-xl cursor-pointer hover:scale-105 transition-all`}
+                  >
+                    {validSubscription ? '+ CRÉER SOIRÉE' : '⚠️ S\'ABONNER'}
+                  </button>
+                )}
+              </div>
+            </header>
+
+            {userData?.linkedDjCode && (
+              <div className="mb-10 p-6 glass-card rounded-[30px] border border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-[#ff0080]/20 rounded-xl border border-[#ff0080]/30 text-[#ff0080]">
+                    <Edit2 size={20} />
                   </div>
-                ) : (
-                  <div className="flex justify-between items-center bg-white/5 px-4 py-3 rounded-2xl border border-white/5">
-                    <span className="text-xs font-black tracking-widest text-white uppercase">{userData?.linkedDjCode || "AUCUN CODE"}</span>
-                    <button onClick={() => { setNewDjCode(userData?.linkedDjCode || ""); setIsEditingCode(true); }} className="text-[#ff0080] hover:text-white transition-colors">
-                      <Edit2 size={14} />
+
+                  <div>
+                    <p className="text-[10px] font-black uppercase text-gray-500">Votre Code DJ actuel</p>
+                    <p className="text-xl font-black tracking-widest uppercase">{userData.linkedDjCode}</p>
+                  </div>
+                </div>
+
+                {isEditingCode ? (
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="text"
+                      className="px-6 py-3 rounded-xl bg-black border border-[#ff0080] text-white font-black uppercase text-center outline-none"
+                      value={newDjCode}
+                      onChange={(e) => setNewDjCode(e.target.value.toUpperCase())}
+                    />
+
+                    <button
+                      onClick={handleUpdateDjCode}
+                      className="bg-[#ff0080] text-white px-6 py-3 rounded-xl font-black uppercase text-[10px] border-none cursor-pointer"
+                    >
+                      OK
+                    </button>
+
+                    <button
+                      onClick={() => setIsEditingCode(false)}
+                      className="text-gray-500 font-bold uppercase text-[10px] cursor-pointer bg-transparent border-none"
+                    >
+                      Annuler
                     </button>
                   </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setNewDjCode(userData.linkedDjCode);
+                      setIsEditingCode(true);
+                    }}
+                    className="px-8 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-black uppercase text-[10px] text-white border border-white/10 cursor-pointer transition-all"
+                  >
+                    MODIFIER MON CODE DJ
+                  </button>
                 )}
               </div>
             )}
 
-            {((userData?.role === 'organisateur' && userData?.isStandalone) || userData?.role === 'dj') && (
-              <button onClick={handleStartCreate} className="w-full mt-6 py-4 bg-[#ff0080] rounded-2xl font-black uppercase text-[11px] tracking-widest text-white shadow-[0_0_20px_rgba(255,0,128,0.3)] hover:scale-[1.02] transition-all cursor-pointer">
-                + Créer une nouvelle soirée
-              </button>
-            )}
-          </div>
-        </div>
+            <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
+              <h2 className="text-[11px] font-black uppercase tracking-[0.4em] text-gray-600 italic">
+                Mes événements
+              </h2>
 
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white/[0.02] backdrop-blur-2xl border border-white/5 p-8 rounded-[35px]">
-            <h2 className="text-2xl font-black uppercase italic tracking-tight mb-6 flex items-center gap-3">
-              <BookOpen size={22} className="text-[#ff0080]" /> Vos Événements Actifs & Livres d'or
-            </h2>
+              {userData?.role === 'dj' && (
+                <div className="glass-card px-6 py-4 rounded-2xl border border-white/5 flex items-center gap-4">
+                  <Package size={18} className="text-[#ff0080]" />
 
-            {visibleEvents.length === 0 ? (
-              <div className="text-center py-12 border-2 border-dashed border-white/5 rounded-2xl">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Aucune soirée active pour le moment.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {visibleEvents.map((evt) => (
-                  <div key={evt.id} className="bg-black/40 border border-white/5 hover:border-white/10 p-5 rounded-2xl transition-all relative overflow-hidden group">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-sm font-black uppercase tracking-tight text-white group-hover:text-[#ff0080] transition-colors">{evt.eventName}</h3>
-                        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-0.5">Code unique : {evt.djCode}</p>
-                      </div>
-                      {userData?.role === 'dj' && (
-                        <button onClick={() => handleHideEvent(evt.id)} className="text-gray-600 hover:text-red-500 transition-colors p-1" title="Masquer l'événement">
-                          <EyeOff size={14} />
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-white/5">
-                      <Link href={`/event/${evt.id}`} className="flex items-center justify-center gap-2 py-2.5 bg-white/5 hover:bg-[#ff0080] rounded-xl text-[10px] font-black uppercase tracking-wider text-center transition-all border border-white/5 hover:border-[#ff0080]">
-                        <ImageIcon size={12} /> Live Photos
-                      </Link>
-                      <Link href={`/event/${evt.id}/guestbook`} className="flex items-center justify-center gap-2 py-2.5 bg-white/5 hover:bg-[#ff0080] rounded-xl text-[10px] font-black uppercase tracking-wider text-center transition-all border border-white/5 hover:border-[#ff0080]">
-                        <BookOpen size={12} /> Livre d'or
-                      </Link>
-                    </div>
-
-                    <div className="mt-4 flex justify-center p-3 bg-white rounded-xl w-32 mx-auto">
-                      <QRCodeSVG value={`${window.location.origin}/event/${evt.id}`} size={100} />
-                    </div>
+                  <div className="text-left">
+                    <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Compteur Clés USB</p>
+                    <p className="text-xs font-black text-white">{usedUsbCount} / {freeUsbLimit} gratuites utilisées</p>
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {visibleEvents.map((event) => (
+                <div
+                  key={event.id}
+                  className="glass-card p-10 rounded-[45px] border border-white/5 flex flex-col relative overflow-hidden"
+                >
+                  {event.usbOrdered && (
+                    <div className="absolute top-6 right-6 flex items-center gap-2 bg-[#ff0080]/10 text-[#ff0080] px-3 py-1.5 rounded-full border border-[#ff0080]/30">
+                      <Package size={12} />
+                      <span className="text-[8px] font-black uppercase tracking-tighter">Clé USB incluse</span>
+                    </div>
+                  )}
+
+                  <h3 className="text-3xl font-black italic uppercase mb-14 tracking-tighter truncate text-white mt-4">
+                    {event.eventName}
+                  </h3>
+
+                  <div className="mt-auto flex flex-col gap-3">
+                    {(userData?.role === 'dj' || userData?.isStandalone !== false) ? (
+                      <Link
+                        href={`/admin/${event.id}/dashboard`}
+                        className="w-full py-4 bg-[#ff0080] text-white rounded-2xl font-black uppercase text-[10px] no-underline flex items-center justify-center gap-2 shadow-lg shadow-pink-500/20 hover:bg-[#e60073] transition-all"
+                      >
+                        ACCÉDER RÉGIE
+                      </Link>
+                    ) : (
+                      <div className="bg-white/5 p-4 rounded-xl text-center text-[10px] font-bold text-gray-500 border border-dashed border-white/10 uppercase">
+                        {event.status === 'terminé' ? "Soirée terminée" : "En cours"}
+                      </div>
+                    )}
+
+                    <Link
+                      href={`/event/${event.id}`}
+                      className="w-full py-4 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all border border-white/5 no-underline flex items-center justify-center gap-2"
+                    >
+                      PAGE INVITÉS <ArrowRight size={14} />
+                    </Link>
+
+                    {/* BOUTONS CORRIGÉS ICI */}
+                    <div className="flex gap-2 w-full mt-1">
+                      <Link
+                        href={`/admin/${event.id}/galerie`} // On remet le chemin admin pour la galerie
+                        className="flex-1 py-3 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-xl font-black uppercase text-[9px] no-underline flex items-center justify-center gap-2 border border-blue-500/20 transition-all"
+                      >
+                        <ImageIcon size={12} /> GALERIE
+                      </Link>
+                      <Link
+                        href={`/event/${event.id}/guestbook`} // Le chemin spécifique pour le livre d'or
+                        className="flex-1 py-3 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 rounded-xl font-black uppercase text-[9px] no-underline flex items-center justify-center gap-2 border border-yellow-500/20 transition-all"
+                      >
+                        <BookOpen size={12} /> LIVRE D'OR
+                      </Link>
+                    </div>
+
+                    {event.status === 'terminé' && userData?.role !== 'dj' && (
+                      <Link
+                        href={`/admin/${event.id}/galerie`}
+                        className="w-full py-4 bg-green-600 hover:bg-green-500 text-white rounded-2xl font-black uppercase text-[10px] no-underline flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 transition-all"
+                      >
+                        <Download size={14} /> TÉLÉCHARGER PHOTOS
+                      </Link>
+                    )}
+
+                    {userData?.role === 'dj' && (
+                      <button
+                        onClick={() => handleHideEvent(event.id)}
+                        className="w-full py-4 mt-2 bg-red-600/10 hover:bg-red-600/30 text-red-500 hover:text-red-400 rounded-2xl font-black uppercase text-[10px] border border-red-500/20 cursor-pointer flex items-center justify-center gap-2 transition-all"
+                      >
+                        <EyeOff size={14} /> MASQUER
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* ... Reste des étapes (Step 1, 5, 4, 3) identiques au code précédent ... */}
+        
+        {step === 1 && (
+          <div className="glass-card p-12 rounded-[50px] max-w-xl mx-auto text-center border border-white/5 animate-in zoom-in">
+            <button onClick={() => setStep(0)} className="mb-10 bg-transparent border-none text-gray-500 cursor-pointer font-black flex items-center gap-2">
+              <ArrowLeft size={14} /> RETOUR
+            </button>
+            <h2 className="text-4xl font-black italic uppercase mb-12 tracking-tighter">
+              Nouvelle <span className="text-pink-600">Soirée</span>
+            </h2>
+            <input
+              type="text"
+              placeholder="NOM DE L'ÉVÉNEMENT"
+              className="w-full p-8 rounded-[30px] bg-black border border-white/10 text-white font-black uppercase outline-none focus:border-pink-600 transition-all text-xl"
+              value={formData.eventName}
+              onChange={(e) => setFormData({ ...formData, eventName: e.target.value })}
+            />
+            <div
+              onClick={() => setFormData({ ...formData, includeUsb: !formData.includeUsb })}
+              className={`mt-6 w-full p-6 rounded-[30px] border transition-all cursor-pointer flex items-center justify-between ${formData.includeUsb ? 'bg-[#ff0080]/10 border-[#ff0080]' : 'bg-white/5 border-white/10 hover:border-white/30'}`}
+            >
+              <div className="flex items-center gap-4 text-left">
+                <Package size={24} className={formData.includeUsb ? "text-[#ff0080]" : "text-gray-500"} />
+                <div>
+                  <p className={`font-black uppercase tracking-widest text-[12px] ${formData.includeUsb ? 'text-white' : 'text-gray-400'}`}>INCLURE UNE CLÉ USB</p>
+                  <p className={`text-[10px] font-bold uppercase mt-1 ${remainingFreeUsb > 0 ? 'text-green-500' : 'text-orange-500'}`}>{remainingFreeUsb > 0 ? `Gratuit (${remainingFreeUsb} clé(s) restante(s))` : 'Sera facturé 15€'}</p>
+                </div>
+              </div>
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${formData.includeUsb ? 'border-[#ff0080] bg-[#ff0080]' : 'border-gray-600'}`}>
+                {formData.includeUsb && <CheckCircle2 size={14} className="text-white" />}
+              </div>
+            </div>
+            <button onClick={handleCheckBeforeCreate} className="w-full p-8 rounded-[30px] bg-pink-600 font-black uppercase text-white cursor-pointer mt-8 border-none shadow-2xl transition-all hover:bg-pink-500">
+              LANCER LA SOIRÉE
+            </button>
+          </div>
+        )}
+
+        {step === 5 && (
+          <div className="glass-card p-12 rounded-[50px] max-w-xl mx-auto text-center border border-white/10 animate-in zoom-in">
+            <Package size={40} className="text-[#ff0080] mx-auto mb-6" />
+            <h2 className="text-3xl font-black italic uppercase mb-2">Livraison de la clé</h2>
+            <div className="grid gap-4 text-left mt-8">
+              <input type="text" placeholder="NOM ET PRÉNOM" className="w-full p-5 rounded-2xl bg-black border border-white/10 text-white font-bold text-xs uppercase" value={shippingData.name} onChange={(e) => setShippingData({ ...shippingData, name: e.target.value.toUpperCase() })} />
+              <input type="text" placeholder="ADRESSE" className="w-full p-5 rounded-2xl bg-black border border-white/10 text-white font-bold text-xs uppercase" value={shippingData.address} onChange={(e) => setShippingData({ ...shippingData, address: e.target.value.toUpperCase() })} />
+              <div className="grid grid-cols-2 gap-4">
+                <input type="text" placeholder="CODE POSTAL" className="w-full p-5 rounded-2xl bg-black border border-white/10 text-white font-bold text-xs" value={shippingData.zip} onChange={(e) => setShippingData({ ...shippingData, zip: e.target.value })} />
+                <input type="text" placeholder="VILLE" className="w-full p-5 rounded-2xl bg-black border border-white/10 text-white font-bold text-xs uppercase" value={shippingData.city} onChange={(e) => setShippingData({ ...shippingData, city: e.target.value.toUpperCase() })} />
+              </div>
+              <input type="tel" placeholder="TÉLÉPHONE" className="w-full p-5 rounded-2xl bg-black border border-white/10 text-white font-bold text-xs" value={shippingData.phone} onChange={(e) => setShippingData({ ...shippingData, phone: e.target.value })} />
+            </div>
+            <button onClick={() => usedUsbCount >= freeUsbLimit ? setStep(4) : executeCreateEvent()} disabled={!shippingData.name || !shippingData.address} className="w-full p-6 rounded-2xl bg-pink-600 font-black uppercase text-white mt-8 disabled:opacity-30">Continuer</button>
+          </div>
+        )}
+
+        {step === 4 && (
+          <div className="glass-card p-12 rounded-[50px] max-w-xl mx-auto text-center border border-orange-500/30 animate-in zoom-in bg-orange-500/5">
+            <AlertTriangle size={60} className="text-orange-500 mx-auto mb-6" />
+            <h2 className="text-3xl font-black italic uppercase mb-4 text-orange-500">Facturation requise</h2>
+            <p className="text-gray-300 font-bold mb-8">Quota épuisé. Cette clé sera facturée 15€.</p>
+            <button onClick={handlePayExtraUsb} className="w-full p-6 rounded-2xl bg-orange-500 font-black uppercase text-white flex items-center justify-center gap-2 tracking-widest text-xs">
+              {loading ? <Loader2 className="animate-spin" size={18} /> : <><CreditCard size={18} /> Payer 15,00 € et Lancer</>}
+            </button>
+            <button onClick={() => setStep(1)} className="w-full p-6 mt-4 text-gray-500 font-black uppercase text-xs">Annuler</button>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="text-center">
+            <div className="max-w-md mx-auto glass-card p-14 rounded-[60px] border border-white/5 shadow-2xl">
+              <h2 className="text-4xl font-black italic uppercase mb-8">{activeEventData?.eventName}</h2>
+              <div className="bg-white p-8 rounded-[45px] inline-block mb-12">
+                {typeof window !== "undefined" && <QRCodeSVG value={`${window.location.origin}/event/${activeEventId}`} size={220} />}
+              </div>
+              <Link href={`/admin/${activeEventId}/dashboard`} className="w-full py-6 flex items-center justify-center bg-[#ff0080] rounded-[30px] text-[11px] font-black uppercase tracking-[0.3em] no-underline text-white">ACCÉDER RÉGIE →</Link>
+            </div>
+            <button onClick={() => setStep(0)} className="mt-12 text-white/30 border-none bg-transparent cursor-pointer font-black uppercase text-[10px] italic">Retour à l'accueil</button>
+          </div>
+        )}
 
       </div>
 
-      {step > 0 && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-6">
-          <div className="bg-[#0a0a0a] border border-white/10 w-full max-w-lg p-8 rounded-[35px] relative max-h-[90vh] overflow-y-auto">
-            
-            {step === 1 && (
-              <div className="space-y-4">
-                <h3 className="text-xl font-black uppercase italic tracking-tight">Nommer votre événement</h3>
-                <input 
-                  type="text" 
-                  placeholder="NOM DE LA SOIRÉE (EX: MARIAGE SOPHIE & MARC)"
-                  className="w-full bg-black border border-white/10 rounded-xl p-4 text-xs font-bold uppercase tracking-wider text-white outline-none focus:border-[#ff0080]"
-                  value={formData.eventName}
-                  onChange={(e) => setFormData({ ...formData, eventName: e.target.value })}
-                />
-                
-                <div className="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/5 mt-4">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wide">Commander une clé USB souvenir</p>
-                    <p className="text-[10px] font-medium text-gray-400 mt-1">Regroupe toutes les photos et le livre d'or de l'événement.</p>
-                  </div>
-                  <input 
-                    type="checkbox" 
-                    className="w-5 h-5 accent-[#ff0080]"
-                    checked={formData.includeUsb}
-                    onChange={(e) => setFormData({ ...formData, includeUsb: e.target.checked })}
-                  />
-                </div>
-
-                <div className="flex gap-3 mt-6">
-                  <button onClick={() => setStep(0)} className="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/5 text-gray-400 font-bold uppercase text-[10px] tracking-wider rounded-xl transition-all">Annuler</button>
-                  <button onClick={handleCheckBeforeCreate} disabled={!formData.eventName} className="flex-1 py-3 bg-[#ff0080] text-white font-black uppercase text-[10px] tracking-wider rounded-xl transition-all disabled:opacity-50">Continuer</button>
-                </div>
-              </div>
-            )}
-
-            {step === 5 && (
-              <div className="space-y-4">
-                <h3 className="text-xl font-black uppercase italic tracking-tight">Adresse de livraison USB</h3>
-                <input type="text" placeholder="NOM COMPLET" className="w-full bg-black border border-white/10 rounded-xl p-3 text-xs font-bold uppercase text-white outline-none" value={shippingData.name} onChange={(e) => setShippingData({ ...shippingData, name: e.target.value })} />
-                <input type="text" placeholder="ADRESSE POSTALE" className="w-full bg-black border border-white/10 rounded-xl p-3 text-xs font-bold uppercase text-white outline-none" value={shippingData.address} onChange={(e) => setShippingData({ ...shippingData, address: e.target.value })} />
-                <div className="grid grid-cols-2 gap-2">
-                  <input type="text" placeholder="CODE POSTAL" className="w-full bg-black border border-white/10 rounded-xl p-3 text-xs font-bold uppercase text-white outline-none" value={shippingData.zip} onChange={(e) => setShippingData({ ...shippingData, zip: e.target.value })} />
-                  <input type="text" placeholder="VILLE" className="w-full bg-black border border-white/10 rounded-xl p-3 text-xs font-bold uppercase text-white outline-none" value={shippingData.city} onChange={(e) => setShippingData({ ...shippingData, city: e.target.value })} />
-                </div>
-                <input type="tel" placeholder="TÉLÉPHONE" className="w-full bg-black border border-white/10 rounded-xl p-3 text-xs font-bold uppercase text-white outline-none" value={shippingData.phone} onChange={(e) => setShippingData({ ...shippingData, phone: e.target.value })} />
-                
-                <div className="flex gap-3 mt-6">
-                  <button onClick={() => setStep(1)} className="flex-1 py-3 bg-white/5 text-gray-400 font-bold uppercase text-[10px] rounded-xl">Retour</button>
-                  <button 
-                    onClick={() => {
-                      if (remainingFreeUsb > 0) {
-                        executeCreateEvent();
-                      } else {
-                        handlePayExtraUsb();
-                      }
-                    }} 
-                    disabled={!shippingData.name || !shippingData.address || !shippingData.zip || !shippingData.city || !shippingData.phone} 
-                    className="flex-1 py-3 bg-[#ff0080] text-white font-black uppercase text-[10px] rounded-xl disabled:opacity-50"
-                  >
-                    {remainingFreeUsb > 0 ? "Valider (Inclus)" : "Passer au paiement (15€)"}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {step === 3 && activeEventData && (
-              <div className="text-center space-y-6 py-4">
-                <CheckCircle2 size={50} className="text-green-500 mx-auto animate-bounce" />
-                <div>
-                  <h3 className="text-2xl font-black uppercase italic tracking-tight text-white">Soirée Créée !</h3>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">{activeEventData.eventName}</p>
-                </div>
-                <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-center">
-                  <p className="text-[10px] font-black text-[#ff0080] uppercase tracking-widest">Code DJ de l'événement</p>
-                  <p className="text-3xl font-black tracking-widest mt-1 text-white">{activeEventData.djCode}</p>
-                </div>
-                <button onClick={() => setStep(0)} className="w-full py-4 bg-white text-black font-black uppercase text-xs tracking-widest rounded-2xl hover:bg-gray-200 transition-all">
-                  Accéder au Tableau de Bord
-                </button>
-              </div>
-            )}
-
-          </div>
+      {notify.show && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[300] flex items-center gap-3 px-8 py-4 rounded-full border border-pink-500/50 bg-black/90 text-pink-500 backdrop-blur-xl shadow-2xl animate-in slide-in-from-bottom-5">
+          <CheckCircle2 size={18} />
+          <span className="text-[10px] font-black uppercase italic tracking-widest">{notify.msg}</span>
         </div>
       )}
+
+      <style jsx global>{`
+        .bg-blobs { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: black; }
+        .blob { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.2; }
+        .blob-pink { top: -10%; left: -10%; width: 50vw; height: 50vw; background: #ff0080; }
+        .blob-purple { bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: #7928ca; }
+        .blob-blue { top: 20%; right: 10%; width: 30vw; height: 30vw; background: #0072ff; }
+        .glass-card { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(20px); }
+      `}</style>
     </main>
   );
 }
 
 export default function AdminPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center text-white font-black uppercase tracking-widest">Chargement...</div>}>
+    <Suspense fallback={<div className="bg-black min-h-screen"></div>}>
       <AdminContent />
     </Suspense>
   );
