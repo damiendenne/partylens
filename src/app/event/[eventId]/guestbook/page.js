@@ -4,13 +4,14 @@ import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import HTMLFlipBook from 'react-pageflip';
 import { ArrowLeft, Loader2, Download } from 'lucide-react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation'; // 👈 1. ON IMPORTE useRouter ÉVIDEMMENT
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 export default function GuestbookView({ params }) {
   const unwrappedParams = use(params);
   const eventId = unwrappedParams.eventId;
+  const router = useRouter(); // 👈 2. ON INITIALISE LE ROUTER
   const [messages, setMessages] = useState([]);
   const [eventData, setEventData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -77,9 +78,14 @@ export default function GuestbookView({ params }) {
     <main className="min-h-screen bg-[#050505] flex items-center justify-center overflow-hidden relative">
       
       <header className="absolute top-0 left-0 w-full p-6 flex justify-between items-center z-50">
-        <Link href={`/event/${eventId}/gallery`} className="flex items-center gap-2 text-white/30 hover:text-[#d4af37] transition no-underline text-[10px] font-black uppercase tracking-widest">
+        {/* 👈 3. MODIFICATION ICI : On passe sur un bouton avec router.back() */}
+        <button 
+          onClick={() => router.back()} 
+          className="flex items-center gap-2 text-white/30 hover:text-[#d4af37] transition no-underline text-[10px] font-black uppercase tracking-widest bg-transparent border-none cursor-pointer"
+        >
           <ArrowLeft size={14} /> Retour Galerie
-        </Link>
+        </button>
+        
         <button 
           onClick={downloadPDF}
           disabled={exporting}

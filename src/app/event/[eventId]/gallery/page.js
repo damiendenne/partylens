@@ -13,13 +13,30 @@ export default function FinalGallery({ params }) {
   const [passwordInput, setPasswordInput] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [error, setError] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true); // Pour éviter le flash de l'écran de verrouillage
 
   useEffect(() => {
     if (!eventId) return;
 
+    // Vérifier si l'accès a déjà été validé dans cette session (ex: retour depuis le livre d'or)
+    const sessionAuth = sessionStorage.getItem(`auth_event_${eventId}`);
+    if (sessionAuth === 'true') {
+      setIsAuthenticated(true);
+    }
+
     // 1. Récupérer les infos de l'event (pour le mot de passe)
     const unsubEvent = onSnapshot(doc(db, "events", eventId), (snap) => {
-      if (snap.exists()) setEventData(snap.data());
+      if (snap.exists()) {
+        const data = snap.data();
+        setEventData(data);
+
+        // SYSTÈME DE SÉCURITÉ AUTOMATIQUE : 
+        // Si l'événement n'a aucun mot de passe configuré, on déverrouille automatiquement
+        if (!data.eventPassword || data.eventPassword.trim() === "") {
+          setIsAuthenticated(true);
+        }
+      }
+      setCheckingAuth(false);
     });
 
     // 2. Récupérer les photos
@@ -36,6 +53,8 @@ export default function FinalGallery({ params }) {
     if (passwordInput === eventData?.eventPassword) {
       setIsAuthenticated(true);
       setError(false);
+      // On sauvegarde l'accès en mémoire pour éviter les blocages au bouton retour
+      sessionStorage.setItem(`auth_event_${eventId}`, 'true');
     } else {
       setError(true);
     }
@@ -56,6 +75,15 @@ export default function FinalGallery({ params }) {
       window.open(url, '_blank');
     }
   };
+
+  // Tant qu'on n'a pas chargé les infos de l'événement, on attend un instant
+  if (checkingAuth) {
+    return (
+      <main className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="animate-pulse text-xs uppercase tracking-widest text-gray-500">Chargement...</div>
+      </main>
+    );
+  }
 
   // --- ÉCRAN DE VERROUILLAGE ---
   if (!isAuthenticated) {
