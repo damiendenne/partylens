@@ -135,7 +135,10 @@ function AdminContent() {
 
   const isPlanValid = () => {
     if (!userData?.plan) return false;
+    
+    // Ajout pour ton mode démo
     if (userData.plan === "DEMO") return true;
+
     if (!userData?.lastPaymentDate) return false;
 
     const lastPay = typeof userData.lastPaymentDate.toDate === 'function'
@@ -271,8 +274,8 @@ function AdminContent() {
     } catch (e) {
       console.error(e);
       alert("Erreur création");
-    } vanished: {
-      setLoading(false); // Fix de la typo ici (remplace le withLoading erroné)
+    } finally {
+      setLoading(false); 
     }
   };
 
@@ -340,6 +343,7 @@ function AdminContent() {
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white/[0.02] backdrop-blur-2xl border border-white/5 p-8 rounded-[35px]">
             <div className="flex items-center gap-4 mb-6">
@@ -420,9 +424,7 @@ function AdminContent() {
                     </div>
 
                     <div className="mt-4 flex justify-center p-3 bg-white rounded-xl w-32 mx-auto">
-                      {typeof window !== 'undefined' && (
-                        <QRCodeSVG value={`${window.location.origin}/event/${evt.id}`} size={100} />
-                      )}
+                      <QRCodeSVG value={`${window.location.origin}/event/${evt.id}`} size={100} />
                     </div>
                   </div>
                 ))}
@@ -430,6 +432,7 @@ function AdminContent() {
             )}
           </div>
         </div>
+
       </div>
 
       {step > 0 && (
