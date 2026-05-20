@@ -134,7 +134,12 @@ function AdminContent() {
   };
 
   const isPlanValid = () => {
-    if (!userData?.plan || !userData?.lastPaymentDate) return false;
+    if (!userData?.plan) return false;
+    
+    // AJOUT : Validation directe pour ton compte de démonstration
+    if (userData.plan === "DEMO") return true;
+
+    if (!userData?.lastPaymentDate) return false;
 
     const lastPay = typeof userData.lastPaymentDate.toDate === 'function'
       ? userData.lastPaymentDate.toDate()
@@ -465,16 +470,15 @@ function AdminContent() {
                       PAGE INVITÉS <ArrowRight size={14} />
                     </Link>
 
-                    {/* BOUTONS CORRIGÉS ICI */}
                     <div className="flex gap-2 w-full mt-1">
                       <Link
-                        href={`/admin/${event.id}/galerie`} // On remet le chemin admin pour la galerie
+                        href={`/admin/${event.id}/galerie`}
                         className="flex-1 py-3 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-xl font-black uppercase text-[9px] no-underline flex items-center justify-center gap-2 border border-blue-500/20 transition-all"
                       >
                         <ImageIcon size={12} /> GALERIE
                       </Link>
                       <Link
-                        href={`/event/${event.id}/guestbook`} // Le chemin spécifique pour le livre d'or
+                        href={`/event/${event.id}/guestbook`}
                         className="flex-1 py-3 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 rounded-xl font-black uppercase text-[9px] no-underline flex items-center justify-center gap-2 border border-yellow-500/20 transition-all"
                       >
                         <BookOpen size={12} /> LIVRE D'OR
@@ -504,8 +508,6 @@ function AdminContent() {
             </div>
           </div>
         )}
-
-        {/* ... Reste des étapes (Step 1, 5, 4, 3) identiques au code précédent ... */}
         
         {step === 1 && (
           <div className="glass-card p-12 rounded-[50px] max-w-xl mx-auto text-center border border-white/5 animate-in zoom-in">
