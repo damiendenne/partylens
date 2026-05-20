@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect, use } from 'react';
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+// AJOUT de getDocs et query pour pouvoir compter les photos existantes
+import { collection, addDoc, serverTimestamp, doc, getDoc, getDocs, query } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Camera, Music, Share2, ArrowLeft, CheckCircle2, BookOpen, Image as ImageIcon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
@@ -60,7 +61,19 @@ export default function GuestPage({ params }) {
     e.preventDefault();
     if (!file) return;
     setLoading(true);
+    
     try {
+      // VÉRIFICATION DU QUOTA POUR LE PLAN DEMO
+      if (eventData?.plan === "DEMO") {
+        const photosSnapshot = await getDocs(query(collection(db, "events", eventId, "photos")));
+        if (photosSnapshot.size >= 5) {
+          alert("Limite de 5 photos atteinte pour cet événement de démonstration !");
+          setFile(null);
+          setLoading(false);
+          return; // On stoppe l'exécution ici
+        }
+      }
+
       const storageRef = ref(storage, `events/${eventId}/${Date.now()}_${file.name}`);
       await uploadBytes(storageRef, file);
       const url = await getDownloadURL(storageRef);
@@ -68,7 +81,9 @@ export default function GuestPage({ params }) {
       setNotify({ show: true, msg: "📸 Photo publiée !" });
       setFile(null);
       setTimeout(() => setNotify({ show: false, msg: "" }), 3000);
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err); 
+    }
     setLoading(false);
   };
 
