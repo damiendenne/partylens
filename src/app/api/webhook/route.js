@@ -18,13 +18,10 @@ export async function POST(req) {
     );
   } catch (err) {
     console.error("❌ Erreur de signature Webhook :", err.message);
-
-    return NextResponse.json(
-      { error: "Signature invalide" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Signature invalide" }, { status: 400 });
   }
 
+  // --- TRAITEMENT DU PREMIER PAIEMENT (CHECKOUT) ---
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     const userId = session.client_reference_id;
@@ -46,40 +43,24 @@ export async function POST(req) {
     console.log(`💰 Paiement reçu (Type: ${purchaseType}) pour l'utilisateur : ${userId}`);
 
     if (!userId) {
-      return NextResponse.json(
-        { error: "Pas d'ID utilisateur" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Pas d'ID utilisateur" }, { status: 400 });
     }
 
     try {
-      // --- CAS 1 : DÉBLOCAGE D'UN CADRE PREMIUM (0,99€) ---
       if (purchaseType === 'frame_unlock') {
-        if (!eventId || !frameId) {
-          throw new Error("Infos manquantes pour le déblocage de cadre");
-        }
+        if (!eventId || !frameId) throw new Error("Infos manquantes pour le déblocage de cadre");
 
         await adminDb.collection('events').doc(eventId).update({
           unlockedFrames: admin.firestore.FieldValue.arrayUnion(frameId),
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
-
         console.log(`✅ Cadre ${frameId} débloqué pour la soirée ${eventId}`);
       }
 
-      // --- CAS 2 : ACHAT D'UNE CLÉ USB POUR UNE SOIRÉE EXISTANTE (15€) ---
       else if (purchaseType === 'extra_usb_event') {
-        if (!eventId) {
-          throw new Error("eventId manquant pour la commande USB");
-        }
+        if (!eventId) throw new Error("eventId manquant pour la commande USB");
 
         const eventRef = adminDb.collection('events').doc(eventId);
-        const eventSnap = await eventRef.get();
-
-        if (!eventSnap.exists) {
-          throw new Error(`Soirée introuvable : ${eventId}`);
-        }
-
         const shippingInfo = {
           name: shippingName || '',
           address: shippingAddress || '',
@@ -97,13 +78,8 @@ export async function POST(req) {
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         };
 
-        const hasShippingInfo = Object.values(shippingInfo).some((value) => {
-          return typeof value === 'string' && value.trim() !== '';
-        });
-
-        if (hasShippingInfo) {
-          updateData.shippingInfo = shippingInfo;
-        }
+        const hasShippingInfo = Object.values(shippingInfo).some(val => typeof val === 'string' && val.trim() !== '');
+        if (hasShippingInfo) updateData.shippingInfo = shippingInfo;
 
         await eventRef.update(updateData);
 
@@ -112,13 +88,11 @@ export async function POST(req) {
           lastUsbOrderDate: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
-
-        console.log(`✅ Soirée "${eventName}" mise à jour après paiement USB (ID: ${eventId})`);
+        console.log(`✅ Soirée "${eventName}" mise à jour après paiement USB`);
       }
 
-      // --- CAS 3 : ABONNEMENT OU UPGRADE ---
+      // Cas de l'achat d'un abonnement / pack
       else {
-        // Sécurité : On force la valeur en MAJUSCULES pour correspondre au Front-end
         const cleanPlanName = planName ? planName.trim().toUpperCase() : 'BRONZE';
 
         await adminDb.collection('users').doc(userId).set({
@@ -129,16 +103,39 @@ export async function POST(req) {
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
-        console.log(`✅ Pack ${cleanPlanName} activé pour l'utilisateur ${userId}`);
+        console.log(`✅ Pack ${cleanPlanName} activé à l'achat pour l'utilisateur ${userId}`);
       }
 
     } catch (error) {
       console.error("❌ Erreur Firebase lors du traitement Webhook :", error);
+      return NextResponse.json({ error: "Erreur base de données" }, { status: 500 });
+    }
+  }
 
-      return NextResponse.json(
-        { error: "Erreur base de données" },
-        { status: 500 }
-      );
+  // --- TRAITEMENT DU RENOUVELLEMENT MENSUEL AUTOMATIQUE ---
+  if (event.type === 'invoice.paid') {
+    const invoice = event.data.object;
+    
+    // On ne traite pas la première facture de la session checkout car elle est déjà gérée au-dessus
+    if (invoice.billing_reason === 'subscription_cycle') {
+      const subscriptionId = invoice.subscription;
+      
+      try {
+        // On récupère les métadonnées qu'on a stockées dans l'abonnement
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        const { userId, planName, billingCycle } = subscription.metadata || {};
+
+        if (userId) {
+          await adminDb.collection('users').doc(userId).update({
+            status: "active",
+            lastPaymentDate: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+          console.log(`🔄 RESSOUCRIPTION AUTO : Date de validité repoussée de 30 jours pour ${userId} (Plan: ${planName})`);
+        }
+      } catch (error) {
+        console.error("❌ Erreur lors du renouvellement automatique :", error);
+      }
     }
   }
 

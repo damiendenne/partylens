@@ -16,11 +16,11 @@ export async function POST(req) {
       eventId,
       frameId,
       shippingInfo,
-      // On récupère les URLs envoyées par le front (optionnel)
       success_url: customSuccessUrl,
       cancel_url: customCancelUrl
     } = body;
 
+    // Tes prix Stripe
     const STRIPE_PRICES = {
       bronze: "price_1TTRIL0kxrnMCRhvsIs6fydu",
       silver: "price_1TTRII0kxrnMCRhvZF64mAns",
@@ -31,29 +31,23 @@ export async function POST(req) {
     };
 
     if (!userId) {
-      return NextResponse.json(
-        { error: "Utilisateur manquant." },
-        { status: 400 }
-      );
-    }
-
-    // ... (tes vérifications restent les mêmes) ...
-    if (planId === 'usb_only' && !eventId) {
-      return NextResponse.json({ error: "eventId manquant pour la commande USB." }, { status: 400 });
-    }
-    if (planId === 'frame_unlock' && (!eventId || !frameId)) {
-      return NextResponse.json({ error: "eventId ou frameId manquant pour le déblocage du cadre." }, { status: 400 });
+      return NextResponse.json({ error: "Utilisateur manquant." }, { status: 400 });
     }
 
     const lineItems = [];
     let isRecurring = false;
 
-    // Logique de sélection des prix (inchangée)
+    // --- LOGIQUE DE SÉLECTION ---
     if (planId === 'usb_only') {
       lineItems.push({ price: STRIPE_PRICES.usb, quantity: 1 });
     } else if (planId === 'frame_unlock') {
       lineItems.push({ price: STRIPE_PRICES.frame, quantity: 1 });
     } else {
+      // SEUL LE GOLD MENSUEL EST RÉCURRENT
+      if (planId === 'gold' && billingCycle !== 'Annuel') {
+        isRecurring = true;
+      }
+
       if (planId === 'bronze') lineItems.push({ price: STRIPE_PRICES.bronze, quantity: 1 });
       if (planId === 'silver') lineItems.push({ price: STRIPE_PRICES.silver, quantity: 1 });
       if (planId === 'gold') {
@@ -61,7 +55,6 @@ export async function POST(req) {
           lineItems.push({ price: STRIPE_PRICES.gold_annual, quantity: 1 });
         } else {
           lineItems.push({ price: STRIPE_PRICES.gold_monthly, quantity: 1 });
-          isRecurring = true;
         }
       }
       if (usbQty > 0) lineItems.push({ price: STRIPE_PRICES.usb, quantity: usbQty });
@@ -74,28 +67,23 @@ export async function POST(req) {
     const sessionMode = isRecurring ? 'subscription' : 'payment';
 
     const purchaseType =
-      planId === 'frame_unlock'
-        ? 'frame_unlock'
-        : planId === 'usb_only'
-          ? 'extra_usb_event'
-          : 'subscription_upgrade';
+      planId === 'frame_unlock' ? 'frame_unlock' :
+      planId === 'usb_only' ? 'extra_usb_event' : 'subscription_upgrade';
 
-    // --- LOGIQUE D'URL DYNAMIQUE ---
-    // Par défaut, on va vers l'admin
+    // URLs de retour
     let finalSuccessUrl = `https://partylens.fr/admin?success=true&session_id={CHECKOUT_SESSION_ID}`;
     let finalCancelUrl = `https://partylens.fr/admin?canceled=true`;
 
-    // Si c'est un déblocage de cadre, on veut revenir sur le catalogue pour voir le bouton "Sélectionner"
     if (planId === 'frame_unlock' && eventId) {
       finalSuccessUrl = `https://partylens.fr/admin/catalogue-cadres?eventId=${eventId}&success=true`;
       finalCancelUrl = `https://partylens.fr/admin/catalogue-cadres?eventId=${eventId}`;
     }
     
-    // Si le front nous a envoyé des URLs spécifiques (comme dans le code précédent), on les utilise en priorité
     if (customSuccessUrl) finalSuccessUrl = customSuccessUrl + (customSuccessUrl.includes('?') ? '&' : '?') + "session_id={CHECKOUT_SESSION_ID}";
     if (customCancelUrl) finalCancelUrl = customCancelUrl;
 
-    const session = await stripe.checkout.sessions.create({
+    // Configuration de la session Stripe
+    const sessionData = {
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: sessionMode,
@@ -107,7 +95,7 @@ export async function POST(req) {
         purchaseType,
         planName: planId === 'gold' ? 'VIP GOLD' : (planId ? planId.toUpperCase() : ''),
         billingCycle: billingCycle || 'Unique',
-        userId: userId || '',
+        userId: userId,
         eventId: eventId || '',
         eventName: eventName || '',
         frameId: frameId || '',
@@ -117,8 +105,20 @@ export async function POST(req) {
         shippingCity: shippingInfo?.city || '',
         shippingPhone: shippingInfo?.phone || ''
       }
-    });
+    };
 
+    // Si c'est un abonnement, on ajoute les metadata pour le renouvellement auto
+    if (sessionMode === 'subscription') {
+      sessionData.subscription_data = {
+        metadata: {
+          userId: userId,
+          planName: 'VIP GOLD',
+          billingCycle: 'mensuel'
+        }
+      };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionData);
     return NextResponse.json({ url: session.url });
 
   } catch (error) {
