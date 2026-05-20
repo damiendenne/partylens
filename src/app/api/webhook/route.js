@@ -118,15 +118,18 @@ export async function POST(req) {
 
       // --- CAS 3 : ABONNEMENT OU UPGRADE ---
       else {
+        // Sécurité : On force la valeur en MAJUSCULES pour correspondre au Front-end
+        const cleanPlanName = planName ? planName.trim().toUpperCase() : 'BRONZE';
+
         await adminDb.collection('users').doc(userId).set({
-          plan: planName,
-          billingCycle: billingCycle,
+          plan: cleanPlanName,
+          billingCycle: billingCycle || 'mensuel',
           status: "active",
           lastPaymentDate: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
-        console.log(`✅ Pack ${planName} activé pour l'utilisateur ${userId}`);
+        console.log(`✅ Pack ${cleanPlanName} activé pour l'utilisateur ${userId}`);
       }
 
     } catch (error) {

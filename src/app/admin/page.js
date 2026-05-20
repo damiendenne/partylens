@@ -31,7 +31,7 @@ import {
   CreditCard,
   AlertTriangle,
   Star,
-  Image as ImageIcon,
+  ImageIcon,
   BookOpen
 } from 'lucide-react';
 
@@ -116,6 +116,24 @@ function AdminContent() {
     };
   }, [router]);
 
+  // --- COPIÉ-COLLÉ DU BLOC ICI : TRAITEMENT DU RETOUR DE PAIEMENT STRIPE ---
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    const success = params.get("success");
+
+    if (success === "true") {
+      // On efface les paramètres de l'URL pour faire propre
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      // On affiche la notification de succès sur l'écran
+      setNotify({ show: true, msg: "🎉 ABONNEMENT ACTIVÉ ! MERCI POUR VOTRE CONFIANCE." });
+      setTimeout(() => setNotify({ show: false, msg: "" }), 5000);
+    }
+  }, []);
+  // --- FIN DU BLOC AJOUTÉ ---
+
   const handleUpdateDjCode = async () => {
     if (!newDjCode.trim() || !user) return;
 
@@ -136,7 +154,6 @@ function AdminContent() {
   const isPlanValid = () => {
     if (!userData?.plan) return false;
     
-    // AJOUT : Validation directe pour ton compte de démonstration
     if (userData.plan === "DEMO") return true;
 
     if (!userData?.lastPaymentDate) return false;
