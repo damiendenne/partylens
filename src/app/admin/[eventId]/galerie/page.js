@@ -5,7 +5,7 @@ import { db, auth } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import Link from 'next/link';
-import { ArrowLeft, Download, Image as ImageIcon, Loader2, BookOpen } from 'lucide-react'; // <-- AJOUT BOOKOPEN
+import { ArrowLeft, Download, Image as ImageIcon, Loader2, BookOpen, Play } from 'lucide-react'; // Ajout de Play
 import JSZip from 'jszip'; 
 
 export default function GaleriePage() {
@@ -14,6 +14,8 @@ export default function GaleriePage() {
   
   const [loading, setLoading] = useState(true);
   const [photos, setPhotos] = useState([]);
+  const [videos, setVideos] = useState([]);
+  const [mediaItems, setMediaItems] = useState([]); // Tableau fusionné
   const [eventName, setEventName] = useState("");
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
 
@@ -29,13 +31,22 @@ export default function GaleriePage() {
           setEventName(eventDoc.data().eventName);
         }
 
-        const qPhotos = query(collection(db, "events", eventId, "photos"), orderBy("createdAt", "desc"));
+        // Écoute des Photos
+        const qPhotos = query(collection(db, "events", eventId, "photos"));
         const unsubPhotos = onSnapshot(qPhotos, (snap) => {
-          setPhotos(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-          setLoading(false);
+          setPhotos(snap.docs.map(d => ({ id: d.id, isVideo: false, ...d.data() })));
         });
 
-        return () => unsubPhotos();
+        // Écoute des Vidéos
+        const qVideos = query(collection(db, "events", eventId, "videos"));
+        const unsubVideos = onSnapshot(qVideos, (snap) => {
+          setVideos(snap.docs.map(d => ({ id: d.id, isVideo: true, ...d.data() })));
+        });
+
+        return () => {
+          unsubPhotos();
+          unsubVideos();
+        };
       } catch (e) {
         console.error("Erreur de chargement", e);
         setLoading(false);
@@ -45,14 +56,34 @@ export default function GaleriePage() {
     return () => unsubAuth();
   }, [eventId, router]);
 
-  const downloadSinglePhoto = async (url, index) => {
+  // Fusion et Tri sécurisé par date
+  useEffect(() => {
+    const combined = [...photos, ...videos].sort((a, b) => {
+      const dateA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : Date.now();
+      const dateB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : Date.now();
+      return dateB - dateA;
+    });
+    setMediaItems(combined);
+    
+    // On arrête le chargement une fois la première fusion faite
+    if (photos.length > 0 || videos.length > 0 || !loading) {
+      setLoading(false);
+    }
+    
+    // Sécurité de secours si la base est vraiment vide
+    const timer = setTimeout(() => setLoading(false), 2000);
+    return () => clearTimeout(timer);
+  }, [photos, videos]);
+
+  const downloadSingleMedia = async (url, index, isVideo) => {
     try {
       const response = await fetch(url);
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = blobUrl;
-      a.download = `partylens_${eventName || 'photo'}_${index + 1}.jpg`;
+      const extension = isVideo ? 'mp4' : 'jpg';
+      a.download = `partylens_${eventName || 'souvenir'}_${index + 1}.${extension}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -62,8 +93,8 @@ export default function GaleriePage() {
     }
   };
 
-  const downloadAllPhotos = async () => {
-    if (photos.length === 0) return;
+  const downloadAllMedia = async () => {
+    if (mediaItems.length === 0) return;
     setIsDownloadingAll(true);
     
     try {
@@ -71,13 +102,14 @@ export default function GaleriePage() {
       const folderName = `Souvenirs_${eventName || 'PartyLens'}`.replace(/\s+/g, '_');
       const imgFolder = zip.folder(folderName);
 
-      const fetchPromises = photos.map(async (photo, index) => {
+      const fetchPromises = mediaItems.map(async (item, index) => {
         try {
-          const response = await fetch(photo.url);
+          const response = await fetch(item.url);
           const blob = await response.blob();
-          imgFolder.file(`photo_${index + 1}.jpg`, blob);
+          const extension = item.isVideo ? 'mp4' : 'jpg';
+          imgFolder.file(`souvenir_${index + 1}.${extension}`, blob);
         } catch (err) {
-          console.error("Erreur lors de la récupération d'une photo", err);
+          console.error("Erreur lors de la récupération d'un média", err);
         }
       });
 
@@ -127,13 +159,12 @@ export default function GaleriePage() {
                 Galerie <span className="text-[#ff0080]">/</span> {eventName}
               </h1>
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mt-2">
-                {photos.length} Photo(s) capturée(s)
+                {mediaItems.length} Média(s) capturé(s)
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-4">
-            {/* BOUTON LIVRE D'OR */}
             <Link 
               href={`/event/${eventId}/guestbook`}
               className="flex items-center gap-3 bg-[#ff0080] hover:bg-[#ff0080]/80 text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all border-none cursor-pointer shadow-lg shadow-[#ff0080]/20 no-underline"
@@ -142,8 +173,8 @@ export default function GaleriePage() {
             </Link>
 
             <button 
-              onClick={downloadAllPhotos} 
-              disabled={isDownloadingAll || photos.length === 0}
+              onClick={downloadAllMedia} 
+              disabled={isDownloadingAll || mediaItems.length === 0}
               className="flex items-center gap-3 bg-green-600 hover:bg-green-500 text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all border-none cursor-pointer shadow-lg shadow-green-500/20 disabled:opacity-50"
             >
               {isDownloadingAll ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />} 
@@ -153,23 +184,41 @@ export default function GaleriePage() {
         </header>
 
         <div className="glass-card p-10 rounded-[40px] border border-white/5">
-          {photos.length === 0 ? (
+          {mediaItems.length === 0 ? (
             <div className="text-center py-20 opacity-50">
               <ImageIcon size={60} className="mx-auto mb-6 text-gray-600" />
-              <p className="text-xl font-black uppercase tracking-widest italic">Aucune photo pour l'instant</p>
+              <p className="text-xl font-black uppercase tracking-widest italic">Aucun souvenir pour l'instant</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {photos.map((photo, index) => (
-                <div key={photo.id} className="relative group rounded-2xl overflow-hidden border border-white/10 aspect-square bg-black">
-                  <img 
-                    src={photo.url} 
-                    alt="Souvenir" 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
+              {mediaItems.map((item, index) => (
+                <div key={item.id} className="relative group rounded-2xl overflow-hidden border border-white/10 aspect-square bg-black">
+                  
+                  {item.isVideo ? (
+                    <div className="w-full h-full relative">
+                      <video 
+                        src={item.url} 
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        muted
+                        playsInline
+                        autoPlay
+                        loop
+                      />
+                      <div className="absolute bottom-3 right-3 bg-black/60 p-1.5 rounded-full backdrop-blur-sm">
+                        <Play size={12} className="text-white fill-white" />
+                      </div>
+                    </div>
+                  ) : (
+                    <img 
+                      src={item.url} 
+                      alt="Souvenir" 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                  )}
+
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
                     <button 
-                      onClick={() => downloadSinglePhoto(photo.url, index)}
+                      onClick={() => downloadSingleMedia(item.url, index, item.isVideo)}
                       className="p-4 bg-[#ff0080] rounded-full text-white cursor-pointer border-none shadow-xl hover:bg-white hover:text-black transition-colors"
                     >
                       <Download size={20} />

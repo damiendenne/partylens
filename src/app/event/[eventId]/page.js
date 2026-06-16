@@ -1,10 +1,9 @@
 "use client";
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useRef } from 'react';
 import { db, storage } from '@/lib/firebase';
-// AJOUT de getDocs et query pour pouvoir compter les photos existantes
 import { collection, addDoc, serverTimestamp, doc, getDoc, getDocs, query } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Camera, Music, Share2, ArrowLeft, CheckCircle2, BookOpen, Image as ImageIcon } from 'lucide-react';
+import { Camera, Music, Share2, ArrowLeft, CheckCircle2, BookOpen, Image as ImageIcon, QrCode, X } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import Link from 'next/link';
 
@@ -23,6 +22,9 @@ export default function GuestPage({ params }) {
   
   const [mounted, setMounted] = useState(false);
   const [currentUrl, setCurrentUrl] = useState("");
+  const [showModalQR, setShowModalQR] = useState(false);
+
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     setMounted(true);
@@ -59,30 +61,67 @@ export default function GuestPage({ params }) {
 
   const handlePhotoUpload = async (e) => {
     e.preventDefault();
-    if (!file) return;
+    
+    const fileInput = fileInputRef.current;
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) return;
+    
     setLoading(true);
+    const selectedFiles = Array.from(fileInput.files);
     
     try {
-      // VÉRIFICATION DU QUOTA POUR LE PLAN DEMO
       if (eventData?.plan === "DEMO") {
         const photosSnapshot = await getDocs(query(collection(db, "events", eventId, "photos")));
-        if (photosSnapshot.size >= 5) {
-          alert("Limite de 5 photos atteinte pour cet événement de démonstration !");
+        if (photosSnapshot.size >= 5 || (photosSnapshot.size + selectedFiles.length) > 5) {
+          alert(`Limite de 5 photos privée pour la démo ! (Actuelles : ${photosSnapshot.size})`);
           setFile(null);
+          fileInput.value = "";
           setLoading(false);
-          return; // On stoppe l'exécution ici
+          return;
         }
       }
 
-      const storageRef = ref(storage, `events/${eventId}/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      await addDoc(collection(db, "events", eventId, "photos"), { url, createdAt: serverTimestamp() });
-      setNotify({ show: true, msg: "📸 Photo publiée !" });
+      let imageCompression = null;
+      try {
+        const module = await import('browser-image-compression');
+        imageCompression = module.default;
+      } catch (err) {
+        console.warn("Impossible de charger le module de compression :", err);
+      }
+
+      const options = { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true, fileType: 'image/jpeg' };
+
+      for (const currentFile of selectedFiles) {
+        let finalFile = currentFile;
+        const isVideo = currentFile.type.startsWith('video/');
+
+        if (!isVideo && imageCompression) {
+          try {
+            const compressedBlob = await imageCompression(currentFile, options);
+            finalFile = new File([compressedBlob], currentFile.name, { type: 'image/jpeg' });
+          } catch (compressionErr) {
+            console.error("Échec compression image, envoi du fichier brut :", compressionErr);
+          }
+        }
+
+        const storageRef = ref(storage, `events/${eventId}/${Date.now()}_${finalFile.name}`);
+        await uploadBytes(storageRef, finalFile);
+        const url = await getDownloadURL(storageRef);
+        
+        const targetCollection = isVideo ? "videos" : "photos";
+        
+        await addDoc(collection(db, "events", eventId, targetCollection), { 
+          url, 
+          createdAt: serverTimestamp() 
+        });
+      }
+
+      setNotify({ show: true, msg: `🚀 ${selectedFiles.length} Médias(s) publié(s) !` });
       setFile(null);
+      fileInput.value = "";
       setTimeout(() => setNotify({ show: false, msg: "" }), 3000);
     } catch (err) { 
-      console.error(err); 
+      console.error("Erreur d'envoi général :", err);
+      alert("Une erreur est survenue lors du traitement de vos médias.");
     }
     setLoading(false);
   };
@@ -146,14 +185,12 @@ export default function GuestPage({ params }) {
             <span className="text-[11px] font-black uppercase text-purple-400 tracking-widest italic">CODE DJ : {eventData?.djCode || "..."}</span>
           </div>
 
-          <div className="bg-white p-6 rounded-[40px] inline-block shadow-[0_0_50px_rgba(255,255,255,0.1)] mb-6 border-8 border-white/5">
-            {mounted ? (
-              <QRCodeSVG value={currentUrl} size={180} />
-            ) : (
-              <div style={{ width: 180, height: 180 }} className="bg-gray-800 animate-pulse rounded-lg" />
-            )}
-          </div>
-          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.4em] mb-8">Partagez ce QR Code avec vos amis</p>
+          <button
+            onClick={() => setShowModalQR(true)}
+            className="mx-auto flex items-center justify-center gap-3 px-8 py-4 bg-white/5 hover:bg-white/10 text-white rounded-full font-black uppercase text-[11px] tracking-[0.2em] border border-white/10 transition-all mb-8 cursor-pointer shadow-xl"
+          >
+            <QrCode size={18} /> Afficher le QR Code
+          </button>
 
           <div className="flex flex-col gap-3">
             <div className="flex gap-2 w-full">
@@ -180,23 +217,32 @@ export default function GuestPage({ params }) {
         </section>
 
         <section className="glass-card p-8 rounded-[40px]">
-          <h2 className="text-lg font-black italic uppercase mb-6 flex items-center gap-3"><Camera size={20} className="text-pink-500" /> Photo en direct</h2>
+          <h2 className="text-lg font-black italic uppercase mb-6 flex items-center gap-3"><Camera size={20} className="text-pink-500" /> Médias en direct</h2>
           <form onSubmit={handlePhotoUpload} className="space-y-4">
-            <label className="block border-2 border-dashed border-white/10 rounded-[30px] p-10 text-center bg-white/[0.02] cursor-pointer hover:bg-white/[0.05] transition relative">
+            <label className="block border-4 border-dashed border-pink-500/50 rounded-[30px] p-10 text-center bg-pink-500/[0.08] cursor-pointer hover:bg-pink-500/[0.15] transition-all relative">
               <input 
                 type="file" 
-                accept="image/*" 
-                onChange={(e) => setFile(e.target.files[0])} 
+                ref={fileInputRef}
+                id="photoUpload"
+                name="photoUpload"
+                accept="image/*,video/*"
+                multiple
+                onChange={(e) => setFile(e.target.files && e.target.files.length > 0 ? e.target.files[0] : null)} 
                 className="hidden" 
+                disabled={loading}
               />
-              <Camera size={32} className="text-gray-700 mx-auto mb-3" />
-              <span className="text-[11px] text-gray-500 font-bold uppercase tracking-widest">
-                {file ? file.name : "Choisir ou prendre une photo"}
+              <Camera size={40} className="text-pink-500 mx-auto mb-3" />
+              <span className="text-[12px] text-white font-black uppercase tracking-widest block">
+                {file ? (
+                  fileInputRef.current?.files?.length > 1 
+                    ? `${fileInputRef.current.files.length} fichiers sélectionnés` 
+                    : file.name
+                ) : "CLIQUEZ POUR AJOUTER PHOTO/VIDÉO"}
               </span>
             </label>
             {file && (
               <button type="submit" disabled={loading} className="w-full py-5 bg-pink-600 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-pink-600/20">
-                {loading ? "Envoi..." : "Publier sur le mur 🚀"}
+                {loading ? "Optimisation et Envoi..." : "Publier sur le mur 🚀"}
               </button>
             )}
           </form>
@@ -210,13 +256,13 @@ export default function GuestPage({ params }) {
               placeholder="Ton nom / signature" 
               value={guestName} 
               onChange={(e) => setGuestName(e.target.value)} 
-              className="w-full bg-black border border-white/10 p-5 rounded-2xl outline-none focus:border-[#ff0080] transition text-sm text-white font-bold"
+              className="w-full bg-black border border-white/20 p-5 rounded-2xl outline-none focus:border-[#ff0080] transition text-sm text-white font-bold placeholder:text-gray-600"
             />
             <textarea 
               placeholder="Laissez un petit mot pour le livre d'or..." 
               value={guestMsg} 
               onChange={(e) => setGuestMsg(e.target.value)} 
-              className="w-full bg-black border border-white/10 p-5 rounded-2xl outline-none focus:border-[#ff0080] transition text-sm text-white font-bold h-32 resize-none"
+              className="w-full bg-black border border-white/20 p-5 rounded-2xl outline-none focus:border-[#ff0080] transition text-sm text-white font-bold h-32 resize-none placeholder:text-gray-600"
             />
             <button type="submit" disabled={loading || !guestMsg.trim() || !guestName.trim()} className="w-full py-5 bg-[#ff0080] rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-[#ff0080]/20">
               {loading ? "Envoi..." : "Envoyer et signer"}
@@ -227,8 +273,8 @@ export default function GuestPage({ params }) {
         <section className="glass-card p-8 rounded-[40px]">
           <h2 className="text-lg font-black italic uppercase mb-6 flex items-center gap-3"><Music size={20} className="text-purple-500" /> Demander un titre</h2>
           <form onSubmit={handleMusicRequest} className="space-y-4">
-            <input type="text" placeholder="Artiste" value={artist} onChange={(e) => setArtist(e.target.value)} className="w-full bg-black border border-white/10 p-5 rounded-2xl outline-none focus:border-purple-500 transition text-sm text-white font-bold" />
-            <input type="text" placeholder="Titre" value={song} onChange={(e) => setSong(e.target.value)} className="w-full bg-black border border-white/10 p-5 rounded-2xl outline-none focus:border-purple-500 transition text-sm text-white font-bold" />
+            <input type="text" placeholder="Artiste" value={artist} onChange={(e) => setArtist(e.target.value)} className="w-full bg-black border border-white/20 p-5 rounded-2xl outline-none focus:border-purple-500 transition text-sm text-white font-bold placeholder:text-gray-600" />
+            <input type="text" placeholder="Titre" value={song} onChange={(e) => setSong(e.target.value)} className="w-full bg-black border border-white/20 p-5 rounded-2xl outline-none focus:border-purple-500 transition text-sm text-white font-bold placeholder:text-gray-600" />
             <button type="submit" disabled={loading} className="w-full py-5 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-purple-600/20">
               {loading ? "Envoi..." : "Envoyer au DJ"}
             </button>
@@ -244,12 +290,45 @@ export default function GuestPage({ params }) {
         </div>
       )}
 
+      {showModalQR && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-6" onClick={() => setShowModalQR(false)}>
+          <div className="bg-[#0f1115] p-8 rounded-[40px] border border-white/10 text-center relative max-w-sm w-full animate-in zoom-in duration-300 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => setShowModalQR(false)}
+              className="absolute top-4 right-4 p-2 bg-white/5 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition cursor-pointer border-none"
+            >
+              <X size={20} />
+            </button>
+            
+            <h3 className="text-xl font-black italic uppercase tracking-tighter mb-8">Partager la soirée</h3>
+            
+            <div className="bg-white p-6 rounded-[30px] inline-block shadow-[0_0_50px_rgba(255,255,255,0.1)] mb-6 border-8 border-white/5">
+              {mounted && currentUrl ? (
+                <QRCodeSVG value={currentUrl} size={200} />
+              ) : (
+                <div style={{ width: 200, height: 200 }} className="bg-gray-800 animate-pulse rounded-lg" />
+              )}
+            </div>
+            
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.3em] leading-relaxed">
+              Faites scanner ce code <br /> à vos amis pour les inviter
+            </p>
+          </div>
+        </div>
+      )}
+
       <style jsx>{`
         .bg-blobs { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
-        .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.15; }
-        .blob-purple { top: -10%; left: -10%; width: 400px; height: 400px; background: #7c3aed; }
-        .blob-pink { bottom: -10%; right: -10%; width: 400px; height: 400px; background: #db2777; }
-        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.3; }
+        .blob-purple { top: -10%; left: -10%; width: 400px; height: 400px; background: #9333ea; }
+        .blob-pink { bottom: -10%; right: -10%; width: 400px; height: 400px; background: #ec4899; }
+        
+        .glass-card { 
+          background: rgba(255, 255, 255, 0.12); 
+          backdrop-filter: blur(16px); 
+          border: 3px solid rgba(255, 255, 255, 0.35); 
+          box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.8);
+        }
       `}</style>
     </main>
   );
