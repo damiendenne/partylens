@@ -3,7 +3,7 @@ import { useState, useEffect, use, useRef } from 'react';
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, getDocs, query } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Camera, Music, Share2, ArrowLeft, CheckCircle2, BookOpen, Image as ImageIcon, QrCode, X } from 'lucide-react';
+import { Camera, Music, Share2, ArrowLeft, CheckCircle2, BookOpen, Image as ImageIcon, QrCode, X, Sparkles } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import Link from 'next/link';
 
@@ -193,6 +193,12 @@ export default function GuestPage({ params }) {
           </button>
 
           <div className="flex flex-col gap-3">
+            <Link
+              href={`/photobooth/${eventId}`}
+              className="w-full py-4 bg-pink-500/20 hover:bg-pink-500/30 text-pink-400 rounded-2xl font-black uppercase text-[10px] no-underline flex items-center justify-center gap-2 border border-pink-500/20 transition-all"
+            >
+              <Sparkles size={14} /> Photobooth Live
+            </Link>
             <div className="flex gap-2 w-full">
               <Link
                 href={`/admin/${eventId}/galerie`}
