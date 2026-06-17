@@ -48,7 +48,7 @@ export default function PhotoboothPage({ params }) {
     const loadAllFrames = async () => {
       const urls = [];
 
-      for (let index = 1; index <= 25; index += 1) {
+      for (let index = 1; index <= 26; index += 1) {
         try {
           const framePath = `photobooth-frames/${index}.png`;
           const frameRef = ref(storage, framePath);

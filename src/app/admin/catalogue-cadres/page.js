@@ -159,7 +159,7 @@ function CatalogueContent() {
           Catalogue cadres
         </h1>
         <p className="mt-4 text-sm uppercase tracking-[0.25em] text-white/40">
-          5 gratuits + 12 premium par thème
+          5 gratuits + 13 premium par thème
         </p>
       </header>
 
