@@ -31,6 +31,7 @@ const generateCatalogue = () => {
   ];
 
   const catalogue = [];
+
   themes.forEach((theme) => {
     for (let i = 1; i <= 5; i++) {
       catalogue.push({
@@ -42,7 +43,8 @@ const generateCatalogue = () => {
         img: getStorageUrl(`designs/${theme.id}/free/${i}.jpg`),
       });
     }
-    for (let i = 1; i <= 12; i++) {
+
+    for (let i = 1; i <= 13; i++) {
       catalogue.push({
         id: `${theme.id}_premium_${i}`,
         name: `${theme.label} Premium ${i}`,
@@ -53,6 +55,7 @@ const generateCatalogue = () => {
       });
     }
   });
+
   return catalogue;
 };
 
@@ -62,7 +65,7 @@ function CatalogueContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const eventId = searchParams.get("eventId");
-  
+
   const [user, setUser] = useState(null);
   const [eventData, setEventData] = useState(null);
   const [filter, setFilter] = useState("all");
@@ -77,9 +80,13 @@ function CatalogueContent() {
       const unsubEvent = onSnapshot(doc(db, "events", eventId), (snap) => {
         if (snap.exists()) setEventData(snap.data());
       });
-      return () => { unsubAuth(); unsubEvent(); };
+
+      return () => {
+        unsubAuth();
+        unsubEvent();
+      };
     }
-    
+
     return () => unsubAuth();
   }, [eventId]);
 
@@ -89,14 +96,18 @@ function CatalogueContent() {
 
   const handleSelect = async (item) => {
     if (!eventId) return;
+
     setLoadingId(item.id);
+
     try {
       const eventRef = doc(db, "events", eventId);
+
       await updateDoc(eventRef, {
         frameUrl: item.img,
         backgroundUrl: item.img,
-        designId: item.id
+        designId: item.id,
       });
+
       router.push(`/admin/${eventId}/dashboard`);
     } catch (e) {
       alert("Erreur lors de la sélection");
@@ -110,26 +121,29 @@ function CatalogueContent() {
       alert("Erreur: session ou événement manquant");
       return;
     }
+
     setLoadingId(item.id);
+
     try {
       const origin = window.location.origin;
 
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          planId: 'frame_unlock',
+          planId: "frame_unlock",
           frameId: item.id,
-          eventId: eventId,
+          eventId,
           userId: user.uid,
           success_url: `${origin}/admin/catalogue-cadres?eventId=${eventId}&success=true`,
-          cancel_url: `${origin}/admin/catalogue-cadres?eventId=${eventId}`
+          cancel_url: `${origin}/admin/catalogue-cadres?eventId=${eventId}`,
         }),
       });
 
       const data = await response.json();
+
       if (data.url) {
-        window.location.href = data.url; 
+        window.location.href = data.url;
       } else {
         throw new Error(data.error);
       }
@@ -141,23 +155,27 @@ function CatalogueContent() {
 
   return (
     <main className="min-h-screen bg-black p-6 text-white md:p-10">
-      <Link href={eventId ? `/admin/${eventId}/dashboard` : "/admin"} className="mb-8 flex items-center gap-2 text-sm text-white/60 hover:text-white">
+      <Link
+        href={eventId ? `/admin/${eventId}/dashboard` : "/admin"}
+        className="mb-8 flex items-center gap-2 text-sm text-white/60 hover:text-white"
+      >
         <ArrowLeft size={14} />
         Retour {eventId ? "Dashboard" : "Admin"}
       </Link>
 
       <header className="mb-10 text-left">
         <div className="mb-6">
-          <img 
-            src="/logo-partylens.png" 
-            alt="PartyLens" 
-            className="w-48 h-auto drop-shadow-xl" 
+          <img
+            src="/logo-partylens.png"
+            alt="PartyLens"
+            className="h-auto w-48 drop-shadow-xl"
           />
         </div>
-        
+
         <h1 className="text-5xl font-black uppercase italic md:text-7xl">
           Catalogue cadres
         </h1>
+
         <p className="mt-4 text-sm uppercase tracking-[0.25em] text-white/40">
           5 gratuits + 13 premium par thème
         </p>
@@ -169,7 +187,9 @@ function CatalogueContent() {
             key={category.id}
             onClick={() => setFilter(category.id)}
             className={`flex items-center gap-2 rounded-xl px-5 py-3 text-xs font-black uppercase transition ${
-              filter === category.id ? "bg-pink-600 text-white" : "bg-white/10 text-white/60 hover:bg-white/20 hover:text-white"
+              filter === category.id
+                ? "bg-pink-600 text-white"
+                : "bg-white/10 text-white/60 hover:bg-white/20 hover:text-white"
             }`}
           >
             {category.icon} {category.name}
@@ -183,15 +203,22 @@ function CatalogueContent() {
           const canSelect = !item.isLocked || isUnlocked;
 
           return (
-            <div key={item.id} className="overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.03] transition-all hover:border-white/20">
+            <div
+              key={item.id}
+              className="overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.03] transition-all hover:border-white/20"
+            >
               <div className="relative aspect-video bg-zinc-900">
                 <img
                   src={item.img}
                   alt={item.name}
                   loading="lazy"
-                  className={`absolute inset-0 h-full w-full object-cover ${!canSelect ? "blur-[2px]" : ""}`}
+                  className={`absolute inset-0 h-full w-full object-cover ${
+                    !canSelect ? "blur-[2px]" : ""
+                  }`}
                 />
+
                 <div className="absolute inset-0 bg-black/20" />
+
                 <div className="absolute right-4 top-4 rounded-full bg-black/70 px-4 py-2 text-[10px] font-black uppercase">
                   {isUnlocked ? "DÉBLOQUÉ" : item.price}
                 </div>
@@ -209,26 +236,37 @@ function CatalogueContent() {
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-pink-400">
                   {item.cat}
                 </p>
+
                 <h3 className="mt-1 text-xl font-black uppercase">
                   {item.name}
                 </h3>
 
                 {canSelect ? (
-                  <button 
+                  <button
                     onClick={() => handleSelect(item)}
                     disabled={loadingId !== null}
                     className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-pink-600 py-4 text-xs font-black uppercase transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
                   >
-                    {loadingId === item.id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                    {loadingId === item.id ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Check size={16} />
+                    )}
+
                     {loadingId === item.id ? "Application..." : "Sélectionner"}
                   </button>
                 ) : (
-                  <button 
+                  <button
                     onClick={() => handleUnlockFrame(item)}
                     disabled={loadingId !== null}
-                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-white/10 py-4 text-xs font-black uppercase hover:bg-white hover:text-black transition-colors"
+                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-white/10 py-4 text-xs font-black uppercase transition-colors hover:bg-white hover:text-black"
                   >
-                    {loadingId === item.id ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />}
+                    {loadingId === item.id ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <CreditCard size={16} />
+                    )}
+
                     Débloquer {item.price}
                   </button>
                 )}
