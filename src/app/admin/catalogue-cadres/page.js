@@ -42,7 +42,7 @@ const generateCatalogue = () => {
         img: getStorageUrl(`designs/${theme.id}/free/${i}.jpg`),
       });
     }
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 1; i <= 12; i++) {
       catalogue.push({
         id: `${theme.id}_premium_${i}`,
         name: `${theme.label} Premium ${i}`,
@@ -105,7 +105,6 @@ function CatalogueContent() {
     }
   };
 
-  // --- FONCTION CORRIGÉE ICI ---
   const handleUnlockFrame = async (item) => {
     if (!user || !eventId) {
       alert("Erreur: session ou événement manquant");
@@ -113,7 +112,6 @@ function CatalogueContent() {
     }
     setLoadingId(item.id);
     try {
-      // On définit les URLs de retour basées sur l'URL actuelle
       const origin = window.location.origin;
 
       const response = await fetch('/api/checkout', {
@@ -124,7 +122,6 @@ function CatalogueContent() {
           frameId: item.id,
           eventId: eventId,
           userId: user.uid,
-          // On passe ces URLs à ton API Checkout
           success_url: `${origin}/admin/catalogue-cadres?eventId=${eventId}&success=true`,
           cancel_url: `${origin}/admin/catalogue-cadres?eventId=${eventId}`
         }),
@@ -162,7 +159,7 @@ function CatalogueContent() {
           Catalogue cadres
         </h1>
         <p className="mt-4 text-sm uppercase tracking-[0.25em] text-white/40">
-          5 gratuits + 10 premium par thème
+          5 gratuits + 12 premium par thème
         </p>
       </header>
 
