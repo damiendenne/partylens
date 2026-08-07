@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { db, auth } from "@/lib/firebase";
 import { doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import { ArrowLeft, Baby, Cake, Check, Heart, Lock, Star, Loader2, CreditCard } from "lucide-react";
+import { ArrowLeft, Baby, Cake, Check, Heart, Star, Loader2 } from "lucide-react";
 
 const BUCKET = "partylens-94ad0.firebasestorage.app";
 
@@ -36,7 +36,7 @@ const generateCatalogue = () => {
     for (let i = 1; i <= 5; i++) {
       catalogue.push({
         id: `${theme.id}_free_${i}`,
-        name: `${theme.label} Gratuit ${i}`,
+        name: `${theme.label} ${i}`,
         cat: theme.id,
         isLocked: false,
         price: "GRATUIT",
@@ -47,10 +47,10 @@ const generateCatalogue = () => {
     for (let i = 1; i <= 13; i++) {
       catalogue.push({
         id: `${theme.id}_premium_${i}`,
-        name: `${theme.label} Premium ${i}`,
+        name: `${theme.label} ${i + 5}`,
         cat: theme.id,
-        isLocked: true,
-        price: "0.99€",
+        isLocked: false,
+        price: "GRATUIT",
         img: getStorageUrl(`designs/${theme.id}/premium/${i}.jpg`),
       });
     }
@@ -116,43 +116,6 @@ function CatalogueContent() {
     }
   };
 
-  const handleUnlockFrame = async (item) => {
-    if (!user || !eventId) {
-      alert("Erreur: session ou événement manquant");
-      return;
-    }
-
-    setLoadingId(item.id);
-
-    try {
-      const origin = window.location.origin;
-
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          planId: "frame_unlock",
-          frameId: item.id,
-          eventId,
-          userId: user.uid,
-          success_url: `${origin}/admin/catalogue-cadres?eventId=${eventId}&success=true`,
-          cancel_url: `${origin}/admin/catalogue-cadres?eventId=${eventId}`,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error(data.error);
-      }
-    } catch (e) {
-      alert("Erreur lors de la connexion à Stripe");
-      setLoadingId(null);
-    }
-  };
-
   return (
     <main className="min-h-screen bg-black p-6 text-white md:p-10">
       <Link
@@ -177,7 +140,7 @@ function CatalogueContent() {
         </h1>
 
         <p className="mt-4 text-sm uppercase tracking-[0.25em] text-white/40">
-          5 gratuits + 13 premium par thème
+          Tous les cadres sont 100% gratuits
         </p>
       </header>
 
@@ -199,9 +162,6 @@ function CatalogueContent() {
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {items.map((item) => {
-          const isUnlocked = eventData?.unlockedFrames?.includes(item.id);
-          const canSelect = !item.isLocked || isUnlocked;
-
           return (
             <div
               key={item.id}
@@ -212,24 +172,14 @@ function CatalogueContent() {
                   src={item.img}
                   alt={item.name}
                   loading="lazy"
-                  className={`absolute inset-0 h-full w-full object-cover ${
-                    !canSelect ? "blur-[2px]" : ""
-                  }`}
+                  className="absolute inset-0 h-full w-full object-cover"
                 />
 
                 <div className="absolute inset-0 bg-black/20" />
 
                 <div className="absolute right-4 top-4 rounded-full bg-black/70 px-4 py-2 text-[10px] font-black uppercase">
-                  {isUnlocked ? "DÉBLOQUÉ" : item.price}
+                  GRATUIT
                 </div>
-
-                {!canSelect && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                    <div className="rounded-full bg-black/80 p-5">
-                      <Lock size={24} />
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="p-6">
@@ -241,35 +191,19 @@ function CatalogueContent() {
                   {item.name}
                 </h3>
 
-                {canSelect ? (
-                  <button
-                    onClick={() => handleSelect(item)}
-                    disabled={loadingId !== null}
-                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-pink-600 py-4 text-xs font-black uppercase transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
-                  >
-                    {loadingId === item.id ? (
-                      <Loader2 size={16} className="animate-spin" />
-                    ) : (
-                      <Check size={16} />
-                    )}
+                <button
+                  onClick={() => handleSelect(item)}
+                  disabled={loadingId !== null}
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-pink-600 py-4 text-xs font-black uppercase transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+                >
+                  {loadingId === item.id ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Check size={16} />
+                  )}
 
-                    {loadingId === item.id ? "Application..." : "Sélectionner"}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleUnlockFrame(item)}
-                    disabled={loadingId !== null}
-                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-white/10 py-4 text-xs font-black uppercase transition-colors hover:bg-white hover:text-black"
-                  >
-                    {loadingId === item.id ? (
-                      <Loader2 size={16} className="animate-spin" />
-                    ) : (
-                      <CreditCard size={16} />
-                    )}
-
-                    Débloquer {item.price}
-                  </button>
-                )}
+                  {loadingId === item.id ? "Application..." : "Sélectionner"}
+                </button>
               </div>
             </div>
           );
