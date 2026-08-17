@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { Resend } from 'resend';
+import PaymentSuccessEmail from '@/email/payment-success';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req) {
   try {
@@ -16,18 +19,16 @@ export async function POST(req) {
       eventId,
       frameId,
       shippingInfo,
+      customerEmail, // Assurez-vous de récupérer l'email du client depuis le body si besoin
       success_url: customSuccessUrl,
       cancel_url: customCancelUrl
     } = body;
 
-    // Tes prix Stripe
+    // Vos 3 prix Stripe officiels
     const STRIPE_PRICES = {
-      bronze: "price_1TTRIL0kxrnMCRhvsIs6fydu",
-      silver: "price_1TTRII0kxrnMCRhvZF64mAns",
-      gold_annual: "price_1TTRII0kxrnMCRhve2lMO0uE",
-      gold_monthly: "price_1TTRII0kxrnMCRhvd9j5QlZX",
-      usb: "price_1TTRIK0kxrnMCRhvZZGwImVJ",
-      frame: "price_1TTRIN0kxrnMCRhvgN6FPIEI"
+      forfait_999: "price_1TTRIL0kxrnMCRhvsIs6fydu", 
+      forfait_2499: "price_1TTRII0kxrnMCRhvd9j5QlZX", 
+      usb: "price_1TTRIK0kxrnMCRhvZZGwImVJ",          
     };
 
     if (!userId) {
@@ -35,49 +36,32 @@ export async function POST(req) {
     }
 
     const lineItems = [];
-    let isRecurring = false;
 
     // --- LOGIQUE DE SÉLECTION ---
     if (planId === 'usb_only') {
       lineItems.push({ price: STRIPE_PRICES.usb, quantity: 1 });
-    } else if (planId === 'frame_unlock') {
-      lineItems.push({ price: STRIPE_PRICES.frame, quantity: 1 });
     } else {
-      // SEUL LE GOLD MENSUEL EST RÉCURRENT
-      if (planId === 'gold' && billingCycle !== 'Annuel') {
-        isRecurring = true;
+      if (planId === 'unique') {
+        lineItems.push({ price: STRIPE_PRICES.forfait_999, quantity: 1 });
+      } else if (planId === 'pro') {
+        lineItems.push({ price: STRIPE_PRICES.forfait_2499, quantity: 1 });
       }
-
-      if (planId === 'bronze') lineItems.push({ price: STRIPE_PRICES.bronze, quantity: 1 });
-      if (planId === 'silver') lineItems.push({ price: STRIPE_PRICES.silver, quantity: 1 });
-      if (planId === 'gold') {
-        if (billingCycle === 'Annuel') {
-          lineItems.push({ price: STRIPE_PRICES.gold_annual, quantity: 1 });
-        } else {
-          lineItems.push({ price: STRIPE_PRICES.gold_monthly, quantity: 1 });
-        }
+      
+      if (usbQty > 0) {
+        lineItems.push({ price: STRIPE_PRICES.usb, quantity: usbQty });
       }
-      if (usbQty > 0) lineItems.push({ price: STRIPE_PRICES.usb, quantity: usbQty });
     }
 
     if (lineItems.length === 0) {
       return NextResponse.json({ error: "Aucun produit Stripe sélectionné." }, { status: 400 });
     }
 
-    const sessionMode = isRecurring ? 'subscription' : 'payment';
-
-    const purchaseType =
-      planId === 'frame_unlock' ? 'frame_unlock' :
-      planId === 'usb_only' ? 'extra_usb_event' : 'subscription_upgrade';
+    const sessionMode = 'payment';
+    const purchaseType = planId === 'usb_only' ? 'extra_usb_event' : 'subscription_upgrade';
 
     // URLs de retour
     let finalSuccessUrl = `https://partylens.fr/admin?success=true&session_id={CHECKOUT_SESSION_ID}`;
     let finalCancelUrl = `https://partylens.fr/admin?canceled=true`;
-
-    if (planId === 'frame_unlock' && eventId) {
-      finalSuccessUrl = `https://partylens.fr/admin/catalogue-cadres?eventId=${eventId}&success=true`;
-      finalCancelUrl = `https://partylens.fr/admin/catalogue-cadres?eventId=${eventId}`;
-    }
     
     if (customSuccessUrl) finalSuccessUrl = customSuccessUrl + (customSuccessUrl.includes('?') ? '&' : '?') + "session_id={CHECKOUT_SESSION_ID}";
     if (customCancelUrl) finalCancelUrl = customCancelUrl;
@@ -91,14 +75,15 @@ export async function POST(req) {
       success_url: finalSuccessUrl,
       cancel_url: finalCancelUrl,
       client_reference_id: userId,
+      // Si vous avez l'email du client, vous pouvez le pré-remplir sur Stripe :
+      // customer_email: customerEmail, 
       metadata: {
         purchaseType,
-        planName: planId === 'gold' ? 'VIP GOLD' : (planId ? planId.toUpperCase() : ''),
+        planName: planId ? planId.toUpperCase() : '',
         billingCycle: billingCycle || 'Unique',
         userId: userId,
         eventId: eventId || '',
         eventName: eventName || '',
-        frameId: frameId || '',
         shippingName: shippingInfo?.name || '',
         shippingAddress: shippingInfo?.address || '',
         shippingZip: shippingInfo?.zip || '',
@@ -107,18 +92,22 @@ export async function POST(req) {
       }
     };
 
-    // Si c'est un abonnement, on ajoute les metadata pour le renouvellement auto
-    if (sessionMode === 'subscription') {
-      sessionData.subscription_data = {
-        metadata: {
-          userId: userId,
-          planName: 'VIP GOLD',
-          billingCycle: 'mensuel'
-        }
-      };
-    }
-
     const session = await stripe.checkout.sessions.create(sessionData);
+
+    /* 
+      NOTE : Si vous voulez envoyer l'email d'ici (attention, le paiement n'est pas encore fait, 
+      c'est juste la création du lien), ou idéalement dans votre Webhook Stripe :
+      
+      if (customerEmail) {
+        await resend.emails.send({
+          from: 'PartyLens <contact@partylens.fr>',
+          to: [customerEmail],
+          subject: 'Confirmation de votre commande PartyLens',
+          react: <PaymentSuccessEmail eventName={eventName || 'Votre événement'} />,
+        });
+      }
+    */
+
     return NextResponse.json({ url: session.url });
 
   } catch (error) {

@@ -64,49 +64,60 @@ function AdminContent() {
     let unsubEvents = () => {};
 
     const unsubAuth = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
+      if (!currentUser) {
+        setLoading(false);
+        router.push('/login');
+        return;
+      }
 
-        unsubUser = onSnapshot(doc(db, "users", currentUser.uid), (snap) => {
-          if (snap.exists()) {
-            const uData = snap.data();
+      setUser(currentUser);
 
-            setUserData(uData);
-            unsubEvents();
+      unsubUser = onSnapshot(doc(db, "users", currentUser.uid), (snap) => {
+        if (!snap.exists()) {
+          setLoading(false);
+          return;
+        }
 
-            let qEvents;
+        const uData = snap.data();
+        setUserData(uData);
+        
+        // Nettoyage de l'ancien listener d'événements avant d'en créer un nouveau
+        unsubEvents();
 
-            if (uData.linkedDjCode) {
-              const cleanCode = uData.linkedDjCode.trim().toUpperCase();
-              qEvents = query(collection(db, "events"), where("djCode", "==", cleanCode));
-            } else {
-              qEvents = query(
-                collection(db, "events"),
-                where("userId", "==", currentUser.uid),
-                orderBy("createdAt", "desc")
-              );
-            }
+        let qEvents;
+        if (uData.linkedDjCode) {
+          const cleanCode = uData.linkedDjCode.trim().toUpperCase();
+          qEvents = query(collection(db, "events"), where("djCode", "==", cleanCode));
+        } else {
+          qEvents = query(
+            collection(db, "events"),
+            where("userId", "==", currentUser.uid),
+            orderBy("createdAt", "desc")
+          );
+        }
 
-            unsubEvents = onSnapshot(qEvents, (eSnap) => {
-              const evts = eSnap.docs.map((eventDoc) => ({
-                id: eventDoc.id,
-                ...eventDoc.data()
-              }));
+        unsubEvents = onSnapshot(qEvents, (eSnap) => {
+          const evts = eSnap.docs.map((eventDoc) => ({
+            id: eventDoc.id,
+            ...eventDoc.data()
+          }));
 
-              if (uData.linkedDjCode) {
-                evts.sort((a, b) => {
-                  return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
-                });
-              }
-
-              setMyEvents(evts);
-              setLoading(false);
+          if (uData.linkedDjCode) {
+            evts.sort((a, b) => {
+              return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
             });
           }
+
+          setMyEvents(evts);
+          setLoading(false);
+        }, (error) => {
+          console.error("Erreur Firestore events:", error);
+          setLoading(false);
         });
-      } else {
-        router.push('/login');
-      }
+      }, (error) => {
+        console.error("Erreur Firestore users:", error);
+        setLoading(false);
+      });
     });
 
     return () => {
@@ -149,17 +160,13 @@ function AdminContent() {
   const isPlanValid = () => {
     if (!userData?.plan) return false;
     
-    // Si compte DEMO
     if (userData.plan === "DEMO") {
-      // S'il y a déjà une soirée créée, la démo est finie -> Invalide
       if (myEvents && myEvents.length > 0) {
         return false;
       }
-      // Sinon, il peut créer sa première et unique soirée démo
       return true;
     }
 
-    // Pour les autres plans (BRONZE, VIP GOLD, etc.), on vérifie la date de validité
     if (!userData?.lastPaymentDate) return false;
 
     const lastPay = typeof userData.lastPaymentDate.toDate === 'function'

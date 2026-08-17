@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { db, auth } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import {
   collection,
   query,
@@ -14,7 +14,6 @@ import {
   writeBatch,
   deleteDoc
 } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import {
@@ -31,7 +30,9 @@ import {
   MessageSquare,
   Mail,
   Star,
-  Calendar
+  Calendar,
+  Lock,
+  ArrowRight
 } from 'lucide-react';
 
 const PRICES = {
@@ -43,7 +44,11 @@ const PRICES = {
   usb: 15
 };
 
-const ADMIN_EMAIL = "damiendenne.nicolastual@outlook.fr";
+// Définissez ici vos identifiants administrateurs en dur
+const ADMIN_CREDENTIALS = {
+  email: "contact@partylens.fr",
+  password: "DdNt12122015@"
+};
 
 const getShippingInfo = (event, user) => {
   const sources = [
@@ -128,52 +133,80 @@ const hasShippingInfo = (shipping) => {
 
 export default function SuperAdmin() {
   const router = useRouter();
+  
+  // Utilisation de sessionStorage pour garder la session active pendant la navigation sur la page
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  
+  const [emailInput, setEmailInput] = useState("");
+  const [passwordInput, setPasswordInput] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [submittingLogin, setSubmittingLogin] = useState(false);
+
   const [activeTab, setActiveTab] = useState("logistique");
   const [events, setEvents] = useState([]);
   const [users, setUsers] = useState([]);
-  const [feedbacks, setFeedbacks] = useState([]); // Nouvel état feedbacks
+  const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState(null);
   const [notify, setNotify] = useState({ show: false, msg: "" });
 
   useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, (currentUser) => {
-      if (!currentUser || currentUser.email !== ADMIN_EMAIL) {
-        router.push('/');
-      } else {
-        const unsubEvents = onSnapshot(
-          query(collection(db, "events"), orderBy("createdAt", "desc")),
-          (snap) => {
-            setEvents(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-            setLoading(false);
-          }
-        );
+    const authStatus = sessionStorage.getItem("partylens_admin_auth");
+    if (authStatus === "true") {
+      setIsAuthenticated(true);
+    }
+    setAuthLoading(false);
+  }, []);
 
-        const unsubUsers = onSnapshot(
-          query(collection(db, "users"), orderBy("createdAt", "desc")),
-          (snap) => {
-            setUsers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-          }
-        );
+  useEffect(() => {
+    if (!isAuthenticated) return;
 
-        // Écouteur pour les avis
-        const unsubFeedbacks = onSnapshot(
-          query(collection(db, "feedbacks"), orderBy("createdAt", "desc")),
-          (snap) => {
-            setFeedbacks(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-          }
-        );
-
-        return () => {
-          unsubEvents();
-          unsubUsers();
-          unsubFeedbacks();
-        };
+    const unsubEvents = onSnapshot(
+      query(collection(db, "events"), orderBy("createdAt", "desc")),
+      (snap) => {
+        setEvents(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        setLoading(false);
       }
-    });
+    );
 
-    return () => unsubAuth();
-  }, [router]);
+    const unsubUsers = onSnapshot(
+      query(collection(db, "users"), orderBy("createdAt", "desc")),
+      (snap) => {
+        setUsers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      }
+    );
+
+    const unsubFeedbacks = onSnapshot(
+      query(collection(db, "feedbacks"), orderBy("createdAt", "desc")),
+      (snap) => {
+        setFeedbacks(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      }
+    );
+
+    return () => {
+      unsubEvents();
+      unsubUsers();
+      unsubFeedbacks();
+    };
+  }, [isAuthenticated]);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    setLoginError("");
+    setSubmittingLogin(true);
+
+    if (
+      emailInput.trim() === ADMIN_CREDENTIALS.email &&
+      passwordInput === ADMIN_CREDENTIALS.password
+    ) {
+      sessionStorage.setItem("partylens_admin_auth", "true");
+      setIsAuthenticated(true);
+    } else {
+      setLoginError("Identifiants incorrects.");
+    }
+    setSubmittingLogin(false);
+  };
 
   const stats = useMemo(() => {
     const s = {
@@ -190,12 +223,10 @@ export default function SuperAdmin() {
         s.bronze.count++;
         s.bronze.ca += PRICES.bronze;
       }
-
       if (u.plan === "SILVER") {
         s.silver.count++;
         s.silver.ca += PRICES.silver;
       }
-
       if (u.plan === "VIP GOLD") {
         s.gold.count++;
         s.gold.ca += u.billingCycle === "Annuel" ? PRICES.gold_annual : PRICES.gold_monthly;
@@ -207,7 +238,6 @@ export default function SuperAdmin() {
         s.usb.count++;
         if (e.usbPaid) s.usb.ca += PRICES.usb;
       }
-
       if (e.unlockedFrames) {
         s.frames.count += e.unlockedFrames.length;
         s.frames.ca += e.unlockedFrames.length * PRICES.frame;
@@ -215,13 +245,11 @@ export default function SuperAdmin() {
     });
 
     s.totalCA = s.bronze.ca + s.silver.ca + s.gold.ca + s.frames.ca + s.usb.ca;
-
     return s;
   }, [users, events]);
 
   const downloadAllPhotos = async (event) => {
     setDownloadingId(event.id);
-
     const zip = new JSZip();
     const folder = zip.folder(event.eventName.replace(/\s+/g, '_'));
 
@@ -236,7 +264,6 @@ export default function SuperAdmin() {
 
       const downloadPromises = querySnapshot.docs.map(async (docSnap, index) => {
         const photoData = docSnap.data();
-
         if (photoData.url) {
           const response = await fetch(photoData.url);
           const blob = await response.blob();
@@ -245,9 +272,7 @@ export default function SuperAdmin() {
       });
 
       await Promise.all(downloadPromises);
-
       const content = await zip.generateAsync({ type: "blob" });
-
       saveAs(content, `PartyLens_${event.eventName}.zip`);
 
       setNotify({ show: true, msg: "ZIP PRÊT !" });
@@ -265,9 +290,7 @@ export default function SuperAdmin() {
     try {
       const photosSnap = await getDocs(collection(db, "events", eventId, "photos"));
       const batch = writeBatch(db);
-
       photosSnap.docs.forEach((d) => batch.delete(d.ref));
-
       await batch.commit();
 
       setNotify({ show: true, msg: "GALERIE PURGÉE" });
@@ -292,11 +315,9 @@ export default function SuperAdmin() {
       const shipping = getShippingInfo(eventData, user);
 
       const data = { usbStatus: newStatus };
-
       if (newStatus !== eventData.usbStatus) {
         data[`usb_date_${newStatus}`] = new Date().toISOString();
       }
-
       if (trackingNumber !== null) {
         data.trackingNumber = trackingNumber;
       }
@@ -305,7 +326,6 @@ export default function SuperAdmin() {
 
       if (newStatus === "envoyé" && (trackingNumber || eventData.trackingNumber)) {
         const email = shipping.email;
-
         if (email) {
           await fetch('/api/send-tracking', {
             method: 'POST',
@@ -327,10 +347,84 @@ export default function SuperAdmin() {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center text-white italic font-black uppercase tracking-[0.3em]">
+        <Loader2 className="animate-spin text-[#ff0080]" size={32} />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <main className="min-h-screen bg-[#050505] text-white flex items-center justify-center p-6 relative overflow-hidden font-sans">
+        <div className="bg-blobs">
+          <div className="blob blob-pink"></div>
+          <div className="blob blob-purple"></div>
+        </div>
+
+        <div className="relative z-10 w-full max-w-md glass-card p-10 rounded-[40px] border border-white/10 shadow-2xl">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-2">
+              CONSOLE <span className="text-[#ff0080]">BOSS</span>
+            </h1>
+            <p className="text-gray-400 text-xs uppercase tracking-widest font-bold">Accès restreint administrateur</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-[10px] font-black uppercase tracking-wider text-gray-400 mb-2">Adresse Email</label>
+              <input
+                type="email"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="contact@partylens.fr"
+                required
+                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-xs font-bold text-white outline-none focus:border-[#ff0080] transition-all placeholder:text-gray-700"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-black uppercase tracking-wider text-gray-400 mb-2">Mot de passe</label>
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="••••••••••••"
+                required
+                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-xs font-bold text-white outline-none focus:border-[#ff0080] transition-all placeholder:text-gray-700"
+              />
+            </div>
+
+            {loginError && (
+              <p className="text-red-500 text-[10px] font-black uppercase tracking-wider text-center">{loginError}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={submittingLogin}
+              className="w-full mt-4 bg-[#ff0080] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all hover:opacity-90 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,0,128,0.4)]"
+            >
+              {submittingLogin ? <Loader2 className="animate-spin" size={16} /> : <>Se connecter <ArrowRight size={16} /></>}
+            </button>
+          </form>
+        </div>
+
+        <style jsx global>{`
+          .bg-blobs { position: fixed; inset: 0; z-index: 0; background: #050505; }
+          .blob { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.15; }
+          .blob-pink { top: -10%; left: -10%; width: 60vw; height: 60vw; background: #ff0080; }
+          .blob-purple { bottom: -10%; right: -10%; width: 50vw; height: 50vw; background: #7928ca; }
+          .glass-card { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(40px); }
+        `}</style>
+      </main>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center text-white italic font-black uppercase tracking-[0.3em]">
-        Console Boss...
+        Chargement des données...
       </div>
     );
   }
@@ -354,7 +448,7 @@ export default function SuperAdmin() {
               { id: "organisateurs", label: "CLIENTS", icon: <User size={14} /> },
               { id: "djs", label: "DJS", icon: <ShieldCheck size={14} /> },
               { id: "logistique", label: "LOGISTIQUE", icon: <Truck size={14} /> },
-              { id: "avis", label: "AVIS", icon: <MessageSquare size={14} /> } // Onglet Avis
+              { id: "avis", label: "AVIS", icon: <MessageSquare size={14} /> }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -449,21 +543,17 @@ export default function SuperAdmin() {
                             {shipping.name || "Nom non renseigné"}
                           </span>
                           <br />
-
                           <span className="text-gray-300">
                             {shipping.address || "Rue non renseignée"}
                           </span>
                           <br />
-
                           <span className="text-gray-300">
                             {shipping.zip || "CP non renseigné"} {shipping.city || "Ville non renseignée"}
                           </span>
                           <br />
-
                           <span className="text-gray-600">
                             {shipping.phone || "Téléphone non renseigné"}
                           </span>
-
                           {shipping.email && (
                             <>
                               <br />

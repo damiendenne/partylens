@@ -1,50 +1,39 @@
 "use client";
 import Link from 'next/link';
-import { Camera, Music, MonitorPlay, Check, ArrowRight, Sparkles } from 'lucide-react';
+import { Camera, Music, Check, ArrowRight, Sparkles, MessageSquareText, LayoutGrid } from 'lucide-react';
 
 export default function HomePage() {
   const plans = [
     {
-      name: "BRONZE",
+      name: "FORFAIT UNIQUE",
       price: "9.99€",
-      period: "PAR ÉVÉNEMENT",
-      desc: "Idéal pour les anniversaires et petites soirées privées.",
+      period: "/ SOIRÉE UNIQUE",
+      desc: "Idéal pour profiter pleinement de votre événement.",
       features: [
-        "ACCÈS RÉGIE ORGANISATEUR",
-        "PHOTOS ILLIMITÉES EN DIRECT",
-        "LIVRE D'OR / ALBUM NUMÉRIQUE",
-        "SUPPORT 10H-2H 7J/7",
-      ],
-      color: "text-[#EAB308]",
-      isGold: false
-    },
-    {
-      name: "SILVER",
-      price: "12.99€",
-      period: "PAR ÉVÉNEMENT",
-      desc: "Le pack roi pour les mariages et grandes réceptions.",
-      features: [
-        "TOUT LE CONTENU BRONZE",
-        "DIAPORAMA LIVE VIDÉOPROJECTEUR",
-        "DEMANDES DE CHANSONS DJ",
-        "SUPPORT 10H-2H 7J/7",
+        "ACCÈS COMPTE RÉGIE",
+        "PHOTOS ILLIMITÉES",
+        "ALBUM DISPO EN TÉLÉCHARGEMENT",
+        "LIVE PHOTO VIA VIDÉOPROJECTEUR AVEC FOND GRATUIT (VIDÉOPROJECTEUR NON INCLUS)",
+        "LIVRE D'OR NUMÉRIQUE TÉLÉCHARGEABLE",
+        "PHOTOROOTH VIA SMARTPHONE OU TABLETTE AVEC CADRE GRATUIT AU CHOIX (SMARTPHONE ET TABLETTE NON INCLUS)",
+        "ENVOI DE CHOIX DE MUSIQUE POUR LE DJ",
       ],
       color: "text-white",
-      isGold: false
+      isUsb: false,
+      href: "/register?plan=unique"
     },
     {
-      name: "VIP PRO GOLD",
-      price: "299€",
-      period: "/ AN (ACCÈS PRO)",
-      desc: "Pour les DJ, animateurs et gérants de salles.",
+      name: "FORFAIT CLÉ USB",
+      price: "24.99€",
+      period: "/ ÉVÉNEMENT",
+      desc: "L'expérience complète avec souvenir physique.",
       features: [
-        "TOUT LE CONTENU SILVER EN ILLIMITÉ",
-        "ÉVÉNEMENTS ILLIMITÉS TOUTE L'ANNÉE",
-        "12 CLÉS USB PHYSIQUES INCLUSES",
-        "SUPPORT PRIORITAIRE EN DIRECT",
+        "TOUT LE FORFAIT À 9.99€ INCLUS",
+        "UNE CLÉ USB AVEC TOUS LES SOUVENIRS PHOTO ET LIVRE D'OR, ENVOYÉE À DOMICILE OU EN POINT RELAIS LE PLUS PROCHE (FRAIS DE LIVRAISON OFFERTS)",
       ],
       color: "text-[#EAB308]",
-      isGold: true
+      isUsb: true,
+      href: "/register?plan=pro"
     }
   ];
 
@@ -71,7 +60,7 @@ export default function HomePage() {
 
         {/* DOUBLE APPEL À L'ACTION (CTA) */}
         <div className="w-full max-w-xl flex flex-col sm:flex-row gap-4 mb-24">
-          <Link href="/login?demo=true" className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 text-white py-4 px-6 rounded-2xl font-black uppercase tracking-tight shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2">
+          <Link href="/register?demo=true" className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 text-white py-4 px-6 rounded-2xl font-black uppercase tracking-tight shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2">
             <Sparkles size={18} /> Créer un test gratuit
           </Link>
           <Link href="/login" className="flex-1 bg-white text-[#4c0d82] py-4 px-6 rounded-2xl font-black uppercase tracking-tight shadow-md hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2">
@@ -79,7 +68,7 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {/* NOUVELLE SECTION : COMMENT ÇA MARCHE */}
+        {/* SECTION COMMENT ÇA MARCHE */}
         <div className="w-full max-w-5xl mb-24 bg-white/[0.02] border border-white/5 rounded-[40px] p-10 backdrop-blur-xl">
           <h2 className="text-3xl font-black uppercase italic tracking-tighter mb-2 bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">Aucune application à télécharger !</h2>
           <p className="text-gray-400 text-xs uppercase tracking-widest mb-12">Simple comme un coup d'œil, magique pour l'ambiance</p>
@@ -92,48 +81,62 @@ export default function HomePage() {
             </div>
             <div className="flex flex-col items-center">
               <div className="w-12 h-12 rounded-full bg-blue-500/10 text-[#0072ff] flex items-center justify-center font-black text-xl mb-4 border border-blue-500/20">2</div>
-              <h4 className="font-black uppercase tracking-tight mb-2">Les invités flashent & partagent</h4>
-              <p className="text-gray-400 text-xs leading-relaxed max-w-xs">Vos proches scannent le code imprimé avec leur smartphone et prennent une photo. C'est tout !</p>
+              <h4 className="font-black uppercase tracking-tight mb-2">Les invités participent</h4>
+              <p className="text-gray-400 text-xs leading-relaxed max-w-xs">Flash du code pour accéder aux photos, au photobooth, au livre d'or et aux demandes DJ.</p>
             </div>
             <div className="flex flex-col items-center">
               <div className="w-12 h-12 rounded-full bg-purple-500/10 text-[#7928ca] flex items-center justify-center font-black text-xl mb-4 border border-purple-500/20">3</div>
-              <h4 className="font-black uppercase tracking-tight mb-2">Diffusion Live & Souvenirs</h4>
-              <p className="text-gray-400 text-xs leading-relaxed max-w-xs">Les clichés fusent instantanément sur votre écran géant. Vous récupérez tout dans un album propre.</p>
+              <h4 className="font-black uppercase tracking-tight mb-2">Souvenirs instantanés</h4>
+              <p className="text-gray-400 text-xs leading-relaxed max-w-xs">Diffusion live sur écran, album en ligne et récupération simplifiée de tous vos souvenirs.</p>
             </div>
           </div>
         </div>
 
-        {/* SECTION CARACTÉRISTIQUES PRINCIPALES */}
-        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-6 mb-24">
-          <div className="bg-white/5 border border-white/10 p-8 rounded-[30px] flex flex-col items-center md:items-start text-center md:text-left group">
-            <div className="bg-black/40 p-4 rounded-2xl mb-6 group-hover:scale-110 transition-transform shadow-lg"><Camera size={32} className="text-[#ff0080]" /></div>
-            <h3 className="text-2xl font-black uppercase italic mb-3 tracking-tighter">Photos en direct</h3>
-            <p className="text-gray-400 text-sm leading-relaxed">Fini d'attendre le lendemain ou de courir après les SMS pour récupérer les souvenirs de la fête !</p>
+        {/* SECTION CARACTÉRISTIQUES PRINCIPALES STYLÉES */}
+        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-24">
+          <div className="bg-white/5 border border-white/10 p-8 rounded-[30px] flex flex-col items-center text-center group hover:border-pink-500/50 transition-all">
+            <div className="bg-black/40 p-4 rounded-2xl mb-6 group-hover:scale-110 transition-transform shadow-lg">
+              <Camera size={32} className="text-[#ff0080]" />
+            </div>
+            <h3 className="text-xl font-black uppercase italic mb-3 tracking-tighter">Photos & Photobooth</h3>
+            <p className="text-gray-400 text-xs leading-relaxed">Photos illimitées, cadres personnalisables, photobooth via smartphone ou tablette.</p>
           </div>
 
-          <div className="bg-white/5 border border-white/10 p-8 rounded-[30px] flex flex-col items-center md:items-start text-center md:text-left group">
-            <div className="bg-black/40 p-4 rounded-2xl mb-6 group-hover:scale-110 transition-transform shadow-lg"><Music size={32} className="text-[#0072ff]" /></div>
-            <h3 className="text-2xl font-black uppercase italic mb-3 tracking-tighter">Demandes DJ</h3>
-            <p className="text-gray-400 text-sm leading-relaxed">Vos invités soumettent leurs envies musicales directement sur votre régie DJ via le même QR code.</p>
+          <div className="bg-white/5 border border-white/10 p-8 rounded-[30px] flex flex-col items-center text-center group hover:border-yellow-500/50 transition-all">
+            <div className="bg-black/40 p-4 rounded-2xl mb-6 group-hover:scale-110 transition-transform shadow-lg">
+              <MessageSquareText size={32} className="text-[#EAB308]" />
+            </div>
+            <h3 className="text-xl font-black uppercase italic mb-3 tracking-tighter">Livre d'Or</h3>
+            <p className="text-gray-400 text-xs leading-relaxed">Numérique téléchargeable pour tous les messages écrits de vos invités.</p>
           </div>
 
-          <div className="bg-white/5 border border-white/10 p-8 rounded-[30px] flex flex-col items-center md:items-start text-center md:text-left group">
-            <div className="bg-black/40 p-4 rounded-2xl mb-6 group-hover:scale-110 transition-transform shadow-lg"><MonitorPlay size={32} className="text-[#7928ca]" /></div>
-            <h3 className="text-2xl font-black uppercase italic mb-3 tracking-tighter">Live Diaporama</h3>
-            <p className="text-gray-400 text-sm leading-relaxed">Diffusez les captures en temps réel sur grand écran ou vidéoprojecteur avec des animations premium.</p>
+          <div className="bg-white/5 border border-white/10 p-8 rounded-[30px] flex flex-col items-center text-center group hover:border-blue-500/50 transition-all">
+            <div className="bg-black/40 p-4 rounded-2xl mb-6 group-hover:scale-110 transition-transform shadow-lg">
+              <Music size={32} className="text-[#0072ff]" />
+            </div>
+            <h3 className="text-xl font-black uppercase italic mb-3 tracking-tighter">Ambiance DJ</h3>
+            <p className="text-gray-400 text-xs leading-relaxed">Interface dédiée pour que vos invités proposent leurs titres favoris en direct.</p>
+          </div>
+
+          <div className="bg-white/5 border border-white/10 p-8 rounded-[30px] flex flex-col items-center text-center group hover:border-purple-500/50 transition-all">
+            <div className="bg-black/40 p-4 rounded-2xl mb-6 group-hover:scale-110 transition-transform shadow-lg">
+              <LayoutGrid size={32} className="text-[#7928ca]" />
+            </div>
+            <h3 className="text-xl font-black uppercase italic mb-3 tracking-tighter">Live Diaporama</h3>
+            <p className="text-gray-400 text-xs leading-relaxed">Diffusion automatique sur écran géant ou vidéoprojecteur de tous les contenus.</p>
           </div>
         </div>
 
         {/* SECTION FORFAITS */}
-        <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-3 gap-8 px-4 mb-24">
+        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-8 px-4 mb-24">
           {plans.map((plan, index) => (
             <div 
               key={index}
-              className={`relative p-10 rounded-[40px] border border-white/10 bg-gradient-to-b from-white/5 to-transparent flex flex-col text-left transition-all duration-500 ${plan.isGold ? 'ring-2 ring-[#EAB308]/50 shadow-[0_0_50px_rgba(234,179,8,0.15)] bg-black/40' : ''}`}
+              className={`relative p-10 rounded-[40px] border border-white/10 bg-gradient-to-b from-white/5 to-transparent flex flex-col text-left transition-all duration-500 ${plan.isUsb ? 'ring-2 ring-[#EAB308]/50 shadow-[0_0_50px_rgba(234,179,8,0.15)] bg-black/40' : ''}`}
             >
-              {plan.isGold && (
+              {plan.isUsb && (
                 <div className="absolute -top-4 right-10 bg-[#EAB308] text-black text-[10px] font-black px-6 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
-                  SPÉCIAL PRO
+                  CLÉ USB INCLUSE
                 </div>
               )}
 
@@ -141,13 +144,6 @@ export default function HomePage() {
                 {plan.name}
               </h3>
               <p className="text-gray-400 text-[11px] font-bold uppercase mt-1 mb-6 tracking-wide">{plan.desc}</p>
-
-              {plan.isGold && (
-                <div className="flex gap-2 mb-8 bg-black/60 p-1.5 rounded-full w-fit border border-white/5">
-                  <div className="px-4 py-1 text-[9px] font-bold text-gray-500 uppercase">Mensuel (Engagement)</div>
-                  <div className="px-4 py-1 bg-[#EAB308] text-black rounded-full text-[9px] font-black uppercase">Annuel Pro</div>
-                </div>
-              )}
 
               <div className="flex items-baseline gap-1 mb-10">
                 <span className="text-7xl font-black tracking-tighter text-white">{plan.price.split('€')[0]}</span>
@@ -164,8 +160,8 @@ export default function HomePage() {
                 ))}
               </ul>
 
-              <Link href="/login" className={`w-full py-5 text-center rounded-2xl font-black uppercase tracking-wider text-xs transition-all ${plan.isGold ? 'bg-[#EAB308] text-black hover:bg-white' : 'bg-white/10 text-white hover:bg-white hover:text-black'}`}>
-                Choisir l'offre
+              <Link href={plan.href} className={`w-full py-5 text-center rounded-2xl font-black uppercase tracking-wider text-xs transition-all ${plan.isUsb ? 'bg-[#EAB308] text-black hover:bg-white' : 'bg-white/10 text-white hover:bg-white hover:text-black'}`}>
+                {plan.isUsb ? 'Souscrire Forfait Clé USB' : 'Choisir ce forfait'}
               </Link>
             </div>
           ))}
