@@ -89,6 +89,7 @@ export default function PlanSelection() {
               <div className="flex items-start gap-4 text-[11px] font-black uppercase tracking-tight"><Check size={16} className="text-[#ff9100] shrink-0 mt-0.5" strokeWidth={4} /> LIVE PHOTO VIA VIDÉOPROJECTEUR AVEC FOND GRATUIT (VIDÉOPROJECTEUR NON INCLUS)</div>
               <div className="flex items-start gap-4 text-[11px] font-black uppercase tracking-tight"><Check size={16} className="text-[#ff9100] shrink-0 mt-0.5" strokeWidth={4} /> LIVRE D'OR NUMÉRIQUE TÉLÉCHARGEABLE</div>
               <div className="flex items-start gap-4 text-[11px] font-black uppercase tracking-tight"><Check size={16} className="text-[#ff9100] shrink-0 mt-0.5" strokeWidth={4} /> PHOTOBOOTH VIA SMARTPHONE OU TABLETTE AVEC CADRE GRATUIT AU CHOIX (SMARTPHONE ET TABLETTE NON INCLUS)</div>
+              <div className="flex items-start gap-4 text-[11px] font-black uppercase tracking-tight"><Check size={16} className="text-[#ff9100] shrink-0 mt-0.5" strokeWidth={4} /> DÉFI PHOTO CHALLENGE (MODE DÉFIS DÉCALÉS) INCLUS</div>
               <div className="flex items-start gap-4 text-[11px] font-black uppercase tracking-tight"><Check size={16} className="text-[#ff9100] shrink-0 mt-0.5" strokeWidth={4} /> ENVOI DE CHOIX DE MUSIQUE POUR LE DJ</div>
             </div>
             <div className="pt-8 border-t border-white/5">

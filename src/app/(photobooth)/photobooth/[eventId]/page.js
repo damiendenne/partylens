@@ -1,10 +1,190 @@
 "use client";
 
 import { useRef, useEffect, useState, use } from "react";
-import { X, Maximize2, Images, Mail, ArrowRight, CheckCircle2 } from "lucide-react";
+import { X, Maximize2, Images, Mail, ArrowRight, CheckCircle2, Shuffle } from "lucide-react";
 import { db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, addDoc, serverTimestamp, doc, onSnapshot } from "firebase/firestore";
+
+// Liste riche de 200 défis collectifs, drôles et décalés
+const FUN_CHALLENGES = [
+  "Faites votre meilleure tête de zombie tous ensemble !",
+  "Prenez une pose de super-héros au sommet de leur gloire !",
+  "Tout le monde doit tirer la langue en même temps !",
+  "Faites un énorme câlin collectif serré !",
+  "Imitez des statues grecques figées dans le temps !",
+  "Faites une tête de surprise totale comme si vous voyiez un fantôme !",
+  "Le groupe doit former un grand cœur avec les mains !",
+  "Tout le monde doit fermer les yeux et sourire béatement !",
+  "Faites semblant d'exploser de rire sans retenue !",
+  "Le groupe doit pointer du doigt la personne la plus drôle !",
+  "Tout le monde doit lever les bras au ciel en criant 'OUAH' !",
+  "Prenez une pose de mannequin de haute couture sur un podium !",
+  "Un seul invité fait une grimace horrible, tous les autres gardent un visage hyper sérieux !",
+  "Tout le monde doit faire un clin d'œil appuyé à la caméra !",
+  "Le groupe doit faire semblant de sauter en l'air !",
+  "Faites une pose de rockstar avec des guitares imaginaires enflammées !",
+  "Tout le monde doit se cacher les yeux avec les mains !",
+  "Faites une pose de méditation zen absolue !",
+  "Le groupe doit montrer ses plus beaux sourires ultra-bright !",
+  "Faites une pyramide humaine improvisée (sans rien casser !)",
+  "Un invité fait l'avion, les autres font les spectateurs ébahis !",
+  "Tout le monde doit envoyer un énorme bisou volant vers l'objectif !",
+  "Faites semblant de dévorer un gâteau géant imaginaire !",
+  "Tout le monde doit se toucher le bout du nez !",
+  "Faites une pose de danse disco tout droit venue des années 80 !",
+  "Le groupe doit pointer le ciel du doigt tous ensemble !",
+  "Tout le monde doit faire des cornes de rockeur avec les doigts !",
+  "Faites semblant d'être coincés dans une boîte invisible trop petite !",
+  "Le groupe se met en cercle serré et se regarde intensément !",
+  "Faites une pose de karatéka prêt à frapper !",
+  "Tout le monde doit faire un pouce levé de validation !",
+  "Imitez des animaux de la jungle en délire !",
+  "Le groupe doit faire semblant de courir à toute vitesse sur place !",
+  "Faites une pose de détective qui cherche un indice louche !",
+  "Tout le monde doit se tirer les oreilles en grimaçant !",
+  "Faites semblant de porter un objet extrêmement lourd qui pèse des tonnes !",
+  "Un invité doit porter un autre invité sur son dos ou ses épaules !",
+  "Tout le monde fait une grimace en plaçant ses doigts sur ses joues !",
+  "Faites une pose de plongeur professionnel sur le point de sauter !",
+  "Le groupe doit regarder fixement vers la droite d'un air intrigué !",
+  "Faites une tête de premier de la classe bien sage !",
+  "Tout le monde fait une tête de méchant de dessin animé !",
+  "Le groupe entier fait semblant de dormir debout !",
+  "Faites une mine boudeuse de bébé capricieux !",
+  "Tout le monde retient sa respiration en gonflant les joues au maximum !",
+  "Faites un regard ténébreux de star de cinéma dramatique !",
+  "Le groupe simule une peur bleue en se protégeant la tête !",
+  "Tout le monde fait un signe de paix (V avec les doigts) lumineux !",
+  "Imitez une équipe de football qui vient de marquer en finale !",
+  "Faites semblant de jouer aux marionnettes désarticulées !",
+  "Le groupe pointe l'objectif du doigt avec autorité !",
+  "Tout le monde fait une moue de poisson (duckface exagérée) !",
+  "Faites semblant de tenir une conversation ultra secoue-tête !",
+  "Le groupe simule un vent glacial en frissonnant de tous ses membres !",
+  "Tout le monde lève les mains en l'air en mode 'je m'rends' !",
+  "Faites une pose de bodybuilder fier de ses muscles !",
+  "Le groupe entier se penche à gauche d'un seul bloc !",
+  "Le groupe entier se penche à droite d'un seul bloc !",
+  "Faites une tête de savant fou en train de créer une potion magique !",
+  "Tout le monde fait un grand sourire forcé et ultra rigide !",
+  "Imitez un groupe de touristes éblouis par un monument !",
+  "Faites semblant de jouer d'un instrument de musique farfelu (trompette, harpe...)",
+  "Tout le monde croise les bras d'un air très mécontent !",
+  "Faites semblant de recevoir un énorme coup de vent dans la figure !",
+  "Le groupe entier fait une révérence royale de courtoisie !",
+  "Tout le monde tire une tête de vaincu fatigué !",
+  "Faites une pose d'explorateur perdu dans la jungle avec une loupe invisible !",
+  "Le groupe fait un 'High Five' géant vers le centre !",
+  "Tout le monde fait semblant d'avoir un fou rire silencieux !",
+  "Faites une pose de majorette ou de pom-pom boy en délire !",
+  "Imitez des robots en panne de batterie",
+  "Le groupe entier fait une grimace asymétrique !",
+  "Tout le monde fait semblant de porter des lunettes de soleil de stars !",
+  "Faites une pose de flamant rose sur un seul pied (attention à l'équilibre !)",
+  "Le groupe entier montre ses muscles avec un air rigolo !",
+  "Faites semblant d'être aspirés par un trou noir sur le côté !",
+  "Tout le monde fait une tête de paparazzi en train de prendre une photo !",
+  "Imitez des chefs cuisiniers en train de goûter un plat trop pimenté !",
+  "Le groupe entier fait une ola de joie !",
+  "Faites semblant de retenir le plafond qui s'effondre tous ensemble !",
+  "Tout le monde fait un clin d'œil avec les deux yeux alternativement !",
+  "Faites une pose de défilé militaire complètement loufoque !",
+  "Le groupe simule une discussion passionnée sur un sujet invisible !",
+  "Tout le monde fait une moue boudeuse trop mignonne !",
+  "Faites semblant de jouer au tir à la corde en deux camps !",
+  "Imitez des passants surpris par une averse soudaine !",
+  "Le groupe entier se cache les yeux, la bouche et les oreilles (les 3 singes sages) !",
+  "Faites une pose de torero face à un taureau imaginaire !",
+  "Tout le monde fait un sourire de grand timide !",
+  "Faites semblant de pousser un mur invisible qui avance vers vous !",
+  "Le groupe entier lève son verre imaginaire pour un toast endiablé !",
+  "Imitez des skieurs en pleine descente de slalom géant !",
+  "Faites une tête de personne qui vient de comprendre une blague nulle !",
+  "Tout le monde fait un geste de silence (chut !) très expressif !",
+  "Faites une pose de disc-jockey en train de mixer sur des platines !",
+  "Le groupe entier fait un signe de ralliement secret de pirates !",
+  "Faites semblant d'être des extraterrestres découvrant la Terre !",
+  "Tout le monde fait une mine dégoûtée devant un plat immangeable !",
+  "Imitez des boxeurs sur un ring prêts à en découdre !",
+  "Le groupe entier fait un grand signe de la main pour dire au revoir !",
+  "Faites une pose de pianiste virtuose en plein solo enflammé !",
+  "Tout le monde fait une tête de zombie affamé de sucreries !",
+  "Faites semblant de regarder par le hublot d'un vaisseau spatial !",
+  "Le groupe entier fait un sourire ultra bright en montrant toutes ses dents !",
+  "Imitez des coureurs du 100 mètres sur la ligne de départ !",
+  "Faites une pose de magicien faisant apparaître un lapin !",
+  "Tout le monde fait une mine interrogative avec un point d'interrogation imaginaire au-dessus de la tête !",
+  "Faites semblant de recevoir un flash de projecteur dans les yeux !",
+  "Le groupe entier se met en position de garde-corps protecteur !",
+  "Imitez des surfeurs attendant la plus grosse vague de l'été !",
+  "Faites une tête de personne très concentrée sur un jeu vidéo difficile !",
+  "Tout le monde fait un grand signe de victoire avec les deux mains !",
+  "Faites semblant de marcher sur la Lune en apesanteur totale !",
+  "Le groupe entier fait une grimace avec les sourcils froncés au maximum !",
+  "Imitez des agents secrets en mission ultra confidentielle !",
+  "Faites une pose de grand penseur (style Le Penseur de Rodin) !",
+  "Tout le monde fait un sourire ultra narquois !",
+  "Faites semblant de frimer avec une voiture de sport imaginaire !",
+  "Le groupe entier fait un signe de cœur avec les bras au-dessus de la tête !",
+  "Imitez des supporters de foot en train de chanter à s'en rompre les cordes vocales !",
+  "Faites une tête de personne qui découvre un magnifique cadeau !",
+  "Tout le monde fait une mine boudeuse de chaton triste !",
+  "Faites semblant de diriger un orchestre symphonique grandiose !",
+  "Le groupe entier fait un grand cri de soulagement collectif !",
+  "Imitez des touristes perdus avec une carte à l'envers !",
+  "Faites une pose de cascadeur prêt à faire une folie !",
+  "Tout le monde fait un clin d'œil doublé d'un sourire malicieux !",
+  "Faites semblant de respirer l'odeur d'une fleur merveilleuse !",
+  "Le groupe entier fait un geste d'encouragement dynamique !",
+  "Imitez des marins luttant contre une tempête en mer agitée !",
+  "Faites une tête de personne surprise par une bonne nouvelle inattendue !",
+  "Tout le monde fait une moue boudeuse de gourmand privé de dessert !",
+  "Faites semblant de tenir un parapluie sous une pluie battante !",
+  "Le groupe entier fait un signe de 'cool' avec le pouce et l'auriculaire !",
+  "Imitez des fashionistas analysant une tenue ridicule !",
+  "Faites une pose de portier de grand palace très strict !",
+  "Tout le monde fait un sourire forcé de photo de classe obligatoire !",
+  "Faites semblant de vous réveiller après une nuit très courte !",
+  "Le groupe entier fait un geste d'applaudissements chaleureux !",
+  "Imitez des pingouins sur la banquise glissante !",
+  "Faites une tête de personne qui a oublié quelque chose d'important !",
+  "Tout le monde fait un signe de tête complice et mystérieux !",
+  "Faites semblant de jouer au bowling et de faire un strike parfait !",
+  "Le groupe entier fait un geste de 'stop' avec la paume de la main !",
+  "Imitez des détectives privés observant un suspect à la jumelle !",
+  "Faites une pose de star sur un tapis rouge sous les flashs !",
+  "Tout le monde fait un sourire ultra éclatant de pub pour dentifrice !",
+  "Faites semblant de porter un sac à dos beaucoup trop lourd !",
+  "Le groupe entier fait un signe de salut romain ou royal décalé !",
+  "Imitez des astronautes dans une capsule spatiale en secousse !",
+  "Faites une tête de personne qui attend un bus qui ne vient jamais !",
+  "Tout le monde fait une moue boudeuse de chef d'orchestre contrarié !",
+  "Faites semblant de faire du hula-hoop avec énergie !",
+  "Le groupe entier fait un geste de victoire les poings serrés !",
+  "Imitez des personnages de jeux vidéo pixélisés en train de sauter !",
+  "Faites une pose de dandy chic avec une canne imaginaire !",
+  "Tout le monde fait un clin d'œil théâtral et exagéré !",
+  "Faites semblant de soulever un trophée de champion du monde !",
+  "Le groupe entier fait un signe de main amical et souriant !",
+  "Imitez des chats qui s'étirent paresseusement au soleil !",
+  "Faites une tête de personne qui regarde un tour de magie fascinant !",
+  "Tout le monde fait un sourire radieux de premier jour de vacances !",
+  "Faites semblant de jouer de la batterie dans un concert de rock !",
+  "Le groupe entier fait un geste d'étonnement les mains sur les joues !",
+  "Imitez des coureurs cyclistes en pleine échappée en montagne !",
+  "Faites une pose de modèle photo allongé sur un canapé imaginaire !",
+  "Tout le monde fait une mine boudeuse adorable et irrésistible !",
+  "Faites semblant de faire du saut à l'élastique en hurlant de rire !",
+  "Le groupe entier fait un signe de paix avec les deux mains levées !",
+  "Imitez des personnages de western prêts à dégainer !",
+  "Faites une tête de personne qui écoute la meilleure blague de sa vie !",
+  "Tout le monde fait un sourire mystérieux de Joconde !",
+  "Faites semblant de porter une couronne royale un peu trop lourde !",
+  "Le groupe entier fait un geste de complicité absolue !",
+  "Imitez des plongeurs sous-marins qui font signe que tout va bien (OK) !",
+  "Faites une pose de gardien de but prêt à arrêter un penalty décisif !"
+];
 
 export default function PhotoboothPage({ params }) {
   const resolvedParams = use(params);
@@ -12,10 +192,7 @@ export default function PhotoboothPage({ params }) {
 
   const videoRef = useRef(null);
 
-  // Gestion des étapes du parcours photobooth
-  // 'live' | 'captured' | 'email-choice' | 'email-input' | 'sent'
   const [step, setStep] = useState("live");
-
   const [flash, setFlash] = useState(false);
   const [countdown, setCountdown] = useState(null);
   const [eventData, setEventData] = useState(null);
@@ -25,7 +202,9 @@ export default function PhotoboothPage({ params }) {
   const [frameUrls, setFrameUrls] = useState([]);
   const [showFrameSelector, setShowFrameSelector] = useState(false);
 
-  // États pour la gestion de l'email et de la photo capturée
+  const [currentChallenge, setCurrentChallenge] = useState(null);
+  const [challengeTimer, setChallengeTimer] = useState(null);
+
   const [capturedPhotoUrl, setCapturedPhotoUrl] = useState(null);
   const [emailInput, setEmailInput] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -135,6 +314,27 @@ export default function PhotoboothPage({ params }) {
     }, 1000);
   };
 
+  const startChallengeProcess = () => {
+    const randomIndex = Math.floor(Math.random() * FUN_CHALLENGES.length);
+    setCurrentChallenge(FUN_CHALLENGES[randomIndex]);
+
+    let timeLeft = 15; // Défini à 15 secondes
+    setChallengeTimer(timeLeft);
+
+    const timer = setInterval(() => {
+      timeLeft -= 1;
+
+      if (timeLeft > 0) {
+        setChallengeTimer(timeLeft);
+      } else {
+        clearInterval(timer);
+        setChallengeTimer(null);
+        setCurrentChallenge(null);
+        capturePhoto();
+      }
+    }, 1000);
+  };
+
   const loadImage = (src) => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -192,10 +392,8 @@ export default function PhotoboothPage({ params }) {
           type: "photo"
         });
 
-        // 1. Affiche "C'est dans la boîte !"
         setStep("captured");
 
-        // 2. Après 2.5 secondes, bascule vers le choix d'envoi par mail
         setTimeout(() => {
           setStep("email-choice");
         }, 2500);
@@ -206,7 +404,6 @@ export default function PhotoboothPage({ params }) {
     }, "image/jpeg");
   };
 
-  // Gestion de l'envoi d'email
   const handleSendEmail = async (e) => {
     e.preventDefault();
     if (!emailInput) return;
@@ -232,7 +429,6 @@ export default function PhotoboothPage({ params }) {
     }
   };
 
-  // Remise à zéro pour repartir sur la page photobooth initiale
   const resetPhotobooth = () => {
     setCapturedPhotoUrl(null);
     setEmailInput("");
@@ -242,13 +438,12 @@ export default function PhotoboothPage({ params }) {
 
   return (
     <main className="fixed inset-0 bg-black flex flex-col items-center justify-center">
-      {/* Flux de la caméra (visible uniquement en mode live ou décompte) */}
       <video
         ref={videoRef}
         autoPlay
         playsInline
         muted
-        className={`absolute inset-0 w-full h-full object-cover z-0 ${step !== 'live' && countdown === null ? 'hidden' : ''}`}
+        className={`absolute inset-0 w-full h-full object-cover z-0 ${step !== 'live' && countdown === null && challengeTimer === null ? 'hidden' : ''}`}
       />
 
       {frameUrl && step === 'live' && (
@@ -260,7 +455,6 @@ export default function PhotoboothPage({ params }) {
         />
       )}
 
-      {/* --- ÉTAPE : C'EST DANS LA BOÎTE --- */}
       {step === 'captured' && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md animate-in zoom-in duration-300">
           <div className="bg-gradient-to-br from-pink-500 to-purple-600 p-1 rounded-[32px]">
@@ -272,7 +466,6 @@ export default function PhotoboothPage({ params }) {
         </div>
       )}
 
-      {/* --- ÉTAPE : CHOIX OUI / NON POUR L'EMAIL --- */}
       {step === 'email-choice' && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-6 animate-in fade-in">
           <div className="w-full max-w-md bg-gray-900 border border-white/10 p-8 rounded-[40px] text-center shadow-2xl">
@@ -303,7 +496,6 @@ export default function PhotoboothPage({ params }) {
         </div>
       )}
 
-      {/* --- ÉTAPE : SAISIE DE L'EMAIL --- */}
       {step === 'email-input' && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-6 animate-in fade-in">
           <div className="w-full max-w-md bg-gray-900 border border-white/10 p-8 rounded-[40px] shadow-2xl">
@@ -346,7 +538,6 @@ export default function PhotoboothPage({ params }) {
         </div>
       )}
 
-      {/* --- ÉTAPE : SUCCÈS ENVOI --- */}
       {step === 'sent' && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md text-center animate-in zoom-in duration-300">
           <div className="bg-gray-900 border border-white/10 p-10 rounded-[40px] max-w-md w-full mx-4 shadow-2xl">
@@ -366,14 +557,13 @@ export default function PhotoboothPage({ params }) {
         </div>
       )}
 
-      {/* Bouton de sélection des cadres (affiché uniquement en mode live) */}
       {step === 'live' && (
         <>
-          <div className="absolute bottom-10 left-4 z-40">
+          <div className="absolute bottom-10 left-4 z-[9999] pointer-events-auto flex items-center gap-3">
             <button
               type="button"
               onClick={() => setShowFrameSelector(!showFrameSelector)}
-              className="flex items-center gap-2 rounded-full bg-black/60 px-4 py-3 text-sm font-semibold text-white backdrop-blur-md border border-white/10"
+              className="flex items-center gap-2 rounded-full bg-black/80 px-4 py-3 text-sm font-semibold text-white backdrop-blur-md border border-white/20 hover:border-pink-500 transition-all cursor-pointer shadow-xl"
             >
               <Images size={20} />
               Cadres
@@ -381,8 +571,8 @@ export default function PhotoboothPage({ params }) {
           </div>
 
           {showFrameSelector && (
-            <div className="absolute bottom-28 left-0 right-0 z-40 px-4">
-              <div className="mx-auto flex max-w-[720px] gap-2 overflow-x-auto rounded-full bg-black/60 px-4 py-3 backdrop-blur-md border border-white/10">
+            <div className="absolute bottom-28 left-0 right-0 z-[9999] pointer-events-auto px-4">
+              <div className="mx-auto flex max-w-[720px] gap-2 overflow-x-auto rounded-full bg-black/80 px-4 py-3 backdrop-blur-md border border-white/20 shadow-2xl">
                 {frameUrls.map((frame) => (
                   <button
                     key={frame.number}
@@ -391,7 +581,7 @@ export default function PhotoboothPage({ params }) {
                       setSelectedFrameNumber(frame.number);
                       setShowFrameSelector(false);
                     }}
-                    className={`relative h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 transition-transform ${
+                    className={`relative h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 transition-transform cursor-pointer ${
                       selectedFrameNumber === frame.number
                         ? "scale-110 border-pink-500"
                         : "border-white/40"
@@ -410,38 +600,58 @@ export default function PhotoboothPage({ params }) {
         </>
       )}
 
-      {/* Compte à rebours */}
       {countdown !== null && (
         <div className="absolute inset-0 flex items-center justify-center z-40 text-[200px] font-black italic text-pink-500 animate-pulse drop-shadow-[0_0_50px_rgba(236,72,153,0.8)]">
           {countdown}
         </div>
       )}
 
-      {/* Flash visuel */}
+      {challengeTimer !== null && currentChallenge && (
+        <div className="absolute top-12 inset-x-4 z-40 flex flex-col items-center pointer-events-none">
+          <div className="bg-black/85 border-2 border-yellow-400 px-8 py-6 rounded-[35px] max-w-xl w-full text-center shadow-[0_0_50px_rgba(250,204,21,0.4)] backdrop-blur-md animate-in zoom-in duration-200">
+            <div className="flex items-center justify-center gap-2 text-yellow-400 text-xs font-black uppercase tracking-widest mb-2">
+              <Shuffle size={16} className="animate-spin" /> Défi Flash en cours ({challengeTimer}s)
+            </div>
+            <h3 className="text-2xl md:text-3xl font-black italic uppercase text-white tracking-tight leading-tight">
+              {currentChallenge}
+            </h3>
+          </div>
+        </div>
+      )}
+
       {flash && <div className="absolute inset-0 bg-white z-50 animate-pulse" />}
 
-      {/* Barre d'action inférieure (visible uniquement en mode live) */}
-      {step === 'live' && countdown === null && (
+      {step === 'live' && countdown === null && challengeTimer === null && (
         <div className="absolute bottom-10 w-full flex justify-center items-center gap-6 z-40">
           <button
             type="button"
             onClick={() => window.history.back()}
-            className="p-4 bg-black/50 hover:bg-black/80 border border-white/10 rounded-full text-white transition-all"
+            className="p-4 bg-black/50 hover:bg-black/80 border border-white/10 rounded-full text-white transition-all cursor-pointer"
           >
             <X size={24} />
           </button>
 
           <button
             type="button"
+            onClick={startChallengeProcess}
+            className="flex flex-col items-center justify-center w-16 h-16 bg-gradient-to-tr from-yellow-500 to-amber-400 rounded-full border-2 border-white/40 hover:scale-105 shadow-[0_0_25px_rgba(250,204,21,0.5)] transition-all cursor-pointer text-black"
+            aria-label="Lancer un défi aléatoire"
+          >
+            <Shuffle size={20} className="stroke-[2.5]" />
+            <span className="text-[9px] font-black uppercase tracking-tighter">Défi</span>
+          </button>
+
+          <button
+            type="button"
             onClick={startPhotoProcess}
-            className="w-20 h-20 bg-white rounded-full border-4 border-pink-500 hover:scale-105 shadow-[0_0_30px_rgba(236,72,153,0.6)] transition-transform"
+            className="w-20 h-20 bg-white rounded-full border-4 border-pink-500 hover:scale-105 shadow-[0_0_30px_rgba(236,72,153,0.6)] transition-transform cursor-pointer"
             aria-label="Prendre une photo"
           />
 
           <button
             type="button"
             onClick={toggleFullScreen}
-            className="p-4 bg-black/50 hover:bg-black/80 border border-white/10 rounded-full text-white transition-all"
+            className="p-4 bg-black/50 hover:bg-black/80 border border-white/10 rounded-full text-white transition-all cursor-pointer"
           >
             <Maximize2 size={24} />
           </button>
