@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { adminDb, admin } from '@/lib/firebaseAdmin';
+import { Resend } from 'resend';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req) {
   const body = await req.text();
@@ -25,6 +27,7 @@ export async function POST(req) {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     const userId = session.client_reference_id;
+    const customerEmail = session.customer_details?.email || session.customer_email;
 
     const {
       purchaseType,
@@ -47,6 +50,7 @@ export async function POST(req) {
     }
 
     try {
+      // 1. Déblocage de cadre spécifique
       if (purchaseType === 'frame_unlock') {
         if (!eventId || !frameId) throw new Error("Infos manquantes pour le déblocage de cadre");
 
@@ -57,6 +61,7 @@ export async function POST(req) {
         console.log(`✅ Cadre ${frameId} débloqué pour la soirée ${eventId}`);
       }
 
+      // 2. Commande Clé USB seule ou supplémentaire
       else if (purchaseType === 'extra_usb_event') {
         if (!eventId) throw new Error("eventId manquant pour la commande USB");
 
@@ -83,27 +88,43 @@ export async function POST(req) {
 
         await eventRef.update(updateData);
 
-        await adminDb.collection('users').doc(userId).update({
+        await adminDb.collection('users').doc(userId).set({
           usedUsb: admin.firestore.FieldValue.increment(1),
           lastUsbOrderDate: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
+        }, { merge: true });
+
         console.log(`✅ Soirée "${eventName}" mise à jour après paiement USB`);
       }
 
-      // Cas de l'achat d'un abonnement / pack
+      // 3. Achat d'un forfait ou pack (UNIQUE / PRO)
       else {
-        const cleanPlanName = planName ? planName.trim().toUpperCase() : 'BRONZE';
+        const cleanPlanName = planName ? planName.trim().toUpperCase() : 'UNIQUE';
 
         await adminDb.collection('users').doc(userId).set({
           plan: cleanPlanName,
-          billingCycle: billingCycle || 'mensuel',
+          billingCycle: billingCycle || 'Unique',
           status: "active",
           lastPaymentDate: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
-        console.log(`✅ Pack ${cleanPlanName} activé à l'achat pour l'utilisateur ${userId}`);
+        console.log(`✅ Pack ${cleanPlanName} activé pour l'utilisateur ${userId}`);
+      }
+
+      // --- ENVOI OPTIONNEL D'UN EMAIL DE CONFIRMATION AVEC RESEND ---
+      if (customerEmail) {
+        await resend.emails.send({
+          from: 'PartyLens <contact@partylens.fr>',
+          to: [customerEmail],
+          subject: '🎉 Confirmation de votre commande PartyLens !',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #140427; color: #ffffff; padding: 40px; border-radius: 24px;">
+              <h1 style="color: #f97316; font-style: italic; text-align: center;">PARTYLENS</h1>
+              <p style="text-align: center; color: #cbd5e1;">Paiement confirmé ! Votre commande pour <strong>${eventName || 'votre soirée'}</strong> a bien été validée.</p>
+            </div>
+          `
+        }).catch(err => console.error("Erreur envoi email webhook :", err));
       }
 
     } catch (error) {
@@ -116,22 +137,20 @@ export async function POST(req) {
   if (event.type === 'invoice.paid') {
     const invoice = event.data.object;
     
-    // On ne traite pas la première facture de la session checkout car elle est déjà gérée au-dessus
     if (invoice.billing_reason === 'subscription_cycle') {
       const subscriptionId = invoice.subscription;
       
       try {
-        // On récupère les métadonnées qu'on a stockées dans l'abonnement
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-        const { userId, planName, billingCycle } = subscription.metadata || {};
+        const { userId, planName } = subscription.metadata || {};
 
         if (userId) {
-          await adminDb.collection('users').doc(userId).update({
+          await adminDb.collection('users').doc(userId).set({
             status: "active",
             lastPaymentDate: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
-          });
-          console.log(`🔄 RESSOUCRIPTION AUTO : Date de validité repoussée de 30 jours pour ${userId} (Plan: ${planName})`);
+          }, { merge: true });
+          console.log(`🔄 RENOUVELLEMENT AUTO : Abonnement prolongé pour ${userId} (Plan: ${planName})`);
         }
       } catch (error) {
         console.error("❌ Erreur lors du renouvellement automatique :", error);

@@ -14,30 +14,31 @@ export async function POST(request) {
       );
     }
 
-    // 1. Télécharger l'image depuis Firebase Storage
+    // 1. Télécharger l'image depuis la source (ex: Firebase Storage)
     const imageResponse = await fetch(photoUrl);
+    if (!imageResponse.ok) {
+      throw new Error("Impossible de récupérer l'image depuis l'URL fournie");
+    }
     const arrayBuffer = await imageResponse.arrayBuffer();
-    
-    // 2. Conversion nécessaire en Base64 pour Resend
-    const base64Buffer = Buffer.from(arrayBuffer).toString('base64');
+    const buffer = Buffer.from(arrayBuffer);
 
-    // 3. Envoi de l'e-mail via Resend
+    // 2. Envoi de l'e-mail via Resend
     const data = await resend.emails.send({
       from: 'PartyLens <contact@partylens.fr>',
       to: [email],
       subject: '📸 Votre souvenir photo PartyLens !',
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #0f172a; color: #ffffff; padding: 40px; border-radius: 24px;">
-          <h2 style="color: #ec4899; text-transform: uppercase; font-style: italic; text-align: center; margin-bottom: 20px;">
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #140427; color: #ffffff; padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1);">
+          <h2 style="color: #f97316; text-transform: uppercase; font-style: italic; text-align: center; margin-bottom: 10px; font-size: 24px;">
             Souvenir de l'événement !
           </h2>
-          <p style="text-align: center; color: #94a3b8; font-size: 14px; margin-bottom: 30px;">
-            Merci d'avoir immortalisé ce moment avec PartyLens. Votre photo est également jointe à cet e-mail pour que vous puissiez l'enregistrer facilement !
+          <p style="text-align: center; color: #cbd5e1; font-size: 14px; margin-bottom: 30px; line-height: 1.5;">
+            Merci d'avoir immortalisé ce moment avec PartyLens. Votre photo est également jointe à cet e-mail pour que vous puissiez l'enregistrer facilement en haute qualité !
           </p>
           <div style="text-align: center; margin-bottom: 30px;">
-            <img src="${photoUrl}" alt="Photo Photobooth" style="max-width: 100%; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);" />
+            <img src="${photoUrl}" alt="Photo Souvenir PartyLens" style="max-width: 100%; height: auto; border-radius: 16px; border: 1px solid rgba(255,255,255,0.15);" />
           </div>
-          <p style="text-align: center; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 2px;">
+          <p style="text-align: center; color: #f59e0b; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold;">
             Propulsé par PartyLens
           </p>
         </div>
@@ -45,16 +46,16 @@ export async function POST(request) {
       attachments: [
         {
           filename: `souvenir-partylens-${Date.now()}.jpg`,
-          content: base64Buffer, // Utilisation du contenu converti en base64
+          content: buffer,
         },
       ],
     });
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
-    console.error("Erreur Resend:", error);
+    console.error("Erreur Resend API :", error);
     return NextResponse.json(
-      { error: "Erreur interne lors de l'envoi de l'e-mail" }, 
+      { error: error.message || "Erreur interne lors de l'envoi de l'e-mail" }, 
       { status: 500 }
     );
   }

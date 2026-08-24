@@ -44,7 +44,7 @@ const PRICES = {
   usb: 15
 };
 
-// Définissez ici vos identifiants administrateurs en dur
+// Identifiants administrateurs
 const ADMIN_CREDENTIALS = {
   email: "contact@partylens.fr",
   password: "DdNt12122015@"
@@ -134,7 +134,6 @@ const hasShippingInfo = (shipping) => {
 export default function SuperAdmin() {
   const router = useRouter();
   
-  // Utilisation de sessionStorage pour garder la session active pendant la navigation sur la page
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   
@@ -349,100 +348,98 @@ export default function SuperAdmin() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center text-white italic font-black uppercase tracking-[0.3em]">
-        <Loader2 className="animate-spin text-[#ff0080]" size={32} />
+      <div className="min-h-screen bg-gradient-to-b from-[#2d104d] via-[#210a3b] to-[#140427] flex items-center justify-center text-white italic font-black uppercase tracking-[0.3em]">
+        <Loader2 className="animate-spin text-orange-400" size={32} />
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <main className="min-h-screen bg-[#050505] text-white flex items-center justify-center p-6 relative overflow-hidden font-sans">
-        <div className="bg-blobs">
-          <div className="blob blob-pink"></div>
-          <div className="blob blob-purple"></div>
+      <main className="min-h-screen bg-gradient-to-b from-[#2d104d] via-[#210a3b] to-[#140427] text-white flex items-center justify-center p-6 relative overflow-hidden font-sans">
+        {/* EFFET DE VAGUES LUMINEUSES ORANGE EN ARRIÈRE-PLAN */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+          <svg className="absolute -top-12 left-0 w-full h-[500px] text-orange-500/35 blur-xl opacity-90" viewBox="0 0 1440 320" preserveAspectRatio="none">
+            <path fill="currentColor" d="M0,160L60,176C120,192,240,224,360,213.3C480,203,600,149,720,154.7C840,160,960,224,1080,229.3C1200,235,1320,181,1380,154.7L1440,128L1440,0L1380,0C1320,0,1200,0,1080,0C960,0,840,0,720,0C600,0,480,0,360,0C240,0,120,0,0,0Z"></path>
+          </svg>
+          <div className="absolute top-[18%] left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-r from-orange-500/40 via-amber-400/30 to-pink-500/20 rounded-full blur-[130px]"></div>
         </div>
 
-        <div className="relative z-10 w-full max-w-md glass-card p-10 rounded-[40px] border border-white/10 shadow-2xl">
+        <div className="relative z-10 w-full max-w-md bg-white/[0.08] border border-white/20 p-10 rounded-[40px] backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-2">
-              CONSOLE <span className="text-[#ff0080]">BOSS</span>
+              CONSOLE <span className="bg-gradient-to-r from-amber-300 via-orange-400 to-amber-200 bg-clip-text text-transparent">BOSS</span>
             </h1>
-            <p className="text-gray-400 text-xs uppercase tracking-widest font-bold">Accès restreint administrateur</p>
+            <p className="text-orange-200/70 text-xs uppercase tracking-widest font-bold">Accès restreint administrateur</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-gray-400 mb-2">Adresse Email</label>
+              <label className="block text-[10px] font-black uppercase tracking-wider text-orange-200/80 mb-2">Adresse Email</label>
               <input
                 type="email"
                 value={emailInput}
                 onChange={(e) => setEmailInput(e.target.value)}
                 placeholder="contact@partylens.fr"
                 required
-                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-xs font-bold text-white outline-none focus:border-[#ff0080] transition-all placeholder:text-gray-700"
+                className="w-full bg-black/40 border border-white/20 p-4 rounded-2xl text-xs font-bold text-white outline-none focus:border-orange-400 transition-all placeholder:text-gray-500"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-gray-400 mb-2">Mot de passe</label>
+              <label className="block text-[10px] font-black uppercase tracking-wider text-orange-200/80 mb-2">Mot de passe</label>
               <input
                 type="password"
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
                 placeholder="••••••••••••"
                 required
-                className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-xs font-bold text-white outline-none focus:border-[#ff0080] transition-all placeholder:text-gray-700"
+                className="w-full bg-black/40 border border-white/20 p-4 rounded-2xl text-xs font-bold text-white outline-none focus:border-orange-400 transition-all placeholder:text-gray-500"
               />
             </div>
 
             {loginError && (
-              <p className="text-red-500 text-[10px] font-black uppercase tracking-wider text-center">{loginError}</p>
+              <p className="text-red-400 text-[10px] font-black uppercase tracking-wider text-center">{loginError}</p>
             )}
 
             <button
               type="submit"
               disabled={submittingLogin}
-              className="w-full mt-4 bg-[#ff0080] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all hover:opacity-90 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,0,128,0.4)]"
+              className="w-full mt-4 bg-gradient-to-r from-orange-500 via-amber-500 to-pink-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(249,115,22,0.6)] border border-orange-300/40"
             >
               {submittingLogin ? <Loader2 className="animate-spin" size={16} /> : <>Se connecter <ArrowRight size={16} /></>}
             </button>
           </form>
         </div>
-
-        <style jsx global>{`
-          .bg-blobs { position: fixed; inset: 0; z-index: 0; background: #050505; }
-          .blob { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.15; }
-          .blob-pink { top: -10%; left: -10%; width: 60vw; height: 60vw; background: #ff0080; }
-          .blob-purple { bottom: -10%; right: -10%; width: 50vw; height: 50vw; background: #7928ca; }
-          .glass-card { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(40px); }
-        `}</style>
       </main>
     );
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center text-white italic font-black uppercase tracking-[0.3em]">
+      <div className="min-h-screen bg-gradient-to-b from-[#2d104d] via-[#210a3b] to-[#140427] flex items-center justify-center text-white italic font-black uppercase tracking-[0.3em]">
         Chargement des données...
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#050505] text-white p-6 md:p-12 font-sans relative overflow-hidden">
-      <div className="bg-blobs">
-        <div className="blob blob-pink"></div>
-        <div className="blob blob-purple"></div>
+    <main className="min-h-screen bg-gradient-to-b from-[#2d104d] via-[#210a3b] to-[#140427] text-white p-6 md:p-12 font-sans relative overflow-hidden">
+      {/* EFFET DE VAGUES LUMINEUSES ORANGE EN ARRIÈRE-PLAN */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <svg className="absolute -top-12 left-0 w-full h-[500px] text-orange-500/35 blur-xl opacity-90" viewBox="0 0 1440 320" preserveAspectRatio="none">
+          <path fill="currentColor" d="M0,160L60,176C120,192,240,224,360,213.3C480,203,600,149,720,154.7C840,160,960,224,1080,229.3C1200,235,1320,181,1380,154.7L1440,128L1440,0L1380,0C1320,0,1200,0,1080,0C960,0,840,0,720,0C600,0,480,0,360,0C240,0,120,0,0,0Z"></path>
+        </svg>
+        <div className="absolute top-[18%] left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-r from-orange-500/40 via-amber-400/30 to-pink-500/20 rounded-full blur-[130px]"></div>
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto">
-        <header className="flex justify-between items-center mb-16">
-          <h1 className="text-6xl font-black italic uppercase tracking-tighter">
-            CONSOLE <span className="text-[#ff0080]">BOSS</span>
+        <header className="flex flex-col md:flex-row justify-between items-center mb-16 gap-6">
+          <h1 className="text-5xl md:text-6xl font-black italic uppercase tracking-tighter">
+            CONSOLE <span className="bg-gradient-to-r from-amber-300 via-orange-400 to-amber-200 bg-clip-text text-transparent">BOSS</span>
           </h1>
 
-          <nav className="flex gap-2 bg-white/5 p-1.5 rounded-full border border-white/10 backdrop-blur-md">
+          <nav className="flex flex-wrap gap-2 bg-white/[0.08] p-1.5 rounded-full border border-white/20 backdrop-blur-xl shadow-lg">
             {[
               { id: "dashboard", label: "STATS", icon: <BarChart3 size={14} /> },
               { id: "organisateurs", label: "CLIENTS", icon: <User size={14} /> },
@@ -455,8 +452,8 @@ export default function SuperAdmin() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-6 py-3 rounded-full text-[10px] font-black uppercase transition-all ${
                   activeTab === tab.id
-                    ? 'bg-[#ff0080] text-white shadow-[0_0_20px_rgba(255,0,128,0.4)]'
-                    : 'text-gray-500 hover:text-white'
+                    ? 'bg-gradient-to-r from-orange-500 via-amber-500 to-pink-500 text-white shadow-[0_0_20px_rgba(249,115,22,0.5)] border border-orange-300/40'
+                    : 'text-gray-300 hover:text-white hover:bg-white/10'
                 }`}
               >
                 {tab.icon} {tab.label}
@@ -467,36 +464,36 @@ export default function SuperAdmin() {
 
         {activeTab === "dashboard" && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 animate-in fade-in slide-in-from-bottom-4">
-            <StatCard label="CHIFFRE D'AFFAIRES" value={`${stats.totalCA.toFixed(0)}€`} icon={<Euro className="text-green-500" />} />
-            <StatCard label="ABONNEMENTS" value={`${(stats.bronze.ca + stats.silver.ca + stats.gold.ca).toFixed(0)}€`} icon={<Zap className="text-yellow-500" />} />
-            <StatCard label="CADRES UNITÉS" value={stats.frames.count} icon={<CheckCircle className="text-blue-500" />} />
+            <StatCard label="CHIFFRE D'AFFAIRES" value={`${stats.totalCA.toFixed(0)}€`} icon={<Euro className="text-orange-400" />} />
+            <StatCard label="ABONNEMENTS" value={`${(stats.bronze.ca + stats.silver.ca + stats.gold.ca).toFixed(0)}€`} icon={<Zap className="text-amber-300" />} />
+            <StatCard label="CADRES UNITÉS" value={stats.frames.count} icon={<CheckCircle className="text-orange-400" />} />
           </div>
         )}
 
         {activeTab === "avis" && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in">
             {feedbacks.map((f) => (
-              <div key={f.id} className="glass-card p-8 rounded-[35px] border border-white/5 relative group hover:border-[#ff0080]/30 transition-all">
+              <div key={f.id} className="bg-white/[0.08] border border-white/20 p-8 rounded-[35px] relative group hover:border-orange-400/80 transition-all backdrop-blur-xl shadow-xl">
                 <button 
                   onClick={() => deleteFeedback(f.id)}
-                  className="absolute top-6 right-6 text-gray-600 hover:text-red-500 transition-colors"
+                  className="absolute top-6 right-6 text-gray-400 hover:text-red-400 transition-colors"
                 >
                   <Trash2 size={18} />
                 </button>
 
                 <div className="flex items-center gap-1 mb-6">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={14} fill={i < f.rating ? "#ff0080" : "none"} className={i < f.rating ? "text-[#ff0080]" : "text-gray-800"} />
+                    <Star key={i} size={14} fill={i < f.rating ? "#fbbf24" : "none"} className={i < f.rating ? "text-amber-400" : "text-gray-600"} />
                   ))}
                 </div>
 
                 <p className="text-lg font-bold italic mb-6 leading-tight">"{f.message}"</p>
 
-                <div className="space-y-3 pt-6 border-t border-white/5">
-                  <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-wider text-gray-400">
-                    <Mail size={14} className="text-[#ff0080]" /> {f.email}
+                <div className="space-y-3 pt-6 border-t border-white/10">
+                  <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-wider text-orange-200/80">
+                    <Mail size={14} className="text-orange-400" /> {f.email}
                   </div>
-                  <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-widest text-gray-600">
+                  <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-widest text-gray-400">
                     <Calendar size={14} /> {f.createdAt?.toDate().toLocaleDateString('fr-FR')}
                   </div>
                   <div className="flex items-center gap-3 text-[10px] font-black uppercase text-white">
@@ -506,7 +503,7 @@ export default function SuperAdmin() {
 
                 <a 
                   href={`mailto:${f.email}?subject=Votre avis sur PartyLens`}
-                  className="mt-6 block text-center bg-white/5 hover:bg-white text-white hover:text-black py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all no-underline border border-white/10"
+                  className="mt-6 block text-center bg-white/15 hover:bg-white text-white hover:text-purple-950 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all no-underline border border-white/25 shadow-md"
                 >
                   Répondre par Email
                 </a>
@@ -516,7 +513,7 @@ export default function SuperAdmin() {
         )}
 
         {activeTab === "logistique" && (
-          <div className="grid gap-6">
+          <div className="grid gap-6 animate-in fade-in">
             {events.filter((e) => e.usbOrdered || e.plan === "VIP GOLD").map((e) => {
               const user = users.find((u) => u.id === e.userId);
               const shipping = getShippingInfo(e, user);
@@ -525,102 +522,65 @@ export default function SuperAdmin() {
               return (
                 <div
                   key={e.id}
-                  className="glass-card p-8 rounded-[40px] border border-white/5 flex flex-wrap justify-between items-center gap-8 hover:border-[#ff0080]/30 transition-all"
+                  className="bg-white/[0.08] border border-white/20 p-8 rounded-[40px] flex flex-wrap justify-between items-center gap-8 hover:border-orange-400/90 hover:shadow-[0_0_30px_rgba(249,115,22,0.45)] transition-all backdrop-blur-xl"
                 >
                   <div className="flex-grow min-w-[250px]">
-                    <p className="text-[10px] font-black text-[#ff0080] uppercase tracking-widest mb-1">
+                    <p className="text-[10px] font-black text-amber-300 uppercase tracking-widest mb-1">
                       {e.usbStatus || "VALIDÉE"}
                     </p>
 
-                    <h3 className="text-4xl font-black italic uppercase mb-6 tracking-tighter">
+                    <h3 className="text-2xl font-black italic tracking-tighter mb-2">
                       {e.eventName}
                     </h3>
+                    <p className="text-xs text-orange-200/80 font-bold mb-2">
+                      Organisateur ID : <span className="text-white">{e.userId}</span>
+                    </p>
 
-                    <div className="bg-black/30 p-6 rounded-3xl border border-white/5 text-[10px] font-bold text-gray-500 uppercase leading-relaxed">
-                      {hasShipping ? (
-                        <>
-                          <span className="text-white text-xs">
-                            {shipping.name || "Nom non renseigné"}
-                          </span>
-                          <br />
-                          <span className="text-gray-300">
-                            {shipping.address || "Rue non renseignée"}
-                          </span>
-                          <br />
-                          <span className="text-gray-300">
-                            {shipping.zip || "CP non renseigné"} {shipping.city || "Ville non renseignée"}
-                          </span>
-                          <br />
-                          <span className="text-gray-600">
-                            {shipping.phone || "Téléphone non renseigné"}
-                          </span>
-                          {shipping.email && (
-                            <>
-                              <br />
-                              <span className="text-gray-600 lowercase normal-case">
-                                {shipping.email}
-                              </span>
-                            </>
-                          )}
-                        </>
-                      ) : (
-                        <div className="flex flex-col">
-                          <span className="text-red-500 italic">
-                            ADRESSE NON RENSEIGNÉE
-                          </span>
-                          <span className="text-[8px] text-gray-600 lowercase normal-case mt-1">
-                            Document event : {e.id}
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                    {hasShipping ? (
+                      <div className="mt-4 p-4 rounded-2xl bg-black/40 border border-white/10 text-xs space-y-1 text-gray-200">
+                        <p><strong className="text-white">Nom :</strong> {shipping.name}</p>
+                        <p><strong className="text-white">Adresse :</strong> {shipping.address}, {shipping.zip} {shipping.city}</p>
+                        <p><strong className="text-white">Tél :</strong> {shipping.phone || "Non renseigné"} | <strong className="text-white">Email :</strong> {shipping.email}</p>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-amber-300 italic mt-2">Aucune adresse de livraison renseignée.</p>
+                    )}
                   </div>
 
-                  <div className="flex flex-col gap-3 min-w-[160px]">
-                    <StatusRow label="1. VALIDÉE" date={e.createdAt} active={true} />
-                    <StatusRow label="2. PRÉPARÉE" date={e.usb_date_preparé} active={Boolean(e.usb_date_preparé)} />
-                    <StatusRow label="3. ENVOYÉE" date={e.usb_date_envoyé} active={Boolean(e.usb_date_envoyé)} />
-                    <StatusRow label="4. REÇUE" date={e.usb_date_recue} active={Boolean(e.usb_date_recue)} />
-                  </div>
-
-                  <div className="flex flex-col gap-3 min-w-[240px]">
-                    <div className="relative">
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <div className="flex flex-col gap-2">
+                      <select
+                        value={e.usbStatus || "en attente"}
+                        onChange={(ev) => updateUsbStatus(e.id, ev.target.value)}
+                        className="bg-black/40 border border-white/20 px-4 py-2 rounded-xl text-xs font-bold text-white outline-none focus:border-orange-400"
+                      >
+                        <option value="en attente" className="bg-purple-950">En attente</option>
+                        <option value="en préparation" className="bg-purple-950">En préparation</option>
+                        <option value="envoyé" className="bg-purple-950">Envoyé</option>
+                      </select>
                       <input
                         type="text"
-                        placeholder="N° DE SUIVI"
+                        placeholder="N° de suivi Colissimo"
                         defaultValue={e.trackingNumber || ""}
-                        onBlur={(el) => updateUsbStatus(e.id, e.usbStatus || "validée", el.target.value)}
-                        className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-[10px] font-black uppercase text-[#ff0080] outline-none focus:border-[#ff0080] transition-all placeholder:text-gray-800"
+                        onBlur={(ev) => updateUsbStatus(e.id, e.usbStatus || "en attente", ev.target.value)}
+                        className="bg-black/40 border border-white/20 px-4 py-2 rounded-xl text-xs font-bold text-white outline-none focus:border-orange-400 placeholder:text-gray-500"
                       />
-                      <Truck size={14} className="absolute right-4 top-4 text-gray-800" />
                     </div>
-
-                    <select
-                      className="bg-[#111] border border-white/10 p-4 rounded-2xl text-[10px] font-black uppercase text-white outline-none cursor-pointer hover:border-[#ff0080]"
-                      onChange={(opt) => updateUsbStatus(e.id, opt.target.value)}
-                      value={e.usbStatus || "validée"}
-                    >
-                      <option value="validée">1. VALIDÉE</option>
-                      <option value="preparé">2. PRÉPARÉE</option>
-                      <option value="envoyé">3. ENVOYÉE</option>
-                      <option value="recue">4. REÇUE</option>
-                    </select>
 
                     <div className="flex gap-2">
                       <button
                         onClick={() => downloadAllPhotos(e)}
                         disabled={downloadingId === e.id}
-                        className="flex-grow py-4 bg-white/5 hover:bg-white text-white hover:text-black rounded-2xl font-black uppercase text-[10px] transition-all flex items-center justify-center gap-3 border border-white/10"
+                        className="bg-white/15 hover:bg-white hover:text-purple-950 text-white px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all border border-white/25 flex items-center gap-2 shadow-md"
                       >
                         {downloadingId === e.id ? <Loader2 className="animate-spin" size={14} /> : <Download size={14} />}
                         ZIP
                       </button>
-
                       <button
                         onClick={() => purgeEvent(e.id)}
-                        className="p-4 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white rounded-2xl transition-all border border-red-500/20"
+                        className="bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all border border-red-500/30 flex items-center gap-2"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
@@ -630,98 +590,50 @@ export default function SuperAdmin() {
           </div>
         )}
 
-        {(activeTab === "organisateurs" || activeTab === "djs") && (
-          <div className="glass-card rounded-[40px] border border-white/5 overflow-hidden animate-in fade-in">
-            <table className="w-full text-left">
-              <thead className="bg-white/5 text-[9px] uppercase font-black text-gray-500 tracking-widest">
-                <tr>
-                  <th className="p-6">NOM</th>
-                  <th className="p-6">PACK</th>
-                  <th className="p-6">INFOS</th>
-                  <th className="p-6">TOTAL</th>
-                </tr>
-              </thead>
+        {activeTab === "organisateurs" && (
+          <div className="grid gap-6 animate-in fade-in">
+            {users.map((u) => (
+              <div key={u.id} className="bg-white/[0.08] border border-white/20 p-8 rounded-[40px] flex justify-between items-center backdrop-blur-xl shadow-xl">
+                <div>
+                  <h3 className="text-xl font-black italic tracking-tighter mb-1">{u.name || u.email}</h3>
+                  <p className="text-xs text-orange-200/80">Plan : <span className="text-amber-300 font-bold">{u.plan || "Gratuit"}</span></p>
+                  <p className="text-[10px] text-gray-400 mt-1">ID : {u.id}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-bold text-white">{u.email}</p>
+                  <p className="text-[10px] text-gray-400">Inscrit le {u.createdAt?.toDate?.()?.toLocaleDateString('fr-FR') || "N/A"}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
-              <tbody className="text-[11px] font-bold uppercase italic">
-                {users
-                  .filter((u) => activeTab === "organisateurs" ? (u.role === 'organisateur' || !u.role) : u.role === 'dj')
-                  .map((u) => (
-                    <tr key={u.id} className="border-b border-white/5 hover:bg-white/[0.02]">
-                      <td className="p-6">
-                        {u.displayName || u.email.split('@')[0]}
-                      </td>
-
-                      <td className="p-6">
-                        <span className="px-3 py-1.5 bg-[#ff0080]/10 text-[#ff0080] rounded-lg border border-[#ff0080]/20">
-                          {u.plan || "BRONZE"}
-                        </span>
-                      </td>
-
-                      <td className="p-6 text-gray-500">
-                        {u.email}
-                      </td>
-
-                      <td className="p-6">
-                        {activeTab === "djs" ? `${u.usedUsb || 0} USB` : `${events.filter((e) => e.userId === u.id).length} SOIRÉES`}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
+        {activeTab === "djs" && (
+          <div className="bg-white/[0.08] border border-white/20 p-10 rounded-[40px] backdrop-blur-xl text-center shadow-xl">
+            <h3 className="text-2xl font-black italic mb-4">Espace DJs / Régie</h3>
+            <p className="text-xs text-orange-200/80">Gestion centralisée des accès DJ et des demandes de titres en temps réel.</p>
           </div>
         )}
       </div>
 
       {notify.show && (
-        <div className="fixed bottom-10 right-10 bg-[#ff0080] text-white px-10 py-5 rounded-2xl font-black uppercase text-[10px] italic shadow-[0_10px_40px_rgba(255,0,128,0.5)] z-50 animate-in slide-in-from-right-10">
+        <div className="fixed bottom-6 right-6 bg-gradient-to-r from-orange-500 via-amber-500 to-pink-500 text-white font-black uppercase tracking-wider text-xs px-6 py-4 rounded-2xl shadow-[0_0_30px_rgba(249,115,22,0.6)] border border-orange-300/40 z-50 animate-bounce">
           {notify.msg}
         </div>
       )}
-
-      <style jsx global>{`
-        .bg-blobs { position: fixed; inset: 0; z-index: 0; background: #050505; }
-        .blob { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.15; }
-        .blob-pink { top: -10%; left: -10%; width: 60vw; height: 60vw; background: #ff0080; }
-        .blob-purple { bottom: -10%; right: -10%; width: 50vw; height: 50vw; background: #7928ca; }
-        .glass-card { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(40px); }
-      `}</style>
     </main>
   );
 }
 
 function StatCard({ label, value, icon }) {
   return (
-    <div className="glass-card p-10 rounded-[50px] border border-white/5 relative overflow-hidden group">
-      <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-30 transition-all">
-        {icon}
-      </div>
-
-      <p className="text-[10px] font-black uppercase text-gray-500 tracking-[0.2em] mb-4">
-        {label}
-      </p>
-
-      <h2 className="text-6xl font-black italic tracking-tighter">
-        {value}
-      </h2>
-    </div>
-  );
-}
-
-function StatusRow({ label, date, active }) {
-  return (
-    <div className={`flex items-center gap-3 ${active ? 'opacity-100' : 'opacity-20'}`}>
-      <div className={`w-2.5 h-2.5 rounded-full ${active ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.6)]' : 'bg-white'}`} />
-
+    <div className="bg-white/[0.08] border border-white/20 p-8 rounded-[30px] flex items-center justify-between backdrop-blur-xl shadow-xl">
       <div>
-        <p className="text-[9px] font-black uppercase tracking-tighter">
-          {label}
-        </p>
-
-        {date && (
-          <p className="text-[8px] text-gray-500 font-bold">
-            {new Date(date.seconds ? date.toDate() : date).toLocaleDateString()}
-          </p>
-        )}
+        <p className="text-[10px] font-black uppercase tracking-widest text-orange-200/70 mb-2">{label}</p>
+        <p className="text-4xl font-black italic tracking-tighter text-white">{value}</p>
+      </div>
+      <div className="p-4 rounded-2xl bg-black/40 border border-white/10 shadow-inner">
+        {icon}
       </div>
     </div>
   );

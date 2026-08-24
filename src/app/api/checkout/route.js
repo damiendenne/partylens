@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { Resend } from 'resend';
-import PaymentSuccessEmail from '@/email/payment-success';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -17,14 +16,13 @@ export async function POST(req) {
       userId,
       eventName,
       eventId,
-      frameId,
       shippingInfo,
-      customerEmail, // Assurez-vous de récupérer l'email du client depuis le body si besoin
+      customerEmail,
       success_url: customSuccessUrl,
       cancel_url: customCancelUrl
     } = body;
 
-    // Vos 3 prix Stripe officiels
+    // Identifiants Prix Stripe
     const STRIPE_PRICES = {
       forfait_999: "price_1TTRIL0kxrnMCRhvsIs6fydu", 
       forfait_2499: "price_1TTRII0kxrnMCRhvd9j5QlZX", 
@@ -37,7 +35,7 @@ export async function POST(req) {
 
     const lineItems = [];
 
-    // --- LOGIQUE DE SÉLECTION ---
+    // Logique d'ajout des articles dans le panier Stripe
     if (planId === 'usb_only') {
       lineItems.push({ price: STRIPE_PRICES.usb, quantity: 1 });
     } else {
@@ -59,14 +57,18 @@ export async function POST(req) {
     const sessionMode = 'payment';
     const purchaseType = planId === 'usb_only' ? 'extra_usb_event' : 'subscription_upgrade';
 
-    // URLs de retour
+    // Gestion dynamique des URLs de redirection
     let finalSuccessUrl = `https://partylens.fr/admin?success=true&session_id={CHECKOUT_SESSION_ID}`;
     let finalCancelUrl = `https://partylens.fr/admin?canceled=true`;
     
-    if (customSuccessUrl) finalSuccessUrl = customSuccessUrl + (customSuccessUrl.includes('?') ? '&' : '?') + "session_id={CHECKOUT_SESSION_ID}";
-    if (customCancelUrl) finalCancelUrl = customCancelUrl;
+    if (customSuccessUrl) {
+      finalSuccessUrl = customSuccessUrl + (customSuccessUrl.includes('?') ? '&' : '?') + "session_id={CHECKOUT_SESSION_ID}";
+    }
+    if (customCancelUrl) {
+      finalCancelUrl = customCancelUrl;
+    }
 
-    // Configuration de la session Stripe
+    // Configuration de la session Stripe Checkout
     const sessionData = {
       payment_method_types: ['card'],
       line_items: lineItems,
@@ -75,8 +77,7 @@ export async function POST(req) {
       success_url: finalSuccessUrl,
       cancel_url: finalCancelUrl,
       client_reference_id: userId,
-      // Si vous avez l'email du client, vous pouvez le pré-remplir sur Stripe :
-      // customer_email: customerEmail, 
+      customer_email: customerEmail || undefined,
       metadata: {
         purchaseType,
         planName: planId ? planId.toUpperCase() : '',
@@ -94,24 +95,10 @@ export async function POST(req) {
 
     const session = await stripe.checkout.sessions.create(sessionData);
 
-    /* 
-      NOTE : Si vous voulez envoyer l'email d'ici (attention, le paiement n'est pas encore fait, 
-      c'est juste la création du lien), ou idéalement dans votre Webhook Stripe :
-      
-      if (customerEmail) {
-        await resend.emails.send({
-          from: 'PartyLens <contact@partylens.fr>',
-          to: [customerEmail],
-          subject: 'Confirmation de votre commande PartyLens',
-          react: <PaymentSuccessEmail eventName={eventName || 'Votre événement'} />,
-        });
-      }
-    */
-
     return NextResponse.json({ url: session.url });
 
   } catch (error) {
-    console.error("Erreur Stripe :", error);
+    console.error("Erreur Stripe Checkout API :", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

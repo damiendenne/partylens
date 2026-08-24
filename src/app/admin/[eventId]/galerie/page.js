@@ -2,10 +2,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import Link from 'next/link';
-import { ArrowLeft, Download, Image as ImageIcon, Loader2, BookOpen, Play } from 'lucide-react'; // Ajout de Play
+import { ArrowLeft, Download, Image as ImageIcon, Loader2, BookOpen, Play } from 'lucide-react';
 import JSZip from 'jszip'; 
 
 export default function GaleriePage() {
@@ -15,7 +15,7 @@ export default function GaleriePage() {
   const [loading, setLoading] = useState(true);
   const [photos, setPhotos] = useState([]);
   const [videos, setVideos] = useState([]);
-  const [mediaItems, setMediaItems] = useState([]); // Tableau fusionné
+  const [mediaItems, setMediaItems] = useState([]);
   const [eventName, setEventName] = useState("");
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
 
@@ -65,12 +65,10 @@ export default function GaleriePage() {
     });
     setMediaItems(combined);
     
-    // On arrête le chargement une fois la première fusion faite
     if (photos.length > 0 || videos.length > 0 || !loading) {
       setLoading(false);
     }
     
-    // Sécurité de secours si la base est vraiment vide
     const timer = setTimeout(() => setLoading(false), 2000);
     return () => clearTimeout(timer);
   }, [photos, videos]);
@@ -134,48 +132,65 @@ export default function GaleriePage() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white">
-      <Loader2 className="animate-spin text-[#ff0080] mb-4" size={40} />
-      <p className="text-[10px] uppercase tracking-[0.4em] font-black opacity-50 italic">Chargement des souvenirs...</p>
+    <div className="min-h-screen bg-[#140427] flex flex-col items-center justify-center text-white font-sans">
+      <Loader2 className="animate-spin text-orange-400 mb-4 drop-shadow-[0_0_15px_rgba(249,115,22,0.6)]" size={40} />
+      <p className="text-[10px] uppercase tracking-[0.4em] font-black text-orange-200/70 italic">Chargement des souvenirs...</p>
     </div>
   );
 
   return (
-    <main className="min-h-screen relative overflow-hidden p-6 md:p-12 font-sans bg-black text-white">
-      <div className="bg-blobs">
-        <div className="blob blob-pink"></div>
-        <div className="blob blob-purple"></div>
-        <div className="blob blob-blue"></div>
+    <main className="min-h-screen bg-gradient-to-b from-[#2d104d] via-[#210a3b] to-[#140427] text-white p-6 md:p-12 font-sans overflow-x-hidden relative pb-16">
+      
+      {/* EFFET DE VAGUES LUMINEUSES ORANGE EN ARRIÈRE-PLAN */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <svg className="absolute -top-12 left-0 w-full h-[500px] text-orange-500/35 blur-xl opacity-90" viewBox="0 0 1440 320" preserveAspectRatio="none">
+          <path fill="currentColor" d="M0,160L60,176C120,192,240,224,360,213.3C480,203,600,149,720,154.7C840,160,960,224,1080,229.3C1200,235,1320,181,1380,154.7L1440,128L1440,0L1380,0C1320,0,1200,0,1080,0C960,0,840,0,720,0C600,0,480,0,360,0C240,0,120,0,0,0Z"></path>
+        </svg>
+
+        <svg className="absolute top-[30%] -left-20 w-[130%] h-[550px] text-amber-500/30 blur-2xl transform rotate-3" viewBox="0 0 1440 320" preserveAspectRatio="none">
+          <path fill="currentColor" d="M0,96L80,122.7C160,149,320,203,480,208C640,213,800,171,960,149.3C1120,128,1280,128,1360,128L1440,128L1440,320L1360,320C1280,320,1120,320,960,320C800,320,640,320,480,320C320,320,160,320,80,320L0,320Z"></path>
+        </svg>
+
+        <svg className="absolute bottom-0 right-0 w-full h-[500px] text-orange-600/35 blur-xl opacity-90" viewBox="0 0 1440 320" preserveAspectRatio="none">
+          <path fill="currentColor" d="M0,224L60,213.3C120,203,240,181,360,186.7C480,192,600,224,720,218.7C840,213,960,171,1080,160C1200,149,1320,171,1380,181.3L1440,192L1440,320L1380,320C1280,320,1120,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"></path>
+        </svg>
+
+        <div className="absolute top-[18%] left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-r from-orange-500/40 via-amber-400/30 to-pink-500/20 rounded-full blur-[130px]"></div>
       </div>
 
       <div className="max-w-6xl mx-auto relative z-10">
-        <header className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        
+        {/* EN-TÊTE */}
+        <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="flex items-center gap-5">
-            <Link href="/admin" className="p-4 glass-card rounded-2xl text-gray-400 hover:text-white transition-all border border-white/5 no-underline">
-              <ArrowLeft size={24} />
+            <Link 
+              href="/admin" 
+              className="p-3.5 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-2xl text-white transition-all border border-white/20 shadow-lg no-underline active:scale-95"
+            >
+              <ArrowLeft size={20} />
             </Link>
             <div>
-              <h1 className="text-3xl md:text-4xl font-black italic uppercase tracking-tighter leading-none">
-                Galerie <span className="text-[#ff0080]">/</span> {eventName}
+              <h1 className="text-3xl md:text-4xl font-black italic uppercase tracking-tighter leading-none bg-gradient-to-r from-white via-orange-100 to-amber-200 bg-clip-text text-transparent">
+                Galerie <span className="text-orange-400">/</span> {eventName || "ÉVÉNEMENT"}
               </h1>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mt-2">
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-orange-200/80 mt-2">
                 {mediaItems.length} Média(s) capturé(s)
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-wrap gap-3 w-full md:w-auto">
             <Link 
               href={`/event/${eventId}/guestbook`}
-              className="flex items-center gap-3 bg-[#ff0080] hover:bg-[#ff0080]/80 text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all border-none cursor-pointer shadow-lg shadow-[#ff0080]/20 no-underline"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-xl text-white px-6 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all border border-white/20 shadow-md no-underline active:scale-95"
             >
-              <BookOpen size={16} /> LIVRE D'OR
+              <BookOpen size={16} className="text-amber-400" /> LIVRE D'OR
             </Link>
 
             <button 
               onClick={downloadAllMedia} 
               disabled={isDownloadingAll || mediaItems.length === 0}
-              className="flex items-center gap-3 bg-green-600 hover:bg-green-500 text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all border-none cursor-pointer shadow-lg shadow-green-500/20 disabled:opacity-50"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:scale-105 active:scale-95 text-white px-6 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all border border-orange-300/40 cursor-pointer shadow-[0_0_25px_rgba(249,115,22,0.5)] disabled:opacity-40 disabled:hover:scale-100 disabled:shadow-none"
             >
               {isDownloadingAll ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />} 
               {isDownloadingAll ? "CRÉATION DU ZIP..." : "TOUT TÉLÉCHARGER (.ZIP)"}
@@ -183,16 +198,17 @@ export default function GaleriePage() {
           </div>
         </header>
 
-        <div className="glass-card p-10 rounded-[40px] border border-white/5">
+        {/* CONTENEUR GLASSMORPHISM DE LA GALERIE */}
+        <div className="bg-white/[0.08] border border-white/20 rounded-[40px] p-6 md:p-8 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           {mediaItems.length === 0 ? (
-            <div className="text-center py-20 opacity-50">
-              <ImageIcon size={60} className="mx-auto mb-6 text-gray-600" />
-              <p className="text-xl font-black uppercase tracking-widest italic">Aucun souvenir pour l'instant</p>
+            <div className="text-center py-20 opacity-60">
+              <ImageIcon size={60} className="mx-auto mb-4 text-orange-400 drop-shadow-[0_0_10px_rgba(249,115,22,0.4)]" />
+              <p className="text-xl font-black uppercase tracking-widest italic text-gray-200">Aucun souvenir pour l'instant</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {mediaItems.map((item, index) => (
-                <div key={item.id} className="relative group rounded-2xl overflow-hidden border border-white/10 aspect-square bg-black">
+                <div key={item.id} className="relative group rounded-3xl overflow-hidden border border-white/20 aspect-square bg-black/40 shadow-lg transition-transform duration-300 hover:scale-[1.02]">
                   
                   {item.isVideo ? (
                     <div className="w-full h-full relative">
@@ -204,8 +220,8 @@ export default function GaleriePage() {
                         autoPlay
                         loop
                       />
-                      <div className="absolute bottom-3 right-3 bg-black/60 p-1.5 rounded-full backdrop-blur-sm">
-                        <Play size={12} className="text-white fill-white" />
+                      <div className="absolute bottom-3 right-3 bg-black/60 p-2 rounded-full backdrop-blur-md border border-white/20 shadow-md">
+                        <Play size={12} className="text-amber-300 fill-amber-300" />
                       </div>
                     </div>
                   ) : (
@@ -216,12 +232,13 @@ export default function GaleriePage() {
                     />
                   )}
 
+                  {/* OVERLAY TÉLÉCHARGEMENT */}
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
                     <button 
                       onClick={() => downloadSingleMedia(item.url, index, item.isVideo)}
-                      className="p-4 bg-[#ff0080] rounded-full text-white cursor-pointer border-none shadow-xl hover:bg-white hover:text-black transition-colors"
+                      className="p-3.5 bg-gradient-to-r from-orange-500 to-amber-500 rounded-2xl text-white cursor-pointer border border-orange-300/40 shadow-[0_0_20px_rgba(249,115,22,0.6)] hover:scale-110 active:scale-95 transition-all"
                     >
-                      <Download size={20} />
+                      <Download size={18} />
                     </button>
                   </div>
                 </div>
@@ -229,16 +246,16 @@ export default function GaleriePage() {
             </div>
           )}
         </div>
+
       </div>
 
-      <style jsx global>{`
-        .bg-blobs { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: black; }
-        .blob { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.2; }
-        .blob-pink { top: -10%; left: -10%; width: 50vw; height: 50vw; background: #ff0080; }
-        .blob-purple { bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: #7928ca; }
-        .blob-blue { top: 20%; right: 10%; width: 30vw; height: 30vw; background: #0072ff; }
-        .glass-card { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(20px); }
-      `}</style>
+      {/* FOOTER */}
+      <footer className="mt-12 relative z-10 w-full text-center max-w-6xl mx-auto">
+        <div className="h-[1px] w-full bg-white/20 mb-6"></div>
+        <p className="text-[10px] text-white/50 uppercase font-black tracking-[0.5em]">
+          Powered by PartyLens
+        </p>
+      </footer>
     </main>
   );
 }

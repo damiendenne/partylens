@@ -117,14 +117,14 @@ function LoginContent() {
   };
 
   return (
-    <div className="glass-card w-full max-w-xl p-10 rounded-[40px] border border-white/5 relative z-10 bg-white/[0.02] backdrop-blur-3xl shadow-2xl">
+    <div className="glass-card w-full max-w-xl p-10 rounded-[40px] border border-white/20 relative z-10 bg-white/[0.08] backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
       <div className="text-center mb-10">
-        <img src="/logo-partylens.png" className="w-32 mx-auto mb-6" alt="Logo" />
+        <img src="/logo-partylens.png" className="w-32 mx-auto mb-6 drop-shadow-[0_0_20px_rgba(249,115,22,0.4)]" alt="Logo" />
         <h1 className="text-4xl font-black italic uppercase tracking-tighter">
           {isRegister ? 'Inscription' : 'Connexion'}
         </h1>
         {isDemo && isRegister && (
-          <p className="text-[#ff0080] text-xs font-black uppercase tracking-widest mt-2 animate-pulse">
+          <p className="text-amber-300 text-xs font-black uppercase tracking-widest mt-2 animate-pulse drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]">
             ✨ Mode Test Gratuit Activé ✨
           </p>
         )}
@@ -135,14 +135,14 @@ function LoginContent() {
           <button 
             type="button" 
             onClick={() => setRole('organisateur')} 
-            className={`flex-1 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2 transition-all flex flex-col items-center gap-2 cursor-pointer ${role === 'organisateur' ? 'bg-white text-black border-white shadow-xl' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20'}`}
+            className={`flex-1 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2 transition-all flex flex-col items-center gap-2 cursor-pointer ${role === 'organisateur' ? 'bg-white text-purple-950 border-white shadow-[0_0_20px_rgba(255,255,255,0.3)]' : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/30'}`}
           >
             <User size={18} /> ORGANISATEUR
           </button>
           <button 
             type="button" 
             onClick={() => setRole('dj')} 
-            className={`flex-1 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2 transition-all flex flex-col items-center gap-2 cursor-pointer ${role === 'dj' ? 'bg-[#ff0080] text-white border-[#ff0080] shadow-xl' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20'}`}
+            className={`flex-1 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2 transition-all flex flex-col items-center gap-2 cursor-pointer ${role === 'dj' ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white border-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.5)]' : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/30'}`}
           >
             <Music size={18} /> PRESTATAIRE / DJ
           </button>
@@ -151,18 +151,18 @@ function LoginContent() {
 
       <form onSubmit={handleAuth} className="space-y-4">
         <div className="relative">
-          <Mail className="absolute left-5 top-5 text-gray-500" size={18} />
+          <Mail className="absolute left-5 top-5 text-gray-400" size={18} />
           <input type="email" placeholder="EMAIL" required className="input-style" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
 
         <div className={`grid ${isRegister ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
           <div className="relative">
-            <Lock className="absolute left-5 top-5 text-gray-500" size={18} />
+            <Lock className="absolute left-5 top-5 text-gray-400" size={18} />
             <input type="password" placeholder="MOT DE PASSE" required className="input-style" value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
           {isRegister && (
             <div className="relative animate-in zoom-in">
-              <Lock className="absolute left-5 top-5 text-gray-500" size={18} />
+              <Lock className="absolute left-5 top-5 text-gray-400" size={18} />
               <input type="password" placeholder="CONFIRMATION" required className="input-style" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
             </div>
           )}
@@ -171,17 +171,17 @@ function LoginContent() {
         {isRegister && (
           <div className="space-y-4 animate-in fade-in slide-in-from-top-4">
             <div className="relative">
-              <Phone className="absolute left-5 top-5 text-gray-500" size={18} />
+              <Phone className="absolute left-5 top-5 text-gray-400" size={18} />
               <input type="tel" placeholder="TÉLÉPHONE" required className="input-style" value={phone} onChange={(e) => setPhone(e.target.value)} />
             </div>
 
             {role === 'organisateur' && (
               <div className="relative animate-in slide-in-from-top-2">
-                <Hash className="absolute left-5 top-5 text-[#ff0080]" size={18} />
+                <Hash className="absolute left-5 top-5 text-orange-400" size={18} />
                 <input 
                   type="text" 
                   placeholder="CODE DJ (OPTIONNEL)" 
-                  className="input-style border-[#ff0080]/30" 
+                  className="input-style border-orange-500/30" 
                   value={djCodeInput} 
                   onChange={(e) => setDjCodeInput(e.target.value)} 
                 />
@@ -191,7 +191,7 @@ function LoginContent() {
             {/* --- SECTION ADRESSE --- */}
             <div className="space-y-3">
               <div className="relative">
-                {isManualAddress ? <Edit3 className="absolute left-5 top-5 text-[#ff0080]" size={18} /> : <MapPin className="absolute left-5 top-5 text-gray-500" size={18} />}
+                {isManualAddress ? <Edit3 className="absolute left-5 top-5 text-orange-400" size={18} /> : <MapPin className="absolute left-5 top-5 text-gray-400" size={18} />}
                 <input 
                   type="text" 
                   placeholder={isManualAddress ? "NUMÉRO ET NOM DE RUE" : "RECHERCHE TON ADRESSE"} 
@@ -202,9 +202,9 @@ function LoginContent() {
                 />
                 
                 {!isManualAddress && suggestions.length > 0 && (
-                  <div className="absolute z-50 w-full mt-2 bg-[#0a0a0a] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+                  <div className="absolute z-50 w-full mt-2 bg-[#18082e] border border-white/20 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-xl">
                     {suggestions.map((s, i) => (
-                      <div key={i} onClick={() => handleSelectAddress(s)} className="p-4 hover:bg-[#ff0080]/20 cursor-pointer text-[10px] font-bold uppercase border-b border-white/5">
+                      <div key={i} onClick={() => handleSelectAddress(s)} className="p-4 hover:bg-orange-500/20 cursor-pointer text-[10px] font-bold uppercase border-b border-white/10 transition-colors">
                         {s.properties.label}
                       </div>
                     ))}
@@ -217,8 +217,8 @@ function LoginContent() {
                 onClick={toggleManualAddress}
                 className={`w-full py-2 px-4 rounded-xl border text-[9px] font-black uppercase tracking-[0.2em] transition-all ${
                   isManualAddress 
-                  ? 'border-[#ff0080]/50 text-[#ff0080] bg-[#ff0080]/5 shadow-[0_0_15px_rgba(255,0,128,0.1)]' 
-                  : 'border-white/10 text-gray-400 hover:text-white hover:border-white/30 bg-white/5'
+                  ? 'border-orange-500/50 text-orange-400 bg-orange-500/10 shadow-[0_0_15px_rgba(249,115,22,0.2)]' 
+                  : 'border-white/15 text-gray-300 hover:text-white hover:border-white/30 bg-white/5'
                 }`}
               >
                 {isManualAddress ? "← Revenir à la recherche automatique" : "📍 Adresse introuvable ? Cliquez ici"}
@@ -229,7 +229,7 @@ function LoginContent() {
                   type="text" 
                   placeholder="CP" 
                   required 
-                  className={`input-style !pl-5 ${!isManualAddress ? 'opacity-50 cursor-not-allowed bg-white/5' : 'bg-black/60 border-[#ff0080]/20 focus:border-[#ff0080]'}`} 
+                  className={`input-style !pl-5 ${!isManualAddress ? 'opacity-50 cursor-not-allowed bg-white/5' : 'bg-black/50 border-orange-500/30 focus:border-orange-500'}`} 
                   value={zip} 
                   readOnly={!isManualAddress}
                   onChange={(e) => setZip(e.target.value)}
@@ -238,7 +238,7 @@ function LoginContent() {
                   type="text" 
                   placeholder="VILLE" 
                   required 
-                  className={`input-style !pl-5 ${!isManualAddress ? 'opacity-50 cursor-not-allowed bg-white/5' : 'bg-black/60 border-[#ff0080]/20 focus:border-[#ff0080]'}`} 
+                  className={`input-style !pl-5 ${!isManualAddress ? 'opacity-50 cursor-not-allowed bg-white/5' : 'bg-black/50 border-orange-500/30 focus:border-orange-500'}`} 
                   value={city} 
                   readOnly={!isManualAddress}
                   onChange={(e) => setCity(e.target.value)}
@@ -248,12 +248,12 @@ function LoginContent() {
           </div>
         )}
 
-        <button type="submit" disabled={loading} className="w-full py-6 bg-[#ff0080] rounded-[30px] font-black uppercase text-xs tracking-[0.3em] shadow-[0_0_20px_rgba(255,0,128,0.4)] border-none text-white cursor-pointer active:scale-95 transition-all flex justify-center items-center mt-6">
-          {loading ? <Loader2 className="animate-spin" /> : (isRegister ? "CRÉER MON COMPTE" : "SE CONNECTER")}
+        <button type="submit" disabled={loading} className="w-full py-6 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 rounded-[30px] font-black uppercase text-xs tracking-[0.3em] shadow-[0_0_25px_rgba(249,115,22,0.5)] border border-orange-300/40 text-white cursor-pointer hover:scale-[1.02] active:scale-95 transition-all flex justify-center items-center mt-6">
+          {loading ? <Loader2 className="animate-spin text-white" /> : (isRegister ? "CRÉER MON COMPTE" : "SE CONNECTER")}
         </button>
       </form>
 
-      <button type="button" onPointerDown={() => setIsRegister(!isRegister)} className="w-full mt-8 text-gray-600 text-[10px] uppercase font-black tracking-widest no-underline italic bg-transparent border-none cursor-pointer hover:text-white transition-colors">
+      <button type="button" onPointerDown={() => setIsRegister(!isRegister)} className="w-full mt-8 text-orange-200/80 text-[10px] uppercase font-black tracking-widest no-underline italic bg-transparent border-none cursor-pointer hover:text-white transition-colors">
         {isRegister ? "J'ai déjà un compte ? → Connexion" : "Pas encore de compte ? → Inscription"}
       </button>
     </div>
@@ -263,20 +263,26 @@ function LoginContent() {
 // 2. Page principale exportée avec le Suspense obligatoire pour useSearchParams
 export default function LoginPage() {
   return (
-    <main className="min-h-screen bg-black flex items-center justify-center p-6 font-sans relative overflow-hidden text-white">
-      <div className="bg-blobs fixed inset-0 z-0">
-        <div className="blob-pink absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#ff0080] opacity-20 blur-[100px] rounded-full"></div>
-        <div className="blob-blue absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-[#0072ff] opacity-20 blur-[100px] rounded-full"></div>
+    <main className="min-h-screen bg-gradient-to-b from-[#2d104d] via-[#210a3b] to-[#140427] flex items-center justify-center p-6 font-sans relative overflow-hidden text-white">
+      {/* VAGUES LUMINEUSES ORANGE ET VIOLETTES */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <svg className="absolute -top-12 left-0 w-full h-[500px] text-orange-500/30 blur-xl opacity-80" viewBox="0 0 1440 320" preserveAspectRatio="none">
+          <path fill="currentColor" d="M0,160L60,176C120,192,240,224,360,213.3C480,203,600,149,720,154.7C840,160,960,224,1080,229.3C1200,235,1320,181,1380,154.7L1440,128L1440,0L1380,0C1320,0,1200,0,1080,0C960,0,840,0,720,0C600,0,480,0,360,0C240,0,120,0,0,0Z"></path>
+        </svg>
+        <svg className="absolute bottom-0 right-0 w-full h-[500px] text-orange-600/30 blur-xl opacity-80" viewBox="0 0 1440 320" preserveAspectRatio="none">
+          <path fill="currentColor" d="M0,224L60,213.3C120,203,240,181,360,186.7C480,192,600,224,720,218.7C840,213,960,171,1080,160C1200,149,1320,171,1380,181.3L1440,192L1440,320L1380,320C1320,320,1120,320,960,320C800,320,640,320,480,320C320,320,160,320,80,320L0,320Z"></path>
+        </svg>
+        <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-r from-orange-500/30 via-amber-400/20 to-pink-500/15 rounded-full blur-[120px]"></div>
       </div>
 
-      <Suspense fallback={<Loader2 className="animate-spin text-[#ff0080] w-10 h-10" />}>
+      <Suspense fallback={<Loader2 className="animate-spin text-orange-400 w-10 h-10" />}>
         <LoginContent />
       </Suspense>
 
       <style jsx global>{`
-        .input-style { width: 100%; padding: 1.25rem 1.25rem 1.25rem 3.5rem; border-radius: 1rem; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); color: white; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; outline: none; transition: all 0.3s; }
-        .input-style:focus { border-color: #ff0080; }
-        .glass-card { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(40px); }
+        .input-style { width: 100%; padding: 1.25rem 1.25rem 1.25rem 3.5rem; border-radius: 1rem; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.15); color: white; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; outline: none; transition: all 0.3s; }
+        .input-style:focus { border-color: #f97316; box-shadow: 0 0 15px rgba(249, 115, 22, 0.3); }
+        .glass-card { background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(40px); }
       `}</style>
     </main>
   );
