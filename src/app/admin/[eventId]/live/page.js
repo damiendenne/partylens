@@ -4,7 +4,7 @@ import { useState, useEffect, use, useRef } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, doc } from 'firebase/firestore';
 import { QRCodeSVG } from 'qrcode.react';
-import { Maximize, Minimize, Camera } from 'lucide-react';
+import { Maximize, Minimize, Camera, Sun, Moon } from 'lucide-react';
 
 export default function LiveWall({ params }) {
   const unwrappedParams = use(params);
@@ -17,6 +17,21 @@ export default function LiveWall({ params }) {
   const [eventData, setEventData] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [darkMode, setDarkMode] = useState(true);
+
+  // Gestion du mode jour/nuit avec localStorage
+  useEffect(() => {
+    const savedMode = localStorage.getItem('partylens_dark_mode');
+    if (savedMode !== null) {
+      setDarkMode(JSON.parse(savedMode));
+    }
+  }, []);
+
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    localStorage.setItem('partylens_dark_mode', JSON.stringify(newMode));
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") setBaseUrl(window.location.origin);
@@ -50,7 +65,7 @@ export default function LiveWall({ params }) {
     return () => clearInterval(interval);
   }, [photos]);
 
-  // Gestion des contrôles (bouton plein écran)
+  // Gestion des contrôles (boutons plein écran et mode)
   useEffect(() => {
     const timer = setTimeout(() => setShowControls(false), 3000);
     const handleMouseMove = () => {
@@ -72,16 +87,26 @@ export default function LiveWall({ params }) {
 
   // ÉCRAN D'ATTENTE DE PHOTOS
   if (photos.length === 0) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#2d104d] via-[#210a3b] to-[#140427] text-white relative overflow-hidden font-sans">
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[140px]"></div>
+    <div className={`min-h-screen flex flex-col items-center justify-center relative overflow-hidden font-sans transition-colors duration-300 ${
+      darkMode ? 'bg-[#0f071e] text-slate-100' : 'bg-[#f4f4f6] text-slate-900'
+    }`}>
+      {/* BACKGROUND EFFECTS */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        {darkMode ? (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-b from-purple-600/15 via-orange-600/10 to-transparent rounded-full blur-[140px]"></div>
+        ) : (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-b from-purple-200/30 via-orange-100/20 to-transparent rounded-full blur-[120px]"></div>
+        )}
       </div>
+
       <div className="relative z-10 flex flex-col items-center gap-6">
-        <img src="/logo-partylens.png" alt="PartyLens" className="w-56 drop-shadow-[0_0_25px_rgba(249,115,22,0.4)]" />
-        <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center animate-bounce">
-          <Camera size={32} className="text-orange-400" />
+        <img src="/logo-partylens.png" alt="PartyLens" className="w-56 drop-shadow-md" />
+        <div className={`w-16 h-16 rounded-2xl backdrop-blur-md flex items-center justify-center animate-bounce border ${
+          darkMode ? 'bg-white/10 border-white/20 text-orange-400' : 'bg-[#eaeaea] border-slate-300 text-orange-600'
+        }`}>
+          <Camera size={32} />
         </div>
-        <p className="font-black italic uppercase tracking-widest text-lg text-orange-200/90 animate-pulse">
+        <p className={`font-bold uppercase tracking-widest text-sm ${darkMode ? 'text-orange-400' : 'text-orange-600'} animate-pulse`}>
           En attente des premières photos...
         </p>
       </div>
@@ -91,9 +116,11 @@ export default function LiveWall({ params }) {
   const prevIndex = currentIndex === 0 ? photos.length - 1 : currentIndex - 1;
 
   return (
-    <main ref={mainRef} className="h-screen w-screen bg-gradient-to-b from-[#2d104d] via-[#210a3b] to-[#140427] overflow-hidden relative select-none font-sans">
+    <main ref={mainRef} className={`h-screen w-screen overflow-hidden relative select-none font-sans transition-colors duration-300 ${
+      darkMode ? 'bg-[#0f071e] text-slate-100' : 'bg-[#f4f4f6] text-slate-900'
+    }`}>
       
-      {/* HABILLAGE DU SOIR & VAGUES ORANGÉES */}
+      {/* BACKGROUND EFFECTS / HABILLAGE */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         {eventData?.frameUrl ? (
           <img
@@ -102,16 +129,38 @@ export default function LiveWall({ params }) {
             alt="Habillage Design"
           />
         ) : (
-          <>
-            <svg className="absolute -top-12 left-0 w-full h-[500px] text-orange-500/25 blur-xl opacity-80" viewBox="0 0 1440 320" preserveAspectRatio="none">
-              <path fill="currentColor" d="M0,160L60,176C120,192,240,224,360,213.3C480,203,600,149,720,154.7C840,160,960,224,1080,229.3C1200,235,1320,181,1380,154.7L1440,128L1440,0L0,0Z"></path>
-            </svg>
-            <svg className="absolute bottom-0 right-0 w-full h-[500px] text-orange-600/25 blur-xl opacity-80" viewBox="0 0 1440 320" preserveAspectRatio="none">
-              <path fill="currentColor" d="M0,224L60,213.3C120,203,240,181,360,186.7C480,192,600,224,720,218.7C840,213,960,171,1080,160C1200,149,1320,171,1380,181.3L1440,192L1440,320L0,320Z"></path>
-            </svg>
-            <div className="absolute top-[25%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-r from-orange-500/20 via-amber-400/15 to-orange-600/15 rounded-full blur-[160px]"></div>
-          </>
+          darkMode ? (
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-to-b from-purple-600/15 via-orange-600/10 to-transparent rounded-full blur-[140px]"></div>
+          ) : (
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-to-b from-purple-200/30 via-orange-100/20 to-transparent rounded-full blur-[120px]"></div>
+          )
         )}
+      </div>
+
+      {/* BOUTONS DE CONTRÔLE (MODE ET PLEIN ÉCRAN) EN HAUT À DROITE */}
+      <div className={`fixed top-8 right-8 z-50 flex items-center gap-3 transition-opacity duration-500 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <button 
+          onClick={toggleDarkMode}
+          className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all shadow-lg border backdrop-blur-xl ${
+            darkMode 
+              ? 'bg-white/10 text-amber-300 border-white/20 hover:bg-white/20' 
+              : 'bg-[#eaeaea] text-slate-700 border-slate-300 hover:bg-[#dedede]'
+          }`}
+          aria-label="Changer le mode d'affichage"
+        >
+          {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+
+        <button
+          onClick={toggleFullscreen}
+          className={`p-3.5 backdrop-blur-xl rounded-2xl cursor-pointer transition-all duration-300 shadow-lg border active:scale-95 ${
+            darkMode 
+              ? 'bg-white/10 hover:bg-white/20 border-white/20 text-white' 
+              : 'bg-[#eaeaea] hover:bg-[#dedede] border-slate-300 text-slate-700'
+          }`}
+        >
+          {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+        </button>
       </div>
 
       {/* LOGO PARTYLENS EN HAUT À GAUCHE */}
@@ -119,21 +168,15 @@ export default function LiveWall({ params }) {
         <img
           src="/logo-partylens.png"
           alt="PartyLens"
-          className="w-48 md:w-64 h-auto drop-shadow-[0_10px_25px_rgba(0,0,0,0.6)]"
+          className="w-48 md:w-64 h-auto drop-shadow-md"
         />
       </div>
 
-      {/* BOUTON PLEIN ÉCRAN */}
-      <button
-        onClick={toggleFullscreen}
-        className={`fixed top-8 right-8 z-50 p-4 bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-xl rounded-2xl text-white/80 hover:text-white cursor-pointer transition-all duration-500 shadow-lg active:scale-95 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-      >
-        {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
-      </button>
-
       {/* DIAPORAMA PHOTO */}
       <div className="relative z-10 h-full w-full flex items-center justify-center p-8">
-        <div className="relative w-full h-full max-w-[85vw] max-h-[80vh] flex items-center justify-center overflow-hidden rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.7)] border border-white/10 bg-black/30 backdrop-blur-md">
+        <div className={`relative w-full h-full max-w-[85vw] max-h-[80vh] flex items-center justify-center overflow-hidden rounded-3xl shadow-2xl backdrop-blur-md border ${
+          darkMode ? 'bg-black/30 border-white/10' : 'bg-white/60 border-slate-300/80'
+        }`}>
           {photos.length > 1 && (
             <img
               key={`prev-${photos[prevIndex]?.id}`}
@@ -152,11 +195,13 @@ export default function LiveWall({ params }) {
       </div>
 
       {/* QR CODE FIXE */}
-      <div className="fixed bottom-8 right-8 z-40 bg-white/10 backdrop-blur-2xl p-4.5 rounded-[32px] flex flex-col items-center gap-3 shadow-[0_15px_35px_rgba(0,0,0,0.5)] border border-white/20">
+      <div className={`fixed bottom-8 right-8 z-40 backdrop-blur-2xl p-4.5 rounded-[32px] flex flex-col items-center gap-3 shadow-xl border ${
+        darkMode ? 'bg-[#170c2c]/80 border-white/20' : 'bg-[#eaeaea]/90 border-slate-300/80'
+      }`}>
         <div className="bg-white p-2.5 rounded-2xl shadow-md">
           {baseUrl && <QRCodeSVG value={`${baseUrl}/event/${eventId}`} size={95} />}
         </div>
-        <p className="text-[10px] font-black uppercase text-orange-200 italic tracking-wider">
+        <p className={`text-[10px] font-bold uppercase tracking-wider ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>
           Scannez & Participez
         </p>
       </div>

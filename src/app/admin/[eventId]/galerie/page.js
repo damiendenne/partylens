@@ -5,7 +5,7 @@ import { db, auth } from '@/lib/firebase';
 import { collection, query, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import Link from 'next/link';
-import { ArrowLeft, Download, Image as ImageIcon, Loader2, BookOpen, Play } from 'lucide-react';
+import { ArrowLeft, Download, Image as ImageIcon, Loader2, BookOpen, Play, Sun, Moon } from 'lucide-react';
 import JSZip from 'jszip'; 
 
 export default function GaleriePage() {
@@ -18,6 +18,21 @@ export default function GaleriePage() {
   const [mediaItems, setMediaItems] = useState([]);
   const [eventName, setEventName] = useState("");
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
+
+  // Gestion du mode jour/nuit avec localStorage
+  useEffect(() => {
+    const savedMode = localStorage.getItem('partylens_dark_mode');
+    if (savedMode !== null) {
+      setDarkMode(JSON.parse(savedMode));
+    }
+  }, []);
+
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    localStorage.setItem('partylens_dark_mode', JSON.stringify(newMode));
+  };
 
   useEffect(() => {
     if (!eventId) return;
@@ -132,65 +147,79 @@ export default function GaleriePage() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-[#140427] flex flex-col items-center justify-center text-white font-sans">
-      <Loader2 className="animate-spin text-orange-400 mb-4 drop-shadow-[0_0_15px_rgba(249,115,22,0.6)]" size={40} />
-      <p className="text-[10px] uppercase tracking-[0.4em] font-black text-orange-200/70 italic">Chargement des souvenirs...</p>
+    <div className={`min-h-screen flex flex-col items-center justify-center transition-colors duration-300 ${darkMode ? 'bg-[#0f071e] text-slate-100' : 'bg-[#f4f4f6] text-slate-900'}`}>
+      <Loader2 className="animate-spin text-orange-500 mb-4" size={40} />
+      <p className="text-xs uppercase tracking-widest font-bold opacity-70">Chargement des souvenirs...</p>
     </div>
   );
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#2d104d] via-[#210a3b] to-[#140427] text-white p-6 md:p-12 font-sans overflow-x-hidden relative pb-16">
+    <main className={`min-h-screen flex flex-col px-6 md:px-12 py-12 font-sans relative overflow-x-hidden pb-16 transition-colors duration-300 ${
+      darkMode 
+        ? 'bg-[#0f071e] text-slate-100 selection:bg-orange-500 selection:text-white' 
+        : 'bg-[#f4f4f6] text-slate-900 selection:bg-orange-500 selection:text-white'
+    }`}>
       
-      {/* EFFET DE VAGUES LUMINEUSES ORANGE EN ARRIÈRE-PLAN */}
+      {/* BOUTON SWITCH MODE CLAIR / SOMBRE (FIXÉ EN HAUT À DROITE) */}
+      <button 
+        onClick={toggleDarkMode}
+        className={`absolute top-6 right-6 z-50 flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all shadow-md border ${
+          darkMode 
+            ? 'bg-white/10 text-amber-300 border-white/20 hover:bg-white/20' 
+            : 'bg-[#eaeaea] text-slate-700 border-slate-300 hover:bg-[#dedede]'
+        }`}
+        aria-label="Changer le mode d'affichage"
+      >
+        {darkMode ? <Sun size={15} /> : <Moon size={15} />}
+        <span>{darkMode ? "Mode Clair" : "Mode Sombre"}</span>
+      </button>
+
+      {/* BACKGROUND EFFECTS */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <svg className="absolute -top-12 left-0 w-full h-[500px] text-orange-500/35 blur-xl opacity-90" viewBox="0 0 1440 320" preserveAspectRatio="none">
-          <path fill="currentColor" d="M0,160L60,176C120,192,240,224,360,213.3C480,203,600,149,720,154.7C840,160,960,224,1080,229.3C1200,235,1320,181,1380,154.7L1440,128L1440,0L1380,0C1320,0,1200,0,1080,0C960,0,840,0,720,0C600,0,480,0,360,0C240,0,120,0,0,0Z"></path>
-        </svg>
-
-        <svg className="absolute top-[30%] -left-20 w-[130%] h-[550px] text-amber-500/30 blur-2xl transform rotate-3" viewBox="0 0 1440 320" preserveAspectRatio="none">
-          <path fill="currentColor" d="M0,96L80,122.7C160,149,320,203,480,208C640,213,800,171,960,149.3C1120,128,1280,128,1360,128L1440,128L1440,320L1360,320C1280,320,1120,320,960,320C800,320,640,320,480,320C320,320,160,320,80,320L0,320Z"></path>
-        </svg>
-
-        <svg className="absolute bottom-0 right-0 w-full h-[500px] text-orange-600/35 blur-xl opacity-90" viewBox="0 0 1440 320" preserveAspectRatio="none">
-          <path fill="currentColor" d="M0,224L60,213.3C120,203,240,181,360,186.7C480,192,600,224,720,218.7C840,213,960,171,1080,160C1200,149,1320,171,1380,181.3L1440,192L1440,320L1380,320C1280,320,1120,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"></path>
-        </svg>
-
-        <div className="absolute top-[18%] left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-r from-orange-500/40 via-amber-400/30 to-pink-500/20 rounded-full blur-[130px]"></div>
+        {darkMode ? (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[450px] bg-gradient-to-b from-purple-600/15 via-orange-600/10 to-transparent rounded-full blur-[120px]"></div>
+        ) : (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[450px] bg-gradient-to-b from-purple-200/30 via-orange-100/20 to-transparent rounded-full blur-[100px]"></div>
+        )}
       </div>
 
-      <div className="max-w-6xl mx-auto relative z-10">
+      <div className="max-w-6xl mx-auto w-full relative z-10">
         
         {/* EN-TÊTE */}
-        <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div className="flex items-center gap-5">
+        <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="flex items-center gap-4">
             <Link 
               href="/admin" 
-              className="p-3.5 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-2xl text-white transition-all border border-white/20 shadow-lg no-underline active:scale-95"
+              className={`p-3 rounded-xl transition-all border ${
+                darkMode ? 'bg-white/[0.04] text-slate-200 border-white/10 hover:bg-white/[0.08]' : 'bg-[#dedede] text-slate-700 border-slate-300 hover:bg-[#dedede]'
+              }`}
             >
               <ArrowLeft size={20} />
             </Link>
             <div>
-              <h1 className="text-3xl md:text-4xl font-black italic uppercase tracking-tighter leading-none bg-gradient-to-r from-white via-orange-100 to-amber-200 bg-clip-text text-transparent">
-                Galerie <span className="text-orange-400">/</span> {eventName || "ÉVÉNEMENT"}
+              <h1 className={`text-2xl md:text-3xl font-extrabold tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                GALERIE <span className="text-orange-500">/</span> {eventName || "ÉVÉNEMENT"}
               </h1>
-              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-orange-200/80 mt-2">
+              <p className={`text-[11px] font-bold uppercase tracking-wider mt-1 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>
                 {mediaItems.length} Média(s) capturé(s)
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3 w-full md:w-auto">
+          <div className="flex flex-wrap gap-2.5 w-full md:w-auto">
             <Link 
               href={`/event/${eventId}/guestbook`}
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-xl text-white px-6 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all border border-white/20 shadow-md no-underline active:scale-95"
+              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                darkMode ? 'bg-white/[0.04] text-amber-400 border-white/10 hover:bg-white/[0.08]' : 'bg-[#dedede] text-amber-700 border-slate-300 hover:bg-[#dedede]'
+              }`}
             >
-              <BookOpen size={16} className="text-amber-400" /> LIVRE D'OR
+              <BookOpen size={16} /> LIVRE D'OR
             </Link>
 
             <button 
               onClick={downloadAllMedia} 
               disabled={isDownloadingAll || mediaItems.length === 0}
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:scale-105 active:scale-95 text-white px-6 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all border border-orange-300/40 cursor-pointer shadow-[0_0_25px_rgba(249,115,22,0.5)] disabled:opacity-40 disabled:hover:scale-100 disabled:shadow-none"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:brightness-105 active:scale-95 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-lg shadow-orange-500/20 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               {isDownloadingAll ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />} 
               {isDownloadingAll ? "CRÉATION DU ZIP..." : "TOUT TÉLÉCHARGER (.ZIP)"}
@@ -199,16 +228,20 @@ export default function GaleriePage() {
         </header>
 
         {/* CONTENEUR GLASSMORPHISM DE LA GALERIE */}
-        <div className="bg-white/[0.08] border border-white/20 rounded-[40px] p-6 md:p-8 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+        <div className={`rounded-3xl p-6 md:p-8 backdrop-blur-xl shadow-xl ${
+          darkMode ? 'bg-[#170c2c]/80 border border-white/10' : 'bg-[#eaeaea]/80 border border-slate-300/80'
+        }`}>
           {mediaItems.length === 0 ? (
-            <div className="text-center py-20 opacity-60">
-              <ImageIcon size={60} className="mx-auto mb-4 text-orange-400 drop-shadow-[0_0_10px_rgba(249,115,22,0.4)]" />
-              <p className="text-xl font-black uppercase tracking-widest italic text-gray-200">Aucun souvenir pour l'instant</p>
+            <div className={`text-center py-20 rounded-2xl border ${darkMode ? 'bg-white/[0.02] border-white/5 text-slate-400' : 'bg-[#f4f4f6] border-slate-300/60 text-slate-600'}`}>
+              <ImageIcon size={48} className="mx-auto mb-3 text-orange-500 opacity-80" />
+              <p className="text-sm font-bold tracking-wider">Aucun souvenir pour l'instant</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {mediaItems.map((item, index) => (
-                <div key={item.id} className="relative group rounded-3xl overflow-hidden border border-white/20 aspect-square bg-black/40 shadow-lg transition-transform duration-300 hover:scale-[1.02]">
+                <div key={item.id} className={`relative group rounded-2xl overflow-hidden border aspect-square shadow-sm transition-transform duration-300 hover:scale-[1.02] ${
+                  darkMode ? 'bg-black/40 border-white/10' : 'bg-white border-slate-300/80'
+                }`}>
                   
                   {item.isVideo ? (
                     <div className="w-full h-full relative">
@@ -236,9 +269,10 @@ export default function GaleriePage() {
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
                     <button 
                       onClick={() => downloadSingleMedia(item.url, index, item.isVideo)}
-                      className="p-3.5 bg-gradient-to-r from-orange-500 to-amber-500 rounded-2xl text-white cursor-pointer border border-orange-300/40 shadow-[0_0_20px_rgba(249,115,22,0.6)] hover:scale-110 active:scale-95 transition-all"
+                      className="p-3 bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl text-white cursor-pointer shadow-lg hover:scale-110 active:scale-95 transition-all"
+                      title="Télécharger ce souvenir"
                     >
-                      <Download size={18} />
+                      <Download size={16} />
                     </button>
                   </div>
                 </div>
@@ -251,8 +285,8 @@ export default function GaleriePage() {
 
       {/* FOOTER */}
       <footer className="mt-12 relative z-10 w-full text-center max-w-6xl mx-auto">
-        <div className="h-[1px] w-full bg-white/20 mb-6"></div>
-        <p className="text-[10px] text-white/50 uppercase font-black tracking-[0.5em]">
+        <div className={`h-[1px] w-full mb-6 ${darkMode ? 'bg-white/10' : 'bg-slate-300'}`}></div>
+        <p className={`text-[10px] uppercase font-bold tracking-[0.4em] ${darkMode ? 'text-slate-500' : 'text-slate-600'}`}>
           Powered by PartyLens
         </p>
       </footer>

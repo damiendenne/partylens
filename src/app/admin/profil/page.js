@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { db, auth } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { onAuthStateChanged, signOut, deleteUser } from 'firebase/auth';
-import { User, Mail, MapPin, Phone, CreditCard, ArrowLeft, Save, Loader2, CheckCircle2, ShieldAlert, AlertTriangle, X } from 'lucide-react';
+import { User, Mail, MapPin, Phone, CreditCard, ArrowLeft, Save, Loader2, CheckCircle2, ShieldAlert, AlertTriangle, X, Sun, Moon } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProfilPage() {
@@ -14,6 +14,7 @@ export default function ProfilPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notify, setNotify] = useState({ show: false, msg: "", type: "success" });
+  const [darkMode, setDarkMode] = useState(true);
   
   // ÉTATS DE LA MODALE DE SUPPRESSION
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -35,6 +36,20 @@ export default function ProfilPage() {
     usbQuantity: 0,
     totalAmount: 0
   });
+
+  // Gestion du mode jour/nuit avec localStorage
+  useEffect(() => {
+    const savedMode = localStorage.getItem('partylens_dark_mode');
+    if (savedMode !== null) {
+      setDarkMode(JSON.parse(savedMode));
+    }
+  }, []);
+
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    localStorage.setItem('partylens_dark_mode', JSON.stringify(newMode));
+  };
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
@@ -126,9 +141,15 @@ export default function ProfilPage() {
     }
   };
 
+  const cardBg = darkMode 
+    ? 'bg-[#170c2c] border border-white/10 text-white shadow-[0_10px_30px_rgba(0,0,0,0.5)]' 
+    : 'bg-[#eaeaea] border border-slate-300 text-slate-900 shadow-lg';
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#2d104d] via-[#210a3b] to-[#140427] flex items-center justify-center text-white font-black italic uppercase tracking-[0.3em]">
+      <div className={`min-h-screen flex items-center justify-center font-black italic uppercase tracking-[0.3em] transition-colors duration-300 ${
+        darkMode ? 'bg-[#0f071e] text-white' : 'bg-[#f4f4f6] text-slate-900'
+      }`}>
         <Loader2 className="animate-spin text-orange-400 mr-3" size={24} />
         Chargement...
       </div>
@@ -136,18 +157,33 @@ export default function ProfilPage() {
   }
 
   return (
-    <main className="min-h-screen relative overflow-hidden p-6 md:p-12 font-sans bg-gradient-to-b from-[#2d104d] via-[#210a3b] to-[#140427] text-white flex flex-col">
+    <main className={`min-h-screen relative overflow-hidden p-6 md:p-12 font-sans flex flex-col transition-colors duration-300 ${
+      darkMode ? 'bg-[#0f071e] text-white selection:bg-orange-500 selection:text-white' : 'bg-[#f4f4f6] text-slate-900 selection:bg-orange-500 selection:text-white'
+    }`}>
       
-      {/* VAGUES LUMINEUSES ET FONDS GRAPHIQUES */}
+      {/* Halos de lumière d'ambiance */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <svg className="absolute -top-12 left-0 w-full h-[500px] text-orange-500/30 blur-xl opacity-80" viewBox="0 0 1440 320" preserveAspectRatio="none">
-          <path fill="currentColor" d="M0,160L60,176C120,192,240,224,360,213.3C480,203,600,149,720,154.7C840,160,960,224,1080,229.3C1200,235,1320,181,1380,154.7L1440,128L1440,0L1380,0C1320,0,1200,0,1080,0C960,0,480,0,360,0C240,0,120,0,0,0Z"></path>
-        </svg>
-        <svg className="absolute bottom-0 right-0 w-full h-[500px] text-orange-600/30 blur-xl opacity-80" viewBox="0 0 1440 320" preserveAspectRatio="none">
-          <path fill="currentColor" d="M0,224L60,213.3C120,203,240,181,360,186.7C480,192,600,224,720,218.7C840,213,960,171,1080,160C1200,149,1320,171,1380,181.3L1440,192L1440,320L1380,320C1320,320,1120,320,960,320C800,320,640,320,480,320C320,320,160,320,80,320L0,320Z"></path>
-        </svg>
-        <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-r from-orange-500/30 via-amber-400/20 to-pink-500/15 rounded-full blur-[120px]"></div>
+        {darkMode && (
+          <>
+            <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-gradient-to-r from-orange-500/20 via-amber-500/10 to-purple-600/20 rounded-full blur-[140px]"></div>
+            <div className="absolute bottom-10 right-10 w-[500px] h-[300px] bg-gradient-to-tr from-purple-600/15 to-orange-500/10 rounded-full blur-[120px]"></div>
+          </>
+        )}
       </div>
+
+      {/* BOUTON TOGGLE MODE EN HAUT À DROITE */}
+      <button 
+        onClick={toggleDarkMode}
+        className={`absolute top-6 right-6 z-50 flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all shadow-md border cursor-pointer ${
+          darkMode 
+            ? 'bg-white/15 text-amber-300 border-white/20 hover:bg-white/25' 
+            : 'bg-[#eaeaea] text-slate-700 border-slate-300 hover:bg-[#dedede]'
+        }`}
+        aria-label="Changer le mode d'affichage"
+      >
+        {darkMode ? <Sun size={15} /> : <Moon size={15} />}
+        <span>{darkMode ? "Mode Clair" : "Mode Sombre"}</span>
+      </button>
 
       <div className="max-w-5xl mx-auto relative z-10 w-full flex-grow">
         
@@ -155,12 +191,16 @@ export default function ProfilPage() {
         <header className="mb-12 flex items-center gap-6">
           <button 
             onClick={() => router.back()} 
-            className="p-4 glass-card rounded-2xl text-gray-300 hover:text-white transition-all bg-transparent border border-white/10 cursor-pointer hover:bg-white/10"
+            className={`p-4 rounded-2xl transition-all border backdrop-blur-xl cursor-pointer ${
+              darkMode 
+                ? 'bg-white/10 hover:bg-white/25 border-white/15 text-white' 
+                : 'bg-white hover:bg-slate-100 border-slate-300 text-slate-700 shadow-md'
+            }`}
           >
             <ArrowLeft size={24} />
           </button>
-          <h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-white">
-            MON <span className="text-orange-400">COMPTE</span>
+          <h1 className={`text-4xl md:text-5xl font-black italic uppercase tracking-tighter ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+            MON <span className="text-orange-500">COMPTE</span>
           </h1>
         </header>
 
@@ -168,41 +208,41 @@ export default function ProfilPage() {
           
           {/* COLONNE GAUCHE (Formulaire) */}
           <div className="md:col-span-2 space-y-6">
-            <div className="glass-card p-10 rounded-[40px] border border-white/15 shadow-2xl">
-              <h2 className="text-xl font-black uppercase italic tracking-widest text-orange-200/70 mb-8">Informations Personnelles</h2>
+            <div className={`p-8 sm:p-10 rounded-[45px] transition-colors duration-300 ${cardBg}`}>
+              <h2 className={`text-xl font-black uppercase italic tracking-widest mb-8 ${darkMode ? 'text-orange-200/70' : 'text-orange-600'}`}>Informations Personnelles</h2>
               
               <form onSubmit={handleSave} className="space-y-5">
                 <div className="relative">
-                  <User className="absolute left-5 top-5 text-orange-400/60" size={18} />
-                  <input type="text" placeholder="NOM COMPLET" className="input-style" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
+                  <User className="absolute left-5 top-5 text-orange-500" size={18} />
+                  <input type="text" placeholder="NOM COMPLET" className={`input-style ${darkMode ? 'dark-input' : 'light-input'}`} value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
                 </div>
 
                 <div className="relative">
-                  <Mail className="absolute left-5 top-5 text-gray-500" size={18} />
-                  <input type="email" placeholder="EMAIL" disabled className="input-style opacity-50 cursor-not-allowed border-white/5" value={formData.email} />
+                  <Mail className="absolute left-5 top-5 text-gray-400" size={18} />
+                  <input type="email" placeholder="EMAIL" disabled className={`input-style opacity-50 cursor-not-allowed ${darkMode ? 'dark-input border-white/5' : 'light-input border-slate-300'}`} value={formData.email} />
                 </div>
 
                 <div className="relative">
-                  <Phone className="absolute left-5 top-5 text-orange-400/60" size={18} />
-                  <input type="tel" placeholder="TÉLÉPHONE" className="input-style" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
+                  <Phone className="absolute left-5 top-5 text-orange-500" size={18} />
+                  <input type="tel" placeholder="TÉLÉPHONE" className={`input-style ${darkMode ? 'dark-input' : 'light-input'}`} value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
                 </div>
 
                 <div className="pt-4">
-                  <h3 className="text-[11px] font-black uppercase text-gray-300 tracking-[0.2em] mb-4">Adresse de facturation / Livraison</h3>
+                  <h3 className={`text-[11px] font-black uppercase tracking-[0.2em] mb-4 ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>Adresse de facturation / Livraison</h3>
                   <div className="relative mb-5">
-                    <MapPin className="absolute left-5 top-5 text-orange-400/60" size={18} />
-                    <input type="text" placeholder="RUE / ADRESSE" className="input-style" value={formData.street} onChange={(e) => setFormData({...formData, street: e.target.value})} />
+                    <MapPin className="absolute left-5 top-5 text-orange-500" size={18} />
+                    <input type="text" placeholder="RUE / ADRESSE" className={`input-style ${darkMode ? 'dark-input' : 'light-input'}`} value={formData.street} onChange={(e) => setFormData({...formData, street: e.target.value})} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <input type="text" placeholder="CODE POSTAL" className="input-style" value={formData.zip} onChange={(e) => setFormData({...formData, zip: e.target.value})} />
-                    <input type="text" placeholder="VILLE" className="input-style" value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})} />
+                    <input type="text" placeholder="CODE POSTAL" className={`input-style ${darkMode ? 'dark-input' : 'light-input'}`} value={formData.zip} onChange={(e) => setFormData({...formData, zip: e.target.value})} />
+                    <input type="text" placeholder="VILLE" className={`input-style ${darkMode ? 'dark-input' : 'light-input'}`} value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})} />
                   </div>
                 </div>
 
                 <button 
                   type="submit" 
                   disabled={saving} 
-                  className="w-full mt-8 py-6 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 rounded-[25px] font-black uppercase text-[11px] tracking-[0.3em] shadow-[0_0_20px_rgba(249,115,22,0.4)] border-none text-white cursor-pointer active:scale-95 hover:scale-[1.02] transition-all flex justify-center items-center gap-3"
+                  className="w-full mt-8 py-6 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 rounded-[25px] font-black uppercase text-[11px] tracking-[0.3em] shadow-lg border-none text-white cursor-pointer active:scale-95 hover:scale-[1.02] transition-all flex justify-center items-center gap-3"
                 >
                   {saving ? <Loader2 className="animate-spin" size={18} /> : <><Save size={18} /> ENREGISTRER LES MODIFICATIONS</>}
                 </button>
@@ -214,39 +254,41 @@ export default function ProfilPage() {
           <div className="space-y-6">
             
             {/* ABONNEMENT */}
-            <div className="glass-card p-8 rounded-[40px] border border-white/15 shadow-xl flex flex-col">
-              <div className="w-12 h-12 bg-orange-500/20 rounded-2xl flex items-center justify-center mb-6 border border-orange-500/30 text-orange-400">
+            <div className={`p-8 rounded-[45px] flex flex-col transition-colors duration-300 ${cardBg}`}>
+              <div className="w-12 h-12 bg-orange-500/20 rounded-2xl flex items-center justify-center mb-6 border border-orange-500/30 text-orange-500">
                 <CreditCard size={20} />
               </div>
-              <h2 className="text-[10px] font-black uppercase text-gray-300 tracking-[0.3em] mb-2">Abonnement Actuel</h2>
-              <p className="text-3xl font-black italic uppercase text-white mb-6 tracking-tighter">PACK <span className="text-orange-400">{packInfo.plan}</span></p>
+              <h2 className={`text-[10px] font-black uppercase tracking-[0.3em] mb-2 ${darkMode ? 'text-gray-300' : 'text-slate-600'}`}>Abonnement Actuel</h2>
+              <p className={`text-3xl font-black italic uppercase mb-6 tracking-tighter ${darkMode ? 'text-white' : 'text-slate-900'}`}>PACK <span className="text-orange-500">{packInfo.plan}</span></p>
               
-              <div className="space-y-4 mb-8">
-                <div className="flex justify-between items-center text-[11px] font-bold border-b border-white/10 pb-3">
-                  <span className="text-gray-400 uppercase">Facturation</span>
-                  <span className="text-white">{packInfo.billingCycle}</span>
+              <div className={`space-y-4 mb-8 border-b pb-4 ${darkMode ? 'border-white/10' : 'border-slate-300'}`}>
+                <div className="flex justify-between items-center text-[11px] font-bold pb-1">
+                  <span className={`uppercase ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>Facturation</span>
+                  <span className={darkMode ? 'text-white' : 'text-slate-900'}>{packInfo.billingCycle}</span>
                 </div>
-                <div className="flex justify-between items-center text-[11px] font-bold border-b border-white/10 pb-3">
-                  <span className="text-gray-400 uppercase">Clés USB</span>
-                  <span className="text-white">{packInfo.usbQuantity} Unité(s)</span>
+                <div className="flex justify-between items-center text-[11px] font-bold pb-1">
+                  <span className={`uppercase ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>Clés USB</span>
+                  <span className={darkMode ? 'text-white' : 'text-slate-900'}>{packInfo.usbQuantity} Unité(s)</span>
                 </div>
               </div>
 
               <Link 
                 href="/admin/plan-selection" 
-                className="w-full mt-auto py-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all border border-white/10 cursor-pointer flex items-center justify-center no-underline text-center"
+                className={`w-full mt-auto py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all border cursor-pointer flex items-center justify-center no-underline text-center ${
+                  darkMode ? 'bg-white/10 hover:bg-white/25 text-white border-white/15' : 'bg-slate-200 hover:bg-slate-300 text-slate-800 border-slate-300'
+                }`}
               >
                 MODIFIER MON PACK
               </Link>
             </div>
 
             {/* ZONE DANGER : SUPPRESSION COMPTE */}
-            <div className="glass-card p-8 rounded-[40px] border border-red-500/30 bg-red-500/10 backdrop-blur-3xl flex flex-col items-start">
+            <div className="p-8 rounded-[45px] border border-red-500/40 bg-red-500/10 backdrop-blur-3xl flex flex-col items-start shadow-lg">
               <div className="w-12 h-12 bg-red-500/20 rounded-2xl flex items-center justify-center mb-4 border border-red-500/30 text-red-400">
                 <ShieldAlert size={20} />
               </div>
               <h2 className="text-[12px] font-black uppercase text-red-400 tracking-widest mb-2">Zone Danger</h2>
-              <p className="text-[10px] font-bold text-gray-300 mb-6 leading-relaxed">
+              <p className={`text-[10px] font-bold mb-6 leading-relaxed ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
                 La suppression de votre compte est définitive. Toutes vos données, soirées et photos seront effacées instantanément.
               </p>
               <button 
@@ -263,10 +305,12 @@ export default function ProfilPage() {
 
       {/* MODALE DE CONFIRMATION DE SUPPRESSION */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-          <div className="glass-card w-full max-w-md p-10 rounded-[40px] border border-red-500/40 relative shadow-2xl bg-[#140427]/90">
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
+          <div className={`w-full max-w-md p-8 sm:p-10 rounded-[45px] border border-red-500/40 relative shadow-2xl ${
+            darkMode ? 'bg-[#1a0831] text-white' : 'bg-white text-slate-900'
+          }`}>
             
-            <button onClick={() => {setShowDeleteModal(false); setDeleteConfirmText("");}} className="absolute top-6 right-6 text-gray-400 hover:text-white bg-transparent border-none cursor-pointer">
+            <button onClick={() => {setShowDeleteModal(false); setDeleteConfirmText("");}} className={`absolute top-6 right-6 bg-transparent border-none cursor-pointer ${darkMode ? 'text-gray-400 hover:text-white' : 'text-slate-400 hover:text-slate-700'}`}>
               <X size={20}/>
             </button>
             
@@ -274,8 +318,8 @@ export default function ProfilPage() {
               <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/30 text-red-400">
                 <AlertTriangle size={24} />
               </div>
-              <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white">Suppression Définitive</h3>
-              <p className="text-[11px] font-bold text-gray-300 mt-3 leading-relaxed">
+              <h3 className={`text-2xl font-black italic uppercase tracking-tighter ${darkMode ? 'text-white' : 'text-slate-900'}`}>Suppression Définitive</h3>
+              <p className={`text-[11px] font-bold mt-3 leading-relaxed ${darkMode ? 'text-gray-300' : 'text-slate-600'}`}>
                 Cette action est irréversible. Pour confirmer, veuillez taper le mot <strong className="text-red-400">SUPPRIMER</strong> ci-dessous.
               </p>
             </div>
@@ -283,7 +327,9 @@ export default function ProfilPage() {
             <input 
               type="text" 
               placeholder="Tapez SUPPRIMER" 
-              className="w-full p-4 mb-6 rounded-2xl bg-black/50 border border-red-500/40 text-white font-black uppercase text-center outline-none focus:border-red-500 transition-colors"
+              className={`w-full p-4 mb-6 rounded-2xl border border-red-500/40 font-black uppercase text-center outline-none focus:border-red-500 transition-colors ${
+                darkMode ? 'bg-black/50 text-white' : 'bg-slate-100 text-slate-900'
+              }`}
               value={deleteConfirmText}
               onChange={(e) => setDeleteConfirmText(e.target.value)}
             />
@@ -291,7 +337,7 @@ export default function ProfilPage() {
             <button 
               onClick={handleDeleteAccount}
               disabled={deleteConfirmText !== "SUPPRIMER" || deleting}
-              className="w-full py-5 bg-red-600 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest transition-all border-none cursor-pointer flex items-center justify-center gap-2 hover:bg-red-500 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="w-full py-5 bg-red-600 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest transition-all border-none cursor-pointer flex items-center justify-center gap-2 hover:bg-red-500 disabled:opacity-30 disabled:cursor-not-allowed shadow-lg"
             >
               {deleting ? <Loader2 className="animate-spin" size={16} /> : "CONFIRMER LA SUPPRESSION"}
             </button>
@@ -303,7 +349,7 @@ export default function ProfilPage() {
       {/* NOTIFICATION FLOTTANTE DE SUCCÈS */}
       {notify.show && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-5">
-          <div className="flex items-center gap-3 px-8 py-4 rounded-full border border-orange-500/50 bg-black/90 text-orange-400 backdrop-blur-xl shadow-[0_0_30px_rgba(249,115,22,0.3)]">
+          <div className="flex items-center gap-3 px-8 py-4 rounded-full border border-orange-500/50 bg-black/90 text-orange-400 backdrop-blur-xl shadow-2xl">
             <CheckCircle2 size={18}/>
             <span className="text-[10px] font-black uppercase italic tracking-widest">{notify.msg}</span>
           </div>
@@ -311,21 +357,31 @@ export default function ProfilPage() {
       )}
 
       <style jsx global>{`
-        .glass-card { background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(40px); }
         .input-style {
           width: 100%;
           padding: 1.25rem 1.25rem 1.25rem 3.5rem;
           border-radius: 1.2rem;
-          background: rgba(0, 0, 0, 0.4);
-          border: 1px solid rgba(255, 255, 255, 0.15);
-          color: white;
           font-weight: 800;
           text-transform: uppercase;
           font-size: 0.75rem;
           outline: none;
           transition: all 0.3s;
         }
-        .input-style:focus {
+        .dark-input {
+          background: rgba(0, 0, 0, 0.4);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          color: white;
+        }
+        .dark-input:focus {
+          border-color: #f97316;
+          box-shadow: 0 0 15px rgba(249, 115, 22, 0.2);
+        }
+        .light-input {
+          background: #ffffff;
+          border: 1px solid rgba(203, 213, 225, 0.9);
+          color: #0f172a;
+        }
+        .light-input:focus {
           border-color: #f97316;
           box-shadow: 0 0 15px rgba(249, 115, 22, 0.2);
         }

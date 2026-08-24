@@ -26,7 +26,7 @@ export async function POST(req) {
     const STRIPE_PRICES = {
       forfait_999: "price_1TTRIL0kxrnMCRhvsIs6fydu", 
       forfait_2499: "price_1TTRII0kxrnMCRhvd9j5QlZX", 
-      usb: "price_1TTRIK0kxrnMCRhvZZGwImVJ",          
+      usb: "price_1TTRIK0kxrnMCRhvZZGwImVJ",         
     };
 
     if (!userId) {

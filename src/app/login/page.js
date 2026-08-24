@@ -4,10 +4,10 @@ import { auth, db } from '@/lib/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, MapPin, Phone, Lock, Mail, User, Music, Hash, Edit3 } from 'lucide-react';
+import { Loader2, MapPin, Phone, Lock, Mail, User, Music, Hash, Edit3, Sun, Moon } from 'lucide-react';
 
-// 1. On sépare le contenu du formulaire qui utilise useSearchParams
-function LoginContent() {
+// 1. Contenu du formulaire recevant l'état darkMode
+function LoginContent({ darkMode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isDemo = searchParams.get('demo') === 'true';
@@ -117,71 +117,115 @@ function LoginContent() {
   };
 
   return (
-    <div className="glass-card w-full max-w-xl p-10 rounded-[40px] border border-white/20 relative z-10 bg-white/[0.08] backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-      <div className="text-center mb-10">
-        <img src="/logo-partylens.png" className="w-32 mx-auto mb-6 drop-shadow-[0_0_20px_rgba(249,115,22,0.4)]" alt="Logo" />
-        <h1 className="text-4xl font-black italic uppercase tracking-tighter">
-          {isRegister ? 'Inscription' : 'Connexion'}
+    <div className={`w-full max-w-xl p-8 md:p-12 rounded-3xl backdrop-blur-xl shadow-xl relative z-10 transition-all ${
+      darkMode 
+        ? 'bg-[#170c2c]/80 border border-white/10 shadow-2xl text-slate-100' 
+        : 'bg-[#eaeaea]/80 border border-slate-300/80 shadow-slate-300/30 text-slate-900'
+    }`}>
+      <div className="text-center mb-8">
+        <img src="/logo-partylens.png" className="w-[280px] max-w-[80vw] mx-auto mb-6 drop-shadow-md" alt="Logo" />
+        <h1 className={`text-2xl md:text-3xl font-extrabold tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+          {isRegister ? 'Créer votre compte' : 'Espace Organisateur & DJ'}
         </h1>
         {isDemo && isRegister && (
-          <p className="text-amber-300 text-xs font-black uppercase tracking-widest mt-2 animate-pulse drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]">
+          <p className="text-orange-400 text-xs font-bold uppercase tracking-widest mt-2">
             ✨ Mode Test Gratuit Activé ✨
           </p>
         )}
       </div>
 
       {isRegister && (
-        <div className="flex justify-center gap-4 mb-8 animate-in slide-in-from-top-4">
+        <div className="flex justify-center gap-4 mb-6">
           <button 
             type="button" 
             onClick={() => setRole('organisateur')} 
-            className={`flex-1 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2 transition-all flex flex-col items-center gap-2 cursor-pointer ${role === 'organisateur' ? 'bg-white text-purple-950 border-white shadow-[0_0_20px_rgba(255,255,255,0.3)]' : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/30'}`}
+            className={`flex-1 py-3.5 rounded-xl font-bold uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer border ${
+              role === 'organisateur' 
+                ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white border-orange-400 shadow-md' 
+                : darkMode 
+                  ? 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10' 
+                  : 'bg-[#dedede] text-slate-700 border-slate-300 hover:bg-[#d4d4d4]'
+            }`}
           >
-            <User size={18} /> ORGANISATEUR
+            <User size={16} /> ORGANISATEUR
           </button>
           <button 
             type="button" 
             onClick={() => setRole('dj')} 
-            className={`flex-1 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2 transition-all flex flex-col items-center gap-2 cursor-pointer ${role === 'dj' ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white border-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.5)]' : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/30'}`}
+            className={`flex-1 py-3.5 rounded-xl font-bold uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer border ${
+              role === 'dj' 
+                ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white border-orange-400 shadow-md' 
+                : darkMode 
+                  ? 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10' 
+                  : 'bg-[#dedede] text-slate-700 border-slate-300 hover:bg-[#d4d4d4]'
+            }`}
           >
-            <Music size={18} /> PRESTATAIRE / DJ
+            <Music size={16} /> PRESTATAIRE / DJ
           </button>
         </div>
       )}
 
       <form onSubmit={handleAuth} className="space-y-4">
         <div className="relative">
-          <Mail className="absolute left-5 top-5 text-gray-400" size={18} />
-          <input type="email" placeholder="EMAIL" required className="input-style" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Mail className={`absolute left-4 top-4 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} size={18} />
+          <input 
+            type="email" 
+            placeholder="EMAIL" 
+            required 
+            className={`input-style ${darkMode ? 'bg-white/[0.02] border-white/10 text-white' : 'bg-white border-slate-300 text-slate-900 shadow-sm'}`} 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)} 
+          />
         </div>
 
-        <div className={`grid ${isRegister ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
+        <div className={`grid ${isRegister ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'} gap-4`}>
           <div className="relative">
-            <Lock className="absolute left-5 top-5 text-gray-400" size={18} />
-            <input type="password" placeholder="MOT DE PASSE" required className="input-style" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Lock className={`absolute left-4 top-4 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} size={18} />
+            <input 
+              type="password" 
+              placeholder="MOT DE PASSE" 
+              required 
+              className={`input-style ${darkMode ? 'bg-white/[0.02] border-white/10 text-white' : 'bg-white border-slate-300 text-slate-900 shadow-sm'}`} 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+            />
           </div>
           {isRegister && (
-            <div className="relative animate-in zoom-in">
-              <Lock className="absolute left-5 top-5 text-gray-400" size={18} />
-              <input type="password" placeholder="CONFIRMATION" required className="input-style" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+            <div className="relative">
+              <Lock className={`absolute left-4 top-4 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} size={18} />
+              <input 
+                type="password" 
+                placeholder="CONFIRMATION" 
+                required 
+                className={`input-style ${darkMode ? 'bg-white/[0.02] border-white/10 text-white' : 'bg-white border-slate-300 text-slate-900 shadow-sm'}`} 
+                value={confirmPassword} 
+                onChange={(e) => setConfirmPassword(e.target.value)} 
+              />
             </div>
           )}
         </div>
 
         {isRegister && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-top-4">
+          <div className="space-y-4">
             <div className="relative">
-              <Phone className="absolute left-5 top-5 text-gray-400" size={18} />
-              <input type="tel" placeholder="TÉLÉPHONE" required className="input-style" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <Phone className={`absolute left-4 top-4 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} size={18} />
+              <input 
+                type="tel" 
+                placeholder="TÉLÉPHONE" 
+                required 
+                className={`input-style ${darkMode ? 'bg-white/[0.02] border-white/10 text-white' : 'bg-white border-slate-300 text-slate-900 shadow-sm'}`} 
+                value={phone} 
+                onChange={(e) => setPhone(e.target.value)} 
+              />
             </div>
 
             {role === 'organisateur' && (
-              <div className="relative animate-in slide-in-from-top-2">
-                <Hash className="absolute left-5 top-5 text-orange-400" size={18} />
+              <div className="relative">
+                <Hash className="absolute left-4 top-4 text-orange-500" size={18} />
                 <input 
                   type="text" 
                   placeholder="CODE DJ (OPTIONNEL)" 
-                  className="input-style border-orange-500/30" 
+                  className={`input-style ${darkMode ? 'bg-white/[0.02] border-white/10 text-white' : 'bg-white border-slate-300 text-slate-900 shadow-sm'}`} 
                   value={djCodeInput} 
                   onChange={(e) => setDjCodeInput(e.target.value)} 
                 />
@@ -191,20 +235,28 @@ function LoginContent() {
             {/* --- SECTION ADRESSE --- */}
             <div className="space-y-3">
               <div className="relative">
-                {isManualAddress ? <Edit3 className="absolute left-5 top-5 text-orange-400" size={18} /> : <MapPin className="absolute left-5 top-5 text-gray-400" size={18} />}
+                {isManualAddress ? <Edit3 className="absolute left-4 top-4 text-orange-500" size={18} /> : <MapPin className={`absolute left-4 top-4 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} size={18} />}
                 <input 
                   type="text" 
                   placeholder={isManualAddress ? "NUMÉRO ET NOM DE RUE" : "RECHERCHE TON ADRESSE"} 
                   required 
-                  className="input-style" 
+                  className={`input-style ${darkMode ? 'bg-white/[0.02] border-white/10 text-white' : 'bg-white border-slate-300 text-slate-900 shadow-sm'}`} 
                   value={addressSearch} 
                   onChange={(e) => { setAddressSearch(e.target.value); if(!isManualAddress) setStreet(''); }} 
                 />
                 
                 {!isManualAddress && suggestions.length > 0 && (
-                  <div className="absolute z-50 w-full mt-2 bg-[#18082e] border border-white/20 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-xl">
+                  <div className={`absolute z-50 w-full mt-2 border rounded-xl overflow-hidden shadow-xl backdrop-blur-xl ${
+                    darkMode ? 'bg-[#170c2c] border-white/10 text-white' : 'bg-white border-slate-300 text-slate-900'
+                  }`}>
                     {suggestions.map((s, i) => (
-                      <div key={i} onClick={() => handleSelectAddress(s)} className="p-4 hover:bg-orange-500/20 cursor-pointer text-[10px] font-bold uppercase border-b border-white/10 transition-colors">
+                      <div 
+                        key={i} 
+                        onClick={() => handleSelectAddress(s)} 
+                        className={`p-3 cursor-pointer text-xs font-semibold border-b transition-colors ${
+                          darkMode ? 'hover:bg-white/10 border-white/5' : 'hover:bg-orange-50 border-slate-100'
+                        }`}
+                      >
                         {s.properties.label}
                       </div>
                     ))}
@@ -215,21 +267,27 @@ function LoginContent() {
               <button 
                 type="button" 
                 onClick={toggleManualAddress}
-                className={`w-full py-2 px-4 rounded-xl border text-[9px] font-black uppercase tracking-[0.2em] transition-all ${
+                className={`w-full py-2.5 px-4 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                   isManualAddress 
-                  ? 'border-orange-500/50 text-orange-400 bg-orange-500/10 shadow-[0_0_15px_rgba(249,115,22,0.2)]' 
-                  : 'border-white/15 text-gray-300 hover:text-white hover:border-white/30 bg-white/5'
+                    ? 'border-orange-500 text-orange-400 bg-orange-500/10' 
+                    : darkMode 
+                      ? 'border-white/10 text-slate-300 hover:text-white hover:bg-white/5 bg-white/[0.02]' 
+                      : 'border-slate-300 text-slate-700 hover:text-slate-900 bg-[#dedede]'
                 }`}
               >
-                {isManualAddress ? "← Revenir à la recherche automatique" : "📍 Adresse introuvable ? Cliquez ici"}
+                {isManualAddress ? "← Revenir à la recherche automatique" : "📍 Adresse introuvable ? Saisir manuellement"}
               </button>
 
               <div className="grid grid-cols-2 gap-4">
                 <input 
                   type="text" 
-                  placeholder="CP" 
+                  placeholder="CODE POSTAL" 
                   required 
-                  className={`input-style !pl-5 ${!isManualAddress ? 'opacity-50 cursor-not-allowed bg-white/5' : 'bg-black/50 border-orange-500/30 focus:border-orange-500'}`} 
+                  className={`input-style !pl-4 ${
+                    !isManualAddress 
+                      ? (darkMode ? 'opacity-50 cursor-not-allowed bg-white/5 text-slate-500' : 'opacity-50 cursor-not-allowed bg-slate-200 text-slate-400') 
+                      : (darkMode ? 'bg-white/[0.02] border-white/10 text-white' : 'bg-white border-slate-300 text-slate-900 shadow-sm')
+                  }`} 
                   value={zip} 
                   readOnly={!isManualAddress}
                   onChange={(e) => setZip(e.target.value)}
@@ -238,7 +296,11 @@ function LoginContent() {
                   type="text" 
                   placeholder="VILLE" 
                   required 
-                  className={`input-style !pl-5 ${!isManualAddress ? 'opacity-50 cursor-not-allowed bg-white/5' : 'bg-black/50 border-orange-500/30 focus:border-orange-500'}`} 
+                  className={`input-style !pl-4 ${
+                    !isManualAddress 
+                      ? (darkMode ? 'opacity-50 cursor-not-allowed bg-white/5 text-slate-500' : 'opacity-50 cursor-not-allowed bg-slate-200 text-slate-400') 
+                      : (darkMode ? 'bg-white/[0.02] border-white/10 text-white' : 'bg-white border-slate-300 text-slate-900 shadow-sm')
+                  }`} 
                   value={city} 
                   readOnly={!isManualAddress}
                   onChange={(e) => setCity(e.target.value)}
@@ -248,41 +310,81 @@ function LoginContent() {
           </div>
         )}
 
-        <button type="submit" disabled={loading} className="w-full py-6 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 rounded-[30px] font-black uppercase text-xs tracking-[0.3em] shadow-[0_0_25px_rgba(249,115,22,0.5)] border border-orange-300/40 text-white cursor-pointer hover:scale-[1.02] active:scale-95 transition-all flex justify-center items-center mt-6">
-          {loading ? <Loader2 className="animate-spin text-white" /> : (isRegister ? "CRÉER MON COMPTE" : "SE CONNECTER")}
+        <button 
+          type="submit" 
+          disabled={loading} 
+          className="w-full py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl font-bold uppercase text-xs tracking-wider shadow-lg shadow-orange-500/20 text-white cursor-pointer hover:brightness-105 active:scale-[0.98] transition-all flex justify-center items-center mt-6"
+        >
+          {loading ? <Loader2 className="animate-spin text-white" size={18} /> : (isRegister ? "Créer mon compte" : "Se connecter")}
         </button>
       </form>
 
-      <button type="button" onPointerDown={() => setIsRegister(!isRegister)} className="w-full mt-8 text-orange-200/80 text-[10px] uppercase font-black tracking-widest no-underline italic bg-transparent border-none cursor-pointer hover:text-white transition-colors">
-        {isRegister ? "J'ai déjà un compte ? → Connexion" : "Pas encore de compte ? → Inscription"}
+      <button 
+        type="button" 
+        onClick={() => setIsRegister(!isRegister)} 
+        className={`w-full mt-6 text-xs font-semibold bg-transparent border-none cursor-pointer transition-colors text-center ${
+          darkMode ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+        }`}
+      >
+        {isRegister ? "J'déjà un compte ? → Connexion" : "Pas encore de compte ? → Inscription"}
       </button>
     </div>
   );
 }
 
-// 2. Page principale exportée avec le Suspense obligatoire pour useSearchParams
+// 2. Page principale gérant l'état global du mode clair / sombre
 export default function LoginPage() {
+  const [darkMode, setDarkMode] = useState(true);
+
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#2d104d] via-[#210a3b] to-[#140427] flex items-center justify-center p-6 font-sans relative overflow-hidden text-white">
-      {/* VAGUES LUMINEUSES ORANGE ET VIOLETTES */}
+    <main className={`min-h-screen flex flex-col items-center justify-center px-6 py-16 font-sans relative transition-colors duration-300 ${
+      darkMode 
+        ? 'bg-[#0f071e] text-slate-100 selection:bg-orange-500 selection:text-white' 
+        : 'bg-[#f4f4f6] text-slate-900 selection:bg-orange-500 selection:text-white'
+    }`}>
+      
+      {/* BOUTON SWITCH MODE CLAIR / SOMBRE (FIXÉ EN HAUT À DROITE) */}
+      <button 
+        onClick={() => setDarkMode(!darkMode)}
+        className={`absolute top-6 right-6 z-50 flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all shadow-md border cursor-pointer ${
+          darkMode 
+            ? 'bg-white/10 text-amber-300 border-white/20 hover:bg-white/20' 
+            : 'bg-[#eaeaea] text-slate-700 border-slate-300 hover:bg-[#dedede]'
+        }`}
+        aria-label="Changer le mode d'affichage"
+      >
+        {darkMode ? <Sun size={15} /> : <Moon size={15} />}
+        <span>{darkMode ? "Mode Clair" : "Mode Sombre"}</span>
+      </button>
+
+      {/* BACKGROUND EFFECTS IDENTIQUES ACCUEIL */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <svg className="absolute -top-12 left-0 w-full h-[500px] text-orange-500/30 blur-xl opacity-80" viewBox="0 0 1440 320" preserveAspectRatio="none">
-          <path fill="currentColor" d="M0,160L60,176C120,192,240,224,360,213.3C480,203,600,149,720,154.7C840,160,960,224,1080,229.3C1200,235,1320,181,1380,154.7L1440,128L1440,0L1380,0C1320,0,1200,0,1080,0C960,0,840,0,720,0C600,0,480,0,360,0C240,0,120,0,0,0Z"></path>
-        </svg>
-        <svg className="absolute bottom-0 right-0 w-full h-[500px] text-orange-600/30 blur-xl opacity-80" viewBox="0 0 1440 320" preserveAspectRatio="none">
-          <path fill="currentColor" d="M0,224L60,213.3C120,203,240,181,360,186.7C480,192,600,224,720,218.7C840,213,960,171,1080,160C1200,149,1320,171,1380,181.3L1440,192L1440,320L1380,320C1320,320,1120,320,960,320C800,320,640,320,480,320C320,320,160,320,80,320L0,320Z"></path>
-        </svg>
-        <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-r from-orange-500/30 via-amber-400/20 to-pink-500/15 rounded-full blur-[120px]"></div>
+        {darkMode ? (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[450px] bg-gradient-to-b from-purple-600/15 via-orange-600/10 to-transparent rounded-full blur-[120px]"></div>
+        ) : (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[450px] bg-gradient-to-b from-purple-200/30 via-orange-100/20 to-transparent rounded-full blur-[100px]"></div>
+        )}
       </div>
 
-      <Suspense fallback={<Loader2 className="animate-spin text-orange-400 w-10 h-10" />}>
-        <LoginContent />
+      <Suspense fallback={<Loader2 className="animate-spin text-orange-500 w-8 h-8" />}>
+        <LoginContent darkMode={darkMode} />
       </Suspense>
 
       <style jsx global>{`
-        .input-style { width: 100%; padding: 1.25rem 1.25rem 1.25rem 3.5rem; border-radius: 1rem; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.15); color: white; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; outline: none; transition: all 0.3s; }
-        .input-style:focus { border-color: #f97316; box-shadow: 0 0 15px rgba(249, 115, 22, 0.3); }
-        .glass-card { background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(40px); }
+        .input-style { 
+          width: 100%; 
+          padding: 0.875rem 1rem 0.875rem 2.75rem; 
+          border-radius: 0.75rem; 
+          font-weight: 600; 
+          font-size: 0.75rem; 
+          outline: none; 
+          transition: all 0.2s; 
+          border-width: 1px;
+        }
+        .input-style:focus { 
+          border-color: #f97316 !important; 
+          box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2); 
+        }
       `}</style>
     </main>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState, use } from "react";
-import { X, Maximize2, Images, Mail, ArrowRight, CheckCircle2, Shuffle } from "lucide-react";
+import { X, Maximize2, Images, Mail, ArrowRight, CheckCircle2, Shuffle, Sun, Moon } from "lucide-react";
 import { db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, addDoc, serverTimestamp, doc, onSnapshot } from "firebase/firestore";
@@ -151,7 +151,7 @@ const FUN_CHALLENGES = [
   "Faites une tête de personne qui a oublié quelque chose d'important !",
   "Tout le monde fait un signe de tête complice et mystérieux !",
   "Faites semblant de jouer au bowling et de faire un strike parfait !",
-  "Le groupe entier fait un geste de 'stop' avec la paume de la hand !",
+  "Le groupe entier fait un geste de 'stop' avec la paume de la main !",
   "Imitez des détectives privés observant un suspect à la jumelle !",
   "Faites une pose de star sur un tapis rouge sous les flashs !",
   "Tout le monde fait un sourire ultra éclatant de pub pour dentifrice !",
@@ -192,6 +192,7 @@ export default function PhotoboothPage({ params }) {
 
   const videoRef = useRef(null);
 
+  const [darkMode, setDarkMode] = useState(true);
   const [step, setStep] = useState("live");
   const [flash, setFlash] = useState(false);
   const [countdown, setCountdown] = useState(null);
@@ -437,7 +438,26 @@ export default function PhotoboothPage({ params }) {
   };
 
   return (
-    <main className="fixed inset-0 bg-gradient-to-b from-[#2d104d] via-[#210a3b] to-[#140427] flex flex-col items-center justify-center font-sans overflow-hidden">
+    <main className={`fixed inset-0 flex flex-col items-center justify-center font-sans overflow-hidden transition-colors duration-300 ${
+      darkMode 
+        ? 'bg-[#0f071e] text-slate-100 selection:bg-orange-500 selection:text-white' 
+        : 'bg-[#f4f4f6] text-slate-900 selection:bg-orange-500 selection:text-white'
+    }`}>
+      
+      {/* BOUTON SWITCH MODE CLAIR / SOMBRE (FIXÉ EN HAUT À DROITE) */}
+      <button 
+        onClick={() => setDarkMode(!darkMode)}
+        className={`absolute top-6 right-6 z-[10000] flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all shadow-md border cursor-pointer ${
+          darkMode 
+            ? 'bg-white/10 text-amber-300 border-white/20 hover:bg-white/20' 
+            : 'bg-[#eaeaea] text-slate-700 border-slate-300 hover:bg-[#dedede]'
+        }`}
+        aria-label="Changer le mode d'affichage"
+      >
+        {darkMode ? <Sun size={15} /> : <Moon size={15} />}
+        <span>{darkMode ? "Mode Clair" : "Mode Sombre"}</span>
+      </button>
+
       <video
         ref={videoRef}
         autoPlay
@@ -445,6 +465,11 @@ export default function PhotoboothPage({ params }) {
         muted
         className={`absolute inset-0 w-full h-full object-cover z-0 ${step !== 'live' && countdown === null && challengeTimer === null ? 'hidden' : ''}`}
       />
+
+      {/* OVERLAY MODE CLAIR POUR LISIBILITÉ DU FLUX VIDÉO SI NÉCESSAIRE */}
+      {!darkMode && step === 'live' && countdown === null && challengeTimer === null && (
+        <div className="absolute inset-0 bg-slate-200/10 pointer-events-none z-0" />
+      )}
 
       {frameUrl && step === 'live' && (
         <img
@@ -456,25 +481,33 @@ export default function PhotoboothPage({ params }) {
       )}
 
       {step === 'captured' && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#140427]/85 backdrop-blur-md animate-in zoom-in duration-300">
+        <div className={`absolute inset-0 z-50 flex items-center justify-center backdrop-blur-md animate-in zoom-in duration-300 ${
+          darkMode ? 'bg-[#0f071e]/90' : 'bg-[#f4f4f6]/90'
+        }`}>
           <div className="bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 p-1 rounded-[36px] shadow-[0_0_50px_rgba(249,115,22,0.4)]">
-            <div className="bg-[#210a3b]/95 border border-white/10 p-10 rounded-[34px] text-white text-center">
+            <div className={`border p-10 rounded-[34px] text-center ${
+              darkMode ? 'bg-[#170c2c]/95 border-white/10 text-white' : 'bg-[#eaeaea]/95 border-slate-300 text-slate-900'
+            }`}>
               <h2 className="text-4xl font-black italic uppercase tracking-tight mb-2 bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 bg-clip-text text-transparent">
                 ✨ C&apos;est dans la boîte !
               </h2>
-              <p className="text-orange-200/80 text-xs font-black uppercase tracking-widest">Préparation des options...</p>
+              <p className={`text-xs font-black uppercase tracking-widest ${darkMode ? 'text-orange-200/80' : 'text-orange-700'}`}>Préparation des options...</p>
             </div>
           </div>
         </div>
       )}
 
       {step === 'email-choice' && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#140427]/90 backdrop-blur-md p-6 animate-in fade-in">
-          <div className="w-full max-w-md bg-white/[0.07] border border-white/15 p-8 rounded-[40px] text-center shadow-[0_25px_60px_rgba(0,0,0,0.7)] backdrop-blur-2xl">
+        <div className={`absolute inset-0 z-50 flex items-center justify-center backdrop-blur-md p-6 animate-in fade-in ${
+          darkMode ? 'bg-[#0f071e]/90' : 'bg-[#f4f4f6]/90'
+        }`}>
+          <div className={`w-full max-w-md border p-8 rounded-[40px] text-center shadow-[0_25px_60px_rgba(0,0,0,0.7)] backdrop-blur-2xl ${
+            darkMode ? 'bg-[#170c2c]/90 border-white/15 text-white' : 'bg-[#eaeaea]/95 border-slate-300 text-slate-900'
+          }`}>
             {capturedPhotoUrl && (
-              <img src={capturedPhotoUrl} alt="Aperçu" className="w-full rounded-2xl mb-6 border border-white/10 object-cover aspect-video shadow-lg" />
+              <img src={capturedPhotoUrl} alt="Aperçu" className={`w-full rounded-2xl mb-6 object-cover aspect-video shadow-lg border ${darkMode ? 'border-white/10' : 'border-slate-300'}`} />
             )}
-            <h3 className="text-2xl font-black italic uppercase mb-6 tracking-tight text-white">
+            <h3 className={`text-2xl font-black italic uppercase mb-6 tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>
               Voulez-vous recevoir une copie par mail ?
             </h3>
 
@@ -489,7 +522,9 @@ export default function PhotoboothPage({ params }) {
               <button
                 type="button"
                 onClick={resetPhotobooth}
-                className="bg-white/10 hover:bg-white/20 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest border border-white/15 transition-all cursor-pointer backdrop-blur-md active:scale-95"
+                className={`py-4 rounded-2xl font-black uppercase text-xs tracking-widest border transition-all cursor-pointer backdrop-blur-md active:scale-95 ${
+                  darkMode ? 'bg-white/10 hover:bg-white/20 text-white border-white/15' : 'bg-[#dedede] hover:bg-[#d4d4d4] text-slate-800 border-slate-300'
+                }`}
               >
                 Non
               </button>
@@ -499,12 +534,16 @@ export default function PhotoboothPage({ params }) {
       )}
 
       {step === 'email-input' && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#140427]/90 backdrop-blur-md p-6 animate-in fade-in">
-          <div className="w-full max-w-md bg-white/[0.07] border border-white/15 p-8 rounded-[40px] shadow-[0_25px_60px_rgba(0,0,0,0.7)] backdrop-blur-2xl">
-            <h3 className="text-2xl font-black italic uppercase mb-2 tracking-tight text-center text-white">
+        <div className={`absolute inset-0 z-50 flex items-center justify-center backdrop-blur-md p-6 animate-in fade-in ${
+          darkMode ? 'bg-[#0f071e]/90' : 'bg-[#f4f4f6]/90'
+        }`}>
+          <div className={`w-full max-w-md border p-8 rounded-[40px] shadow-[0_25px_60px_rgba(0,0,0,0.7)] backdrop-blur-2xl ${
+            darkMode ? 'bg-[#170c2c]/90 border-white/15 text-white' : 'bg-[#eaeaea]/95 border-slate-300 text-slate-900'
+          }`}>
+            <h3 className={`text-2xl font-black italic uppercase mb-2 tracking-tight text-center ${darkMode ? 'text-white' : 'text-slate-900'}`}>
               Votre adresse mail
             </h3>
-            <p className="text-orange-200/80 text-[10px] font-black uppercase tracking-widest text-center mb-6">Pour recevoir votre souvenir photo</p>
+            <p className={`text-[10px] font-black uppercase tracking-widest text-center mb-6 ${darkMode ? 'text-orange-200/80' : 'text-orange-700'}`}>Pour recevoir votre souvenir photo</p>
 
             <form onSubmit={handleSendEmail} className="space-y-4">
               <div className="relative">
@@ -515,9 +554,13 @@ export default function PhotoboothPage({ params }) {
                   placeholder="votre@email.com"
                   required
                   autoFocus
-                  className="w-full bg-white/10 border border-white/20 p-4 rounded-2xl text-xs font-bold text-white outline-none focus:border-orange-500 transition-all placeholder:text-white/40"
+                  className={`w-full p-4 rounded-2xl text-xs font-bold outline-none transition-all border ${
+                    darkMode 
+                      ? 'bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-orange-500' 
+                      : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-orange-500'
+                  }`}
                 />
-                <Mail size={18} className="absolute right-4 top-4 text-orange-400/80" />
+                <Mail size={18} className="absolute right-4 top-4 text-orange-400" />
               </div>
 
               <button
@@ -531,7 +574,9 @@ export default function PhotoboothPage({ params }) {
               <button
                 type="button"
                 onClick={resetPhotobooth}
-                className="w-full text-white/50 hover:text-white py-2 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer"
+                className={`w-full py-2 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer ${
+                  darkMode ? 'text-white/50 hover:text-white' : 'text-slate-500 hover:text-slate-900'
+                }`}
               >
                 Annuler / Recommencer
               </button>
@@ -541,18 +586,22 @@ export default function PhotoboothPage({ params }) {
       )}
 
       {step === 'sent' && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#140427]/90 backdrop-blur-md text-center animate-in zoom-in duration-300">
-          <div className="bg-white/[0.07] border border-white/15 p-10 rounded-[40px] max-w-md w-full mx-4 shadow-[0_25px_60px_rgba(0,0,0,0.7)] backdrop-blur-2xl">
+        <div className={`absolute inset-0 z-50 flex items-center justify-center backdrop-blur-md text-center animate-in zoom-in duration-300 ${
+          darkMode ? 'bg-[#0f071e]/90' : 'bg-[#f4f4f6]/90'
+        }`}>
+          <div className={`border p-10 rounded-[40px] max-w-md w-full mx-4 shadow-[0_25px_60px_rgba(0,0,0,0.7)] backdrop-blur-2xl ${
+            darkMode ? 'bg-[#170c2c]/90 border-white/15 text-white' : 'bg-[#eaeaea]/95 border-slate-300 text-slate-900'
+          }`}>
             <div className="inline-flex p-4 bg-emerald-500/20 text-emerald-400 rounded-full mb-4 border border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
               <CheckCircle2 size={48} />
             </div>
-            <h3 className="text-2xl font-black italic uppercase tracking-tighter mb-2 text-white">
+            <h3 className={`text-2xl font-black italic uppercase tracking-tighter mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
               E-mail bien envoyé !
             </h3>
-            <p className="text-orange-200/80 text-xs font-black uppercase tracking-widest mb-4">
+            <p className={`text-xs font-black uppercase tracking-widest mb-4 ${darkMode ? 'text-orange-200/80' : 'text-orange-700'}`}>
               Pensez à vérifier vos spams si vous ne le recevez pas.
             </p>
-            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest">
+            <p className={`text-[10px] font-black uppercase tracking-widest ${darkMode ? 'text-white/40' : 'text-slate-500'}`}>
               Retour automatique au photobooth...
             </p>
           </div>
@@ -565,16 +614,22 @@ export default function PhotoboothPage({ params }) {
             <button
               type="button"
               onClick={() => setShowFrameSelector(!showFrameSelector)}
-              className="flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/20 px-4 py-3 text-sm font-black uppercase tracking-wider text-white backdrop-blur-xl border border-white/20 hover:border-orange-400 transition-all cursor-pointer shadow-xl active:scale-95"
+              className={`flex items-center gap-2 rounded-full px-4 py-3 text-sm font-black uppercase tracking-wider backdrop-blur-xl transition-all cursor-pointer shadow-xl active:scale-95 border ${
+                darkMode 
+                  ? 'bg-white/10 hover:bg-white/25 text-white border-white/20 hover:border-orange-400' 
+                  : 'bg-[#eaeaea] hover:bg-[#dedede] text-slate-800 border-slate-300 hover:border-orange-500'
+              }`}
             >
-              <Images size={20} className="text-orange-400" />
+              <Images size={20} className="text-orange-500" />
               Cadres
             </button>
           </div>
 
           {showFrameSelector && (
             <div className="absolute bottom-28 left-0 right-0 z-[9999] pointer-events-auto px-4">
-              <div className="mx-auto flex max-w-[720px] gap-2 overflow-x-auto rounded-full bg-[#140427]/90 px-4 py-3 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
+              <div className={`mx-auto flex max-w-[720px] gap-2 overflow-x-auto rounded-full px-4 py-3 backdrop-blur-2xl border shadow-[0_20px_50px_rgba(0,0,0,0.8)] ${
+                darkMode ? 'bg-[#170c2c]/95 border-white/20' : 'bg-[#eaeaea]/95 border-slate-300'
+              }`}>
                 {frameUrls.map((frame) => (
                   <button
                     key={frame.number}
@@ -586,7 +641,7 @@ export default function PhotoboothPage({ params }) {
                     className={`relative h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 transition-transform cursor-pointer ${
                       selectedFrameNumber === frame.number
                         ? "scale-110 border-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.6)]"
-                        : "border-white/30 hover:border-white/60"
+                        : darkMode ? "border-white/30 hover:border-white/60" : "border-slate-300 hover:border-slate-500"
                     }`}
                   >
                     <img
@@ -610,11 +665,13 @@ export default function PhotoboothPage({ params }) {
 
       {challengeTimer !== null && currentChallenge && (
         <div className="absolute top-12 inset-x-4 z-40 flex flex-col items-center pointer-events-none">
-          <div className="bg-[#140427]/90 border-2 border-amber-400 px-8 py-6 rounded-[35px] max-w-xl w-full text-center shadow-[0_0_50px_rgba(251,191,36,0.5)] backdrop-blur-2xl animate-in zoom-in duration-200">
+          <div className={`border-2 border-amber-400 px-8 py-6 rounded-[35px] max-w-xl w-full text-center shadow-[0_0_50px_rgba(251,191,36,0.5)] backdrop-blur-2xl animate-in zoom-in duration-200 ${
+            darkMode ? 'bg-[#170c2c]/95' : 'bg-[#eaeaea]/95'
+          }`}>
             <div className="flex items-center justify-center gap-2 text-amber-300 text-xs font-black uppercase tracking-widest mb-2">
               <Shuffle size={16} className="animate-spin text-orange-400" /> Défi Flash en cours ({challengeTimer}s)
             </div>
-            <h3 className="text-2xl md:text-3xl font-black italic uppercase text-white tracking-tight leading-tight">
+            <h3 className={`text-2xl md:text-3xl font-black italic uppercase tracking-tight leading-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>
               {currentChallenge}
             </h3>
           </div>
@@ -628,7 +685,9 @@ export default function PhotoboothPage({ params }) {
           <button
             type="button"
             onClick={() => window.history.back()}
-            className="p-4 bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-xl rounded-full text-white transition-all cursor-pointer shadow-lg active:scale-95"
+            className={`p-4 border backdrop-blur-xl rounded-full transition-all cursor-pointer shadow-lg active:scale-95 ${
+              darkMode ? 'bg-white/10 hover:bg-white/20 border-white/20 text-white' : 'bg-[#eaeaea] hover:bg-[#dedede] border-slate-300 text-slate-800'
+            }`}
           >
             <X size={24} />
           </button>
@@ -653,7 +712,9 @@ export default function PhotoboothPage({ params }) {
           <button
             type="button"
             onClick={toggleFullScreen}
-            className="p-4 bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-xl rounded-full text-white transition-all cursor-pointer shadow-lg active:scale-95"
+            className={`p-4 border backdrop-blur-xl rounded-full transition-all cursor-pointer shadow-lg active:scale-95 ${
+              darkMode ? 'bg-white/10 hover:bg-white/20 border-white/20 text-white' : 'bg-[#eaeaea] hover:bg-[#dedede] border-slate-300 text-slate-800'
+            }`}
           >
             <Maximize2 size={24} />
           </button>

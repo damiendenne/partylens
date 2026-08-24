@@ -4,7 +4,7 @@ import { useState, useEffect, use, useRef } from 'react';
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, getDocs, query } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Camera, Music, Share2, ArrowLeft, CheckCircle2, BookOpen, Image as ImageIcon, QrCode, X, Sparkles, Loader2 } from 'lucide-react';
+import { Camera, Music, Share2, ArrowLeft, CheckCircle2, BookOpen, Image as ImageIcon, QrCode, X, Sparkles, Loader2, Sun, Moon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import Link from 'next/link';
 
@@ -24,6 +24,7 @@ export default function GuestPage({ params }) {
   const [mounted, setMounted] = useState(false);
   const [currentUrl, setCurrentUrl] = useState("");
   const [showModalQR, setShowModalQR] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
 
   const fileInputRef = useRef(null);
 
@@ -38,11 +39,16 @@ export default function GuestPage({ params }) {
         const snap = await getDoc(doc(db, "events", eventId));
         if (snap.exists()) setEventData(snap.data());
       } catch (err) {
-        console.error("Erreur chargement événement:", err);
+        console.error("Erreur chargement événement :", err);
       }
     };
     fetchEvent();
   }, [eventId]);
+
+  const showNotification = (msg) => {
+    setNotify({ show: true, msg });
+    setTimeout(() => setNotify({ show: false, msg: "" }), 3000);
+  };
 
   const handleShare = async () => {
     const shareData = {
@@ -56,11 +62,10 @@ export default function GuestPage({ params }) {
         await navigator.share(shareData);
       } else {
         await navigator.clipboard.writeText(currentUrl);
-        setNotify({ show: true, msg: "Lien copié !" });
-        setTimeout(() => setNotify({ show: false, msg: "" }), 3000);
+        showNotification("Lien copié !");
       }
     } catch (err) {
-      console.error("Erreur partage:", err);
+      console.error("Erreur partage :", err);
     }
   };
 
@@ -120,10 +125,9 @@ export default function GuestPage({ params }) {
         });
       }
 
-      setNotify({ show: true, msg: `🚀 ${selectedFiles.length} Média(s) publié(s) !` });
+      showNotification(`🚀 ${selectedFiles.length} Média(s) publié(s) !`);
       setFile(null);
-      fileInput.value = "";
-      setTimeout(() => setNotify({ show: false, msg: "" }), 3000);
+      if (fileInput) fileInput.value = "";
     } catch (err) { 
       console.error("Erreur d'envoi :", err);
       alert("Une erreur est survenue lors de l'envoi de vos médias.");
@@ -133,19 +137,19 @@ export default function GuestPage({ params }) {
 
   const handleMusicRequest = async (e) => {
     e.preventDefault();
-    if (!song || !artist) return;
+    if (!song.trim() || !artist.trim()) return;
+    
     setLoading(true);
     try {
       await addDoc(collection(db, "events", eventId, "musicRequests"), { 
-        song: `${artist} - ${song}`, 
+        song: `${artist.trim()} - ${song.trim()}`, 
         createdAt: serverTimestamp() 
       });
-      setNotify({ show: true, msg: "🎵 Demande envoyée !" });
+      showNotification("🎵 Demande envoyée !");
       setSong(""); 
       setArtist("");
-      setTimeout(() => setNotify({ show: false, msg: "" }), 3000);
     } catch (err) { 
-      console.error(err); 
+      console.error("Erreur musique :", err); 
     }
     setLoading(false);
   };
@@ -153,48 +157,63 @@ export default function GuestPage({ params }) {
   const handleGuestbookSubmit = async (e) => {
     e.preventDefault();
     if (!guestMsg.trim() || !guestName.trim()) return;
+    
     setLoading(true);
     try {
       await addDoc(collection(db, "events", eventId, "guestbook"), { 
-        message: guestMsg, 
-        author: guestName, 
+        message: guestMsg.trim(), 
+        author: guestName.trim(), 
         createdAt: serverTimestamp() 
       });
-      setNotify({ show: true, msg: "📖 Mot signé !" });
+      showNotification("📖 Mot signé !");
       setGuestMsg("");
       setGuestName("");
-      setTimeout(() => setNotify({ show: false, msg: "" }), 3000);
     } catch (err) { 
-      console.error(err); 
+      console.error("Erreur livre d'or :", err); 
     }
     setLoading(false);
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#2d104d] via-[#210a3b] to-[#140427] text-white flex flex-col items-center p-6 font-sans overflow-x-hidden relative pb-16">
+    <main className={`min-h-screen flex flex-col items-center px-6 py-12 font-sans relative transition-colors duration-300 ${
+      darkMode 
+        ? 'bg-[#0f071e] text-slate-100 selection:bg-orange-500 selection:text-white' 
+        : 'bg-[#f4f4f6] text-slate-900 selection:bg-orange-500 selection:text-white'
+    }`}>
       
-      {/* EFFET DE VAGUES LUMINEUSES ORANGE EN ARRIÈRE-PLAN */}
+      {/* BOUTON SWITCH MODE CLAIR / SOMBRE (FIXÉ EN HAUT À DROITE) */}
+      <button 
+        onClick={() => setDarkMode(!darkMode)}
+        className={`fixed top-6 right-6 z-50 flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all shadow-md border cursor-pointer ${
+          darkMode 
+            ? 'bg-white/10 text-amber-300 border-white/20 hover:bg-white/20' 
+            : 'bg-[#eaeaea] text-slate-700 border-slate-300 hover:bg-[#dedede]'
+        }`}
+        aria-label="Changer le mode d'affichage"
+      >
+        {darkMode ? <Sun size={15} /> : <Moon size={15} />}
+        <span>{darkMode ? "Mode Clair" : "Mode Sombre"}</span>
+      </button>
+
+      {/* BACKGROUND EFFECTS */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <svg className="absolute -top-12 left-0 w-full h-[500px] text-orange-500/35 blur-xl opacity-90" viewBox="0 0 1440 320" preserveAspectRatio="none">
-          <path fill="currentColor" d="M0,160L60,176C120,192,240,224,360,213.3C480,203,600,149,720,154.7C840,160,960,224,1080,229.3C1200,235,1320,181,1380,154.7L1440,128L1440,0L1380,0C1320,0,1200,0,1080,0C960,0,840,0,720,0C600,0,480,0,360,0C240,0,120,0,0,0Z"></path>
-        </svg>
-
-        <svg className="absolute top-[30%] -left-20 w-[130%] h-[550px] text-amber-500/30 blur-2xl transform rotate-3" viewBox="0 0 1440 320" preserveAspectRatio="none">
-          <path fill="currentColor" d="M0,96L80,122.7C160,149,320,203,480,208C640,213,800,171,960,149.3C1120,128,1280,128,1360,128L1440,128L1440,320L1360,320C1280,320,1120,320,960,320C800,320,640,320,480,320C320,320,160,320,80,320L0,320Z"></path>
-        </svg>
-
-        <svg className="absolute bottom-0 right-0 w-full h-[500px] text-orange-600/35 blur-xl opacity-90" viewBox="0 0 1440 320" preserveAspectRatio="none">
-          <path fill="currentColor" d="M0,224L60,213.3C120,203,240,181,360,186.7C480,192,600,224,720,218.7C840,213,960,171,1080,160C1200,149,1320,171,1380,181.3L1440,192L1440,320L1380,320C1280,320,1120,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"></path>
-        </svg>
-
-        <div className="absolute top-[18%] left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-r from-orange-500/40 via-amber-400/30 to-pink-500/20 rounded-full blur-[130px]"></div>
+        {darkMode ? (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[450px] bg-gradient-to-b from-purple-600/15 via-orange-600/10 to-transparent rounded-full blur-[120px]"></div>
+        ) : (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[450px] bg-gradient-to-b from-purple-200/30 via-orange-100/20 to-transparent rounded-full blur-[100px]"></div>
+        )}
       </div>
 
       {/* EN-TÊTE */}
-      <header className="w-full max-w-md flex justify-between items-center mb-6 z-10 pt-2">
+      <header className="w-full max-w-md flex justify-between items-center mb-8 z-10 pt-2 pr-24">
         <button 
           onClick={() => window.history.back()} 
-          className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-2xl text-white transition-all border border-white/20 shadow-lg cursor-pointer active:scale-95"
+          className={`p-3 rounded-2xl transition-all border shadow-md cursor-pointer active:scale-95 ${
+            darkMode 
+              ? 'bg-white/5 hover:bg-white/10 border-white/10 text-white' 
+              : 'bg-[#eaeaea] hover:bg-slate-200 border-slate-300 text-slate-900'
+          }`}
+          aria-label="Retour"
         >
           <ArrowLeft size={18} />
         </button>
@@ -202,12 +221,17 @@ export default function GuestPage({ params }) {
         <img 
           src="/logo-partylens.png" 
           alt="PartyLens" 
-          className="w-44 h-auto drop-shadow-[0_0_30px_rgba(249,115,22,0.5)]" 
+          className="w-36 h-auto drop-shadow-md" 
         />
 
         <button 
           onClick={handleShare} 
-          className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-xl rounded-2xl text-white transition-all border border-white/20 shadow-lg cursor-pointer active:scale-95"
+          className={`p-3 rounded-2xl transition-all border shadow-md cursor-pointer active:scale-95 ${
+            darkMode 
+              ? 'bg-white/5 hover:bg-white/10 border-white/10 text-white' 
+              : 'bg-[#eaeaea] hover:bg-slate-200 border-slate-300 text-slate-900'
+          }`}
+          aria-label="Partager"
         >
           <Share2 size={18} />
         </button>
@@ -217,43 +241,61 @@ export default function GuestPage({ params }) {
       <div className="w-full max-w-md space-y-6 z-10">
         
         {/* CARTE ÉVÉNEMENT */}
-        <section className="bg-white/[0.08] border border-white/20 rounded-[40px] p-8 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] text-center">
-          <h1 className="text-3xl font-black italic uppercase tracking-tighter mb-2 bg-gradient-to-r from-white via-orange-100 to-amber-200 bg-clip-text text-transparent">
+        <section className={`rounded-3xl p-8 backdrop-blur-xl shadow-xl transition-all duration-300 ${
+          darkMode 
+            ? 'bg-[#170c2c]/80 border border-white/10 shadow-2xl' 
+            : 'bg-[#eaeaea]/90 border border-slate-300/80 shadow-slate-300/30'
+        } text-center`}>
+          <h1 className={`text-2xl md:text-3xl font-black italic uppercase tracking-tight mb-3 ${
+            darkMode ? 'text-white' : 'text-slate-900'
+          }`}>
             {eventData?.eventName || "SOIRÉE"}
           </h1>
 
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-orange-500/20 border border-orange-300/40 rounded-full mb-6 shadow-[0_0_15px_rgba(249,115,22,0.3)]">
-            <Music size={14} className="text-amber-300" />
-            <span className="text-[11px] font-black uppercase text-amber-200 tracking-widest italic">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-orange-500/20 border border-orange-300/40 rounded-full mb-6 shadow-sm">
+            <Music size={14} className="text-amber-400" />
+            <span className="text-[11px] font-black uppercase text-amber-300 tracking-wider">
               CODE DJ : {eventData?.djCode || "..."}
             </span>
           </div>
 
           <button
             onClick={() => setShowModalQR(true)}
-            className="w-full flex items-center justify-center gap-2 py-3.5 bg-white/10 hover:bg-white/20 backdrop-blur-xl text-white rounded-2xl font-black uppercase text-[11px] tracking-wider border border-white/20 transition-all mb-6 cursor-pointer shadow-md active:scale-95"
+            className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold uppercase text-xs tracking-wider border transition-all mb-6 cursor-pointer shadow-sm active:scale-95 ${
+              darkMode 
+                ? 'bg-white/[0.04] hover:bg-white/10 border-white/10 text-white' 
+                : 'bg-white hover:bg-slate-100 border-slate-300 text-slate-900'
+            }`}
           >
-            <QrCode size={18} className="text-orange-400" /> Afficher le QR Code
+            <QrCode size={16} className="text-orange-500" /> Afficher le QR Code
           </button>
 
           <div className="flex flex-col gap-3">
             <Link
               href={`/photobooth/${eventId}`}
-              className="w-full py-4 bg-gradient-to-r from-orange-500 via-amber-500 to-pink-500 text-white rounded-2xl font-black uppercase tracking-tight text-xs no-underline flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(249,115,22,0.5)] border border-orange-300/40 hover:scale-105 active:scale-95 transition-all"
+              className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-bold uppercase tracking-wider text-xs no-underline flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 hover:brightness-105 active:scale-98 transition-all"
             >
-              <Sparkles size={18} /> Photobooth Live
+              <Sparkles size={16} /> Photobooth Live
             </Link>
 
             <div className="flex gap-3 w-full">
               <Link
                 href={`/admin/${eventId}/galerie`}
-                className="flex-1 py-3.5 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-black uppercase text-[10px] tracking-wider no-underline flex items-center justify-center gap-2 border border-white/20 transition-all active:scale-95 shadow-md"
+                className={`flex-1 py-3.5 rounded-xl font-bold uppercase text-[11px] tracking-wider no-underline flex items-center justify-center gap-2 border transition-all active:scale-95 shadow-sm ${
+                  darkMode 
+                    ? 'bg-white/[0.04] hover:bg-white/10 border-white/10 text-white' 
+                    : 'bg-white hover:bg-slate-100 border-slate-300 text-slate-900'
+                }`}
               >
-                <ImageIcon size={14} className="text-orange-400" /> Galerie
+                <ImageIcon size={14} className="text-orange-500" /> Galerie
               </Link>
               <Link
                 href={`/event/${eventId}/guestbook`}
-                className="flex-1 py-3.5 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-black uppercase text-[10px] tracking-wider no-underline flex items-center justify-center gap-2 border border-white/20 transition-all active:scale-95 shadow-md"
+                className={`flex-1 py-3.5 rounded-xl font-bold uppercase text-[11px] tracking-wider no-underline flex items-center justify-center gap-2 border transition-all active:scale-95 shadow-sm ${
+                  darkMode 
+                    ? 'bg-white/[0.04] hover:bg-white/10 border-white/10 text-white' 
+                    : 'bg-white hover:bg-slate-100 border-slate-300 text-slate-900'
+                }`}
               >
                 <BookOpen size={14} className="text-amber-400" /> Livre d'or
               </Link>
@@ -261,7 +303,11 @@ export default function GuestPage({ params }) {
 
             <button
               onClick={handleShare}
-              className="w-full py-3.5 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest border border-white/20 flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-md"
+              className={`w-full py-3.5 rounded-xl font-bold uppercase text-[11px] tracking-wider border flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-sm ${
+                darkMode 
+                  ? 'bg-white/[0.04] hover:bg-white/10 border-white/10 text-white' 
+                  : 'bg-white hover:bg-slate-100 border-slate-300 text-slate-900'
+              }`}
             >
               <Share2 size={14} /> Partager le lien
             </button>
@@ -269,12 +315,20 @@ export default function GuestPage({ params }) {
         </section>
 
         {/* SECTION MÉDIAS EN DIRECT */}
-        <section className="bg-white/[0.08] border border-white/20 rounded-[40px] p-8 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-          <h2 className="text-xl font-black italic uppercase tracking-tighter mb-6 flex items-center gap-3">
-            <Camera size={22} className="text-orange-400" /> Médias en direct
+        <section className={`rounded-3xl p-8 backdrop-blur-xl shadow-xl transition-all duration-300 ${
+          darkMode 
+            ? 'bg-[#170c2c]/80 border border-white/10 shadow-2xl' 
+            : 'bg-[#eaeaea]/90 border border-slate-300/80 shadow-slate-300/30'
+        }`}>
+          <h2 className={`text-lg font-black italic uppercase tracking-tight mb-5 flex items-center gap-2.5 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+            <Camera size={20} className="text-orange-500" /> Médias en direct
           </h2>
           <form onSubmit={handlePhotoUpload} className="space-y-4">
-            <label className="block border-2 border-dashed border-orange-400/60 hover:border-orange-400 rounded-[30px] p-8 text-center bg-black/20 cursor-pointer hover:bg-orange-500/10 transition-all group">
+            <label className={`block border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all group ${
+              darkMode 
+                ? 'border-white/20 hover:border-orange-500 bg-white/[0.02] hover:bg-white/[0.06] text-slate-300' 
+                : 'border-slate-300 hover:border-orange-500 bg-white/50 hover:bg-orange-500/5 text-slate-700'
+            }`}>
               <input 
                 type="file" 
                 ref={fileInputRef}
@@ -286,13 +340,13 @@ export default function GuestPage({ params }) {
                 className="hidden" 
                 disabled={loading}
               />
-              <Camera size={38} className="text-orange-400 mx-auto mb-3 group-hover:scale-110 transition-transform drop-shadow-[0_0_10px_rgba(249,115,22,0.5)]" />
-              <span className="text-[11px] text-gray-100 font-black uppercase tracking-wider block">
+              <Camera size={32} className="text-orange-500 mx-auto mb-2 group-hover:scale-110 transition-transform" />
+              <span className="text-xs font-bold uppercase tracking-wider block">
                 {file ? (
-                  fileInputRef.current?.files?.length > 1 
+                  fileInputRef.current?.files && fileInputRef.current.files.length > 1 
                     ? `${fileInputRef.current.files.length} fichiers sélectionnés` 
                     : file.name
-                ) : "Cliquez pour ajouter photo/vidéo"}
+                ) : "Cliquez pour ajouter photo ou vidéo"}
               </span>
             </label>
 
@@ -300,7 +354,7 @@ export default function GuestPage({ params }) {
               <button 
                 type="submit" 
                 disabled={loading} 
-                className="w-full py-4 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white rounded-2xl font-black uppercase text-xs tracking-wider shadow-[0_0_25px_rgba(249,115,22,0.6)] border border-orange-300/40 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-bold uppercase text-xs tracking-wider shadow-lg shadow-orange-500/20 hover:brightness-105 active:scale-98 transition-all cursor-pointer"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -315,9 +369,13 @@ export default function GuestPage({ params }) {
         </section>
 
         {/* SECTION LIVRE D'OR */}
-        <section className="bg-white/[0.08] border border-white/20 rounded-[40px] p-8 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-          <h2 className="text-xl font-black italic uppercase tracking-tighter mb-6 flex items-center gap-3">
-            <BookOpen size={22} className="text-amber-400" /> Livre d'or
+        <section className={`rounded-3xl p-8 backdrop-blur-xl shadow-xl transition-all duration-300 ${
+          darkMode 
+            ? 'bg-[#170c2c]/80 border border-white/10 shadow-2xl' 
+            : 'bg-[#eaeaea]/90 border border-slate-300/80 shadow-slate-300/30'
+        }`}>
+          <h2 className={`text-lg font-black italic uppercase tracking-tight mb-5 flex items-center gap-2.5 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+            <BookOpen size={20} className="text-amber-400" /> Livre d'or
           </h2>
           <form onSubmit={handleGuestbookSubmit} className="space-y-4">
             <input 
@@ -325,18 +383,26 @@ export default function GuestPage({ params }) {
               placeholder="Ton nom / signature" 
               value={guestName} 
               onChange={(e) => setGuestName(e.target.value)} 
-              className="w-full bg-black/40 border border-white/20 p-4 rounded-2xl outline-none focus:border-orange-400 transition text-xs font-bold text-white placeholder:text-gray-400"
+              className={`w-full border p-3.5 rounded-xl outline-none transition text-xs font-medium ${
+                darkMode 
+                  ? 'bg-white/[0.04] border-white/10 text-white placeholder:text-slate-500 focus:border-orange-500' 
+                  : 'bg-[#f4f4f6] border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-orange-500'
+              }`}
             />
             <textarea 
               placeholder="Laissez un petit mot pour le livre d'or..." 
               value={guestMsg} 
               onChange={(e) => setGuestMsg(e.target.value)} 
-              className="w-full bg-black/40 border border-white/20 p-4 rounded-2xl outline-none focus:border-orange-400 transition text-xs font-bold text-white h-28 resize-none placeholder:text-gray-400"
+              className={`w-full border p-3.5 rounded-xl outline-none transition text-xs font-medium h-24 resize-none ${
+                darkMode 
+                  ? 'bg-white/[0.04] border-white/10 text-white placeholder:text-slate-500 focus:border-orange-500' 
+                  : 'bg-[#f4f4f6] border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-orange-500'
+              }`}
             />
             <button 
               type="submit" 
               disabled={loading || !guestMsg.trim() || !guestName.trim()} 
-              className="w-full py-4 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white rounded-2xl font-black uppercase text-xs tracking-wider shadow-[0_0_25px_rgba(249,115,22,0.6)] border border-orange-300/40 hover:scale-105 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:hover:scale-100 disabled:shadow-none"
+              className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-bold uppercase text-xs tracking-wider shadow-lg shadow-orange-500/20 hover:brightness-105 active:scale-98 transition-all cursor-pointer disabled:opacity-40 disabled:hover:scale-100 disabled:shadow-none"
             >
               {loading ? "Envoi..." : "Envoyer et signer"}
             </button>
@@ -344,9 +410,13 @@ export default function GuestPage({ params }) {
         </section>
 
         {/* SECTION DEMANDER UN TITRE */}
-        <section className="bg-white/[0.08] border border-white/20 rounded-[40px] p-8 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-          <h2 className="text-xl font-black italic uppercase tracking-tighter mb-6 flex items-center gap-3">
-            <Music size={22} className="text-orange-400" /> Demander un titre
+        <section className={`rounded-3xl p-8 backdrop-blur-xl shadow-xl transition-all duration-300 ${
+          darkMode 
+            ? 'bg-[#170c2c]/80 border border-white/10 shadow-2xl' 
+            : 'bg-[#eaeaea]/90 border border-slate-300/80 shadow-slate-300/30'
+        }`}>
+          <h2 className={`text-lg font-black italic uppercase tracking-tight mb-5 flex items-center gap-2.5 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+            <Music size={20} className="text-orange-500" /> Demander un titre
           </h2>
           <form onSubmit={handleMusicRequest} className="space-y-4">
             <input 
@@ -354,19 +424,27 @@ export default function GuestPage({ params }) {
               placeholder="Artiste" 
               value={artist} 
               onChange={(e) => setArtist(e.target.value)} 
-              className="w-full bg-black/40 border border-white/20 p-4 rounded-2xl outline-none focus:border-orange-400 transition text-xs font-bold text-white placeholder:text-gray-400" 
+              className={`w-full border p-3.5 rounded-xl outline-none transition text-xs font-medium ${
+                darkMode 
+                  ? 'bg-white/[0.04] border-white/10 text-white placeholder:text-slate-500 focus:border-orange-500' 
+                  : 'bg-[#f4f4f6] border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-orange-500'
+              }`} 
             />
             <input 
               type="text" 
               placeholder="Titre de la chanson" 
               value={song} 
               onChange={(e) => setSong(e.target.value)} 
-              className="w-full bg-black/40 border border-white/20 p-4 rounded-2xl outline-none focus:border-orange-400 transition text-xs font-bold text-white placeholder:text-gray-400" 
+              className={`w-full border p-3.5 rounded-xl outline-none transition text-xs font-medium ${
+                darkMode 
+                  ? 'bg-white/[0.04] border-white/10 text-white placeholder:text-slate-500 focus:border-orange-500' 
+                  : 'bg-[#f4f4f6] border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-orange-500'
+              }`} 
             />
             <button 
               type="submit" 
-              disabled={loading || !artist || !song} 
-              className="w-full py-4 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white rounded-2xl font-black uppercase text-xs tracking-wider shadow-[0_0_25px_rgba(249,115,22,0.6)] border border-orange-300/40 hover:scale-105 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:hover:scale-100 disabled:shadow-none"
+              disabled={loading || !artist.trim() || !song.trim()} 
+              className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-bold uppercase text-xs tracking-wider shadow-lg shadow-orange-500/20 hover:brightness-105 active:scale-98 transition-all cursor-pointer disabled:opacity-40 disabled:hover:scale-100 disabled:shadow-none"
             >
               {loading ? "Envoi..." : "Envoyer au DJ"}
             </button>
@@ -376,58 +454,63 @@ export default function GuestPage({ params }) {
 
       {/* NOTIFICATION TOAST */}
       {notify.show && (
-        <div className="fixed bottom-8 z-[100]">
-          <div className="flex items-center gap-3 px-6 py-3.5 rounded-2xl border border-orange-400/50 bg-[#2d104d]/95 text-white backdrop-blur-2xl shadow-[0_0_30px_rgba(249,115,22,0.4)]">
-            <CheckCircle2 size={18} className="text-amber-400" />
-            <span className="text-xs font-black uppercase tracking-wider">{notify.msg}</span>
+        <div className="fixed bottom-8 z-[100] animate-bounce">
+          <div className={`flex items-center gap-3 px-6 py-3.5 rounded-2xl border backdrop-blur-xl shadow-xl ${
+            darkMode 
+              ? 'border-orange-500/30 bg-[#170c2c]/95 text-white shadow-2xl' 
+              : 'border-orange-500/30 bg-white/95 text-slate-900 shadow-xl'
+          }`}>
+            <CheckCircle2 size={18} className="text-amber-500" />
+            <span className="text-xs font-bold uppercase tracking-wider">{notify.msg}</span>
           </div>
         </div>
       )}
 
-      {/* MODAL QR CODE HARMONISÉE */}
+      {/* MODAL QR CODE */}
       {showModalQR && (
         <div 
           className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-6" 
           onClick={() => setShowModalQR(false)}
         >
           <div 
-            className="bg-white/[0.08] backdrop-blur-2xl border border-white/20 p-8 rounded-[40px] text-center relative max-w-sm w-full shadow-[0_20px_50px_rgba(0,0,0,0.6)]" 
+            className={`backdrop-blur-xl border p-8 rounded-3xl text-center relative max-w-sm w-full shadow-2xl transition-all ${
+              darkMode ? 'bg-[#170c2c] border-white/10 text-white' : 'bg-white border-slate-300 text-slate-900'
+            }`} 
             onClick={e => e.stopPropagation()}
           >
-            {/* BOUTON FERMER */}
             <button 
               onClick={() => setShowModalQR(false)}
-              className="absolute top-4 right-4 p-2.5 bg-white/10 hover:bg-white/20 rounded-2xl text-gray-300 hover:text-white transition-all cursor-pointer border border-white/20 active:scale-95"
+              className={`absolute top-4 right-4 p-2.5 rounded-xl transition-all cursor-pointer border active:scale-95 ${
+                darkMode ? 'bg-white/10 hover:bg-white/20 border-white/10 text-slate-300 hover:text-white' : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
+              }`}
             >
-              <X size={18} />
+              <X size={16} />
             </button>
             
-            {/* TITRE */}
-            <h3 className="text-2xl font-black italic uppercase tracking-tighter mb-6 bg-gradient-to-r from-white via-orange-100 to-amber-200 bg-clip-text text-transparent">
+            <h3 className={`text-xl font-black italic uppercase tracking-tight mb-6 ${
+              darkMode ? 'text-white' : 'text-slate-900'
+            }`}>
               Partager la soirée
             </h3>
             
-            {/* SUPPORT BLANC ET BORDURE BRILANTE POUR LE QR CODE */}
-            <div className="bg-white p-6 rounded-[32px] inline-block shadow-[0_0_40px_rgba(249,115,22,0.45)] mb-6 border-2 border-orange-400/40 transform hover:scale-[1.02] transition-transform">
+            <div className="bg-white p-6 rounded-2xl inline-block shadow-lg mb-6 border border-slate-200">
               {mounted && currentUrl ? (
-                <QRCodeSVG value={currentUrl} size={190} fgColor="#140427" />
+                <QRCodeSVG value={currentUrl} size={180} fgColor="#0f071e" />
               ) : (
-                <div style={{ width: 190, height: 190 }} className="bg-gray-200 animate-pulse rounded-2xl" />
+                <div style={{ width: 180, height: 180 }} className="bg-slate-200 animate-pulse rounded-xl" />
               )}
             </div>
             
-            {/* LÉGENDE */}
-            <p className="text-[11px] text-orange-200/90 font-black italic uppercase tracking-[0.2em] leading-relaxed">
-              Faites scanner ce code <br /> à vos invités
+            <p className={`text-[11px] font-bold uppercase tracking-wider leading-relaxed ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+              Faites scanner ce code à vos invités
             </p>
           </div>
         </div>
       )}
 
       {/* FOOTER */}
-      <footer className="mt-12 relative z-10 w-full text-center max-w-md">
-        <div className="h-[1px] w-full bg-white/20 mb-6"></div>
-        <p className="text-[10px] text-white/50 uppercase font-black tracking-[0.5em]">
+      <footer className="mt-16 relative z-10 w-full text-center max-w-md border-t pt-6 border-slate-300/20">
+        <p className={`text-[10px] uppercase font-bold tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
           Powered by PartyLens
         </p>
       </footer>

@@ -3,7 +3,7 @@ import { useState, useEffect, use, useRef } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import HTMLFlipBook from 'react-pageflip';
-import { ArrowLeft, Loader2, Download, Mic, DownloadCloud, FileAudio } from 'lucide-react';
+import { ArrowLeft, Loader2, Download, Mic, DownloadCloud, FileAudio, Sun, Moon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -13,6 +13,8 @@ export default function GuestbookView({ params }) {
   const unwrappedParams = use(params);
   const eventId = unwrappedParams.eventId;
   const router = useRouter();
+
+  const [darkMode, setDarkMode] = useState(true);
   const [messages, setMessages] = useState([]);
   const [eventData, setEventData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,8 +28,12 @@ export default function GuestbookView({ params }) {
 
   useEffect(() => {
     const fetchEvent = async () => {
-      const snap = await getDoc(doc(db, "events", eventId));
-      if (snap.exists()) setEventData(snap.data());
+      try {
+        const snap = await getDoc(doc(db, "events", eventId));
+        if (snap.exists()) setEventData(snap.data());
+      } catch (err) {
+        console.error("Erreur chargement événement :", err);
+      }
     };
     fetchEvent();
 
@@ -44,6 +50,10 @@ export default function GuestbookView({ params }) {
     setExporting(true);
     const docPdf = new jsPDF('p', 'mm', 'a4');
     const pdfContainer = pdfExportRef.current;
+    if (!pdfContainer) {
+      setExporting(false);
+      return;
+    }
     const pages = pdfContainer.querySelectorAll('.pdf-page');
 
     try {
@@ -96,67 +106,93 @@ export default function GuestbookView({ params }) {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-[#140427] flex flex-col items-center justify-center text-white font-sans">
-      <Loader2 className="animate-spin text-orange-400 mb-4 drop-shadow-[0_0_15px_rgba(249,115,22,0.6)]" size={40} />
-      <p className="tracking-[0.5em] uppercase text-[11px] font-black text-orange-200/70 italic">Ouverture du Grimoire...</p>
+    <div className={`min-h-screen flex flex-col items-center justify-center font-sans transition-colors duration-300 ${
+      darkMode ? 'bg-[#0f071e] text-white' : 'bg-[#f4f4f6] text-slate-900'
+    }`}>
+      <Loader2 className="animate-spin text-orange-500 mb-4 drop-shadow-[0_0_15px_rgba(249,115,22,0.6)]" size={40} />
+      <p className="tracking-[0.5em] uppercase text-[11px] font-black text-orange-400/80 italic">Ouverture du Grimoire...</p>
     </div>
   );
 
   const audioCount = messages.filter(m => m.audioUrl).length;
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#2d104d] via-[#210a3b] to-[#140427] text-white flex flex-col items-center justify-center relative p-6 font-sans overflow-x-hidden pb-16">
-      
-      {/* VAGUES LUMINEUSES EN ARRIÈRE-PLAN */}
+    <main className={`min-h-screen flex flex-col items-center justify-center relative p-6 font-sans overflow-x-hidden pb-16 transition-colors duration-300 ${
+      darkMode 
+        ? 'bg-[#0f071e] text-slate-100 selection:bg-orange-500 selection:text-white' 
+        : 'bg-[#f4f4f6] text-slate-900 selection:bg-orange-500 selection:text-white'
+    }`}>
+
+      {/* BACKGROUND EFFECTS */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <svg className="absolute -top-12 left-0 w-full h-[500px] text-orange-500/35 blur-xl opacity-90" viewBox="0 0 1440 320" preserveAspectRatio="none">
-          <path fill="currentColor" d="M0,160L60,176C120,192,240,224,360,213.3C480,203,600,149,720,154.7C840,160,960,224,1080,229.3C1200,235,1320,181,1380,154.7L1440,128L1440,0L1380,0C1320,0,1200,0,1080,0C960,0,840,0,720,0C600,0,480,0,360,0C240,0,120,0,0,0Z"></path>
-        </svg>
-
-        <svg className="absolute top-[30%] -left-20 w-[130%] h-[550px] text-amber-500/30 blur-2xl transform rotate-3" viewBox="0 0 1440 320" preserveAspectRatio="none">
-          <path fill="currentColor" d="M0,96L80,122.7C160,149,320,203,480,208C640,213,800,171,960,149.3C1120,128,1280,128,1360,128L1440,128L1440,320L1360,320C1280,320,1120,320,960,320C800,320,640,320,480,320C320,320,160,320,80,320L0,320Z"></path>
-        </svg>
-
-        <svg className="absolute bottom-0 right-0 w-full h-[500px] text-orange-600/35 blur-xl opacity-90" viewBox="0 0 1440 320" preserveAspectRatio="none">
-          <path fill="currentColor" d="M0,224L60,213.3C120,203,240,181,360,186.7C480,192,600,224,720,218.7C840,213,960,171,1080,160C1200,149,1320,171,1380,181.3L1440,192L1440,320L1380,320C1280,320,1120,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"></path>
-        </svg>
-
-        <div className="absolute top-[18%] left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-r from-orange-500/40 via-amber-400/30 to-pink-500/20 rounded-full blur-[130px]"></div>
+        {darkMode ? (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[450px] bg-gradient-to-b from-purple-600/15 via-orange-600/10 to-transparent rounded-full blur-[120px]"></div>
+        ) : (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[450px] bg-gradient-to-b from-purple-200/30 via-orange-100/20 to-transparent rounded-full blur-[100px]"></div>
+        )}
       </div>
 
       {/* HEADER FIXE */}
-      <header className="absolute top-0 left-0 w-full p-5 flex flex-wrap justify-between items-center z-50 gap-4 bg-white/[0.05] backdrop-blur-2xl border-b border-white/10 shadow-2xl">
+      <header className={`absolute top-0 left-0 w-full p-4 md:p-5 flex flex-wrap justify-between items-center z-40 gap-3 backdrop-blur-2xl border-b transition-colors duration-300 ${
+        darkMode ? 'bg-[#170c2c]/80 border-white/10 shadow-2xl' : 'bg-white/80 border-slate-300/80 shadow-slate-200'
+      }`}>
         <button 
           onClick={() => router.back()} 
-          className="flex items-center gap-2 text-white bg-white/10 hover:bg-white/20 px-4 py-3 rounded-2xl border border-white/20 transition-all text-[11px] font-black uppercase tracking-wider cursor-pointer shadow-md active:scale-95"
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border transition-all text-[11px] font-black uppercase tracking-wider cursor-pointer shadow-md active:scale-95 ${
+            darkMode 
+              ? 'text-white bg-white/10 hover:bg-white/20 border-white/20' 
+              : 'text-slate-700 bg-[#eaeaea] hover:bg-[#dedede] border-slate-300'
+          }`}
         >
           <ArrowLeft size={16} /> Retour Galerie
         </button>
         
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* BOUTON SWITCH MODE CLAIR / SOMBRE INTÉGRÉ */}
+          <button 
+            onClick={() => setDarkMode(!darkMode)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all shadow-md border cursor-pointer active:scale-95 ${
+              darkMode 
+                ? 'bg-white/10 text-amber-300 border-white/20 hover:bg-white/20' 
+                : 'bg-[#eaeaea] text-slate-700 border-slate-300 hover:bg-[#dedede]'
+            }`}
+            aria-label="Changer le mode d'affichage"
+          >
+            {darkMode ? <Sun size={15} /> : <Moon size={15} />}
+            <span>{darkMode ? "Mode Clair" : "Mode Sombre"}</span>
+          </button>
+
           {audioCount > 0 && (
             <button 
               onClick={downloadAllAudios}
-              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-xl text-white px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-wider transition-all cursor-pointer border border-white/20 shadow-md active:scale-95"
+              className={`flex items-center gap-2 backdrop-blur-xl px-4 py-2.5 rounded-2xl font-black text-[10px] uppercase tracking-wider transition-all cursor-pointer border shadow-md active:scale-95 ${
+                darkMode 
+                  ? 'bg-white/10 hover:bg-white/20 text-white border-white/20' 
+                  : 'bg-[#eaeaea] hover:bg-[#dedede] text-slate-700 border-slate-300'
+              }`}
             >
-              <FileAudio size={16} className="text-amber-400" /> Tout télécharger ({audioCount} vocaux)
+              <FileAudio size={15} className="text-amber-500" /> Tout télécharger ({audioCount})
             </button>
           )}
 
           <button 
             onClick={() => setShowAudioModal(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:scale-105 active:scale-95 text-white px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-wider transition-all cursor-pointer border border-orange-300/40 shadow-[0_0_20px_rgba(249,115,22,0.4)]"
+            className="flex items-center gap-2 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:scale-105 active:scale-95 text-white px-4 py-2.5 rounded-2xl font-black text-[10px] uppercase tracking-wider transition-all cursor-pointer border border-orange-300/40 shadow-[0_0_20px_rgba(249,115,22,0.4)]"
           >
-            <Mic size={16} /> Laisser un mémo vocal 🎙️
+            <Mic size={15} /> Mémo Vocal 🎙️
           </button>
 
           <button 
             onClick={downloadPDF}
             disabled={exporting}
-            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-xl text-white px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-wider transition-all disabled:opacity-40 shadow-md cursor-pointer border border-white/20 active:scale-95"
+            className={`flex items-center gap-2 backdrop-blur-xl px-4 py-2.5 rounded-2xl font-black text-[10px] uppercase tracking-wider transition-all disabled:opacity-40 shadow-md cursor-pointer border active:scale-95 ${
+              darkMode 
+                ? 'bg-white/10 hover:bg-white/20 text-white border-white/20' 
+                : 'bg-[#eaeaea] hover:bg-[#dedede] text-slate-700 border-slate-300'
+            }`}
           >
-            {exporting ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
-            {exporting ? "CONSTRUCTION..." : "TÉLÉCHARGER LE LIVRE (PDF)"}
+            {exporting ? <Loader2 className="animate-spin" size={15} /> : <Download size={15} />}
+            <span>{exporting ? "Création..." : "Télécharger PDF"}</span>
           </button>
         </div>
       </header>
@@ -178,7 +214,9 @@ export default function GuestbookView({ params }) {
 
       {/* CONTENEUR DU LIVRE */}
       <div className="relative z-10 flex items-center justify-center mt-32 mb-10 w-full max-w-6xl">
-        <div className="p-4 md:p-6 bg-white/[0.08] rounded-[40px] border border-white/20 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
+        <div className={`p-4 md:p-6 rounded-[40px] backdrop-blur-2xl shadow-2xl border transition-colors duration-300 ${
+          darkMode ? 'bg-white/[0.08] border-white/20' : 'bg-white/60 border-slate-300'
+        }`}>
           <HTMLFlipBook 
             width={pageWidth} 
             height={pageHeight} 
@@ -297,8 +335,8 @@ export default function GuestbookView({ params }) {
 
       {/* FOOTER */}
       <footer className="mt-8 relative z-10 w-full text-center max-w-6xl mx-auto">
-        <div className="h-[1px] w-full bg-white/20 mb-6"></div>
-        <p className="text-[10px] text-white/50 uppercase font-black tracking-[0.5em]">
+        <div className={`h-[1px] w-full mb-6 ${darkMode ? 'bg-white/20' : 'bg-slate-300'}`}></div>
+        <p className={`text-[10px] uppercase font-black tracking-[0.5em] ${darkMode ? 'text-white/50' : 'text-slate-500'}`}>
           Powered by PartyLens
         </p>
       </footer>
