@@ -7,7 +7,6 @@ import { ArrowLeft, Loader2, Download, Mic, DownloadCloud, FileAudio, Sun, Moon 
 import { useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import AudioGuestbook from '../AudioGuestbook';
 
 export default function GuestbookView({ params }) {
   const unwrappedParams = use(params);
@@ -19,7 +18,6 @@ export default function GuestbookView({ params }) {
   const [eventData, setEventData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
-  const [showAudioModal, setShowAudioModal] = useState(false);
   const bookRef = useRef();
   const pdfExportRef = useRef(); 
 
@@ -148,7 +146,7 @@ export default function GuestbookView({ params }) {
         </button>
         
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* BOUTON SWITCH MODE CLAIR / SOMBRE INTÉGRÉ */}
+          {/* BOUTON SWITCH MODE CLAIR / SOMBRE */}
           <button 
             onClick={() => setDarkMode(!darkMode)}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all shadow-md border cursor-pointer active:scale-95 ${
@@ -176,13 +174,6 @@ export default function GuestbookView({ params }) {
           )}
 
           <button 
-            onClick={() => setShowAudioModal(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:scale-105 active:scale-95 text-white px-4 py-2.5 rounded-2xl font-black text-[10px] uppercase tracking-wider transition-all cursor-pointer border border-orange-300/40 shadow-[0_0_20px_rgba(249,115,22,0.4)]"
-          >
-            <Mic size={15} /> Mémo Vocal 🎙️
-          </button>
-
-          <button 
             onClick={downloadPDF}
             disabled={exporting}
             className={`flex items-center gap-2 backdrop-blur-xl px-4 py-2.5 rounded-2xl font-black text-[10px] uppercase tracking-wider transition-all disabled:opacity-40 shadow-md cursor-pointer border active:scale-95 ${
@@ -196,21 +187,6 @@ export default function GuestbookView({ params }) {
           </button>
         </div>
       </header>
-
-      {/* MODAL AUDIO */}
-      {showAudioModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md relative">
-            <button 
-              onClick={() => setShowAudioModal(false)}
-              className="absolute -top-4 -right-4 bg-white hover:bg-gray-200 text-black w-10 h-10 rounded-full flex items-center justify-center font-bold transition z-10 cursor-pointer shadow-xl border border-white/40"
-            >
-              ✕
-            </button>
-            <AudioGuestbook eventId={eventId} />
-          </div>
-        </div>
-      )}
 
       {/* CONTENEUR DU LIVRE */}
       <div className="relative z-10 flex items-center justify-center mt-32 mb-10 w-full max-w-6xl">

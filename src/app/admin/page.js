@@ -36,7 +36,8 @@ import {
   Sun,
   Moon,
   Palette,
-  Presentation
+  Presentation,
+  Camera
 } from 'lucide-react';
 
 function AdminContent() {
@@ -530,12 +531,12 @@ function AdminContent() {
                       <BookOpen size={12} /> LIVRE D'OR
                     </Link>
 
-                    {/* Bouton DESIGN relié au catalogue de cadres avec transmission de l'eventId */}
+                    {/* Bouton FOND DIAPO relié au catalogue de cadres avec transmission de l'eventId */}
                     <Link
                       href={`/admin/catalogue-cadres?eventId=${event.id}`}
                       className="px-4 py-3 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 rounded-xl font-black uppercase text-[9px] no-underline flex items-center gap-1.5 border border-purple-500/20 transition-all"
                     >
-                      <Palette size={12} /> DESIGN
+                      <Palette size={12} /> FOND DIAPO
                     </Link>
 
                     {/* Bouton DIAPORAMA relié à la vue live / diaporama de l'événement */}
@@ -544,6 +545,14 @@ function AdminContent() {
                       className="px-4 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-xl font-black uppercase text-[9px] no-underline flex items-center gap-1.5 border border-emerald-500/20 transition-all"
                     >
                       <Presentation size={12} /> DIAPORAMA
+                    </Link>
+
+                    {/* Bouton PHOTOBOOTH mis à jour */}
+                    <Link
+                      href={`/photobooth/${event.id}`}
+                      className="px-4 py-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl font-black uppercase text-[9px] no-underline flex items-center gap-1.5 border border-rose-500/20 transition-all"
+                    >
+                      <Camera size={12} /> PHOTOBOOTH
                     </Link>
 
                     {event.status === 'terminé' && userData?.role !== 'dj' && (

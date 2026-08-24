@@ -4,7 +4,7 @@ import { useState, useEffect, use, useRef } from 'react';
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, getDocs, query } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Camera, Music, Share2, ArrowLeft, CheckCircle2, BookOpen, Image as ImageIcon, QrCode, X, Sparkles, Loader2, Sun, Moon } from 'lucide-react';
+import { Camera, Music, Share2, ArrowLeft, CheckCircle2, BookOpen, Image as ImageIcon, QrCode, X, Sparkles, Loader2, Sun, Moon, Mic, Square } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import Link from 'next/link';
 
@@ -17,6 +17,12 @@ export default function GuestPage({ params }) {
   const [artist, setArtist] = useState("");
   const [guestMsg, setGuestMsg] = useState(""); 
   const [guestName, setGuestName] = useState(""); 
+  
+  // États pour l'enregistrement vocal (Mémo audio)
+  const [recording, setRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const [audioUrl, setAudioUrl] = useState(null);
+
   const [loading, setLoading] = useState(false);
   const [eventData, setEventData] = useState(null);
   const [notify, setNotify] = useState({ show: false, msg: "" });
@@ -27,6 +33,9 @@ export default function GuestPage({ params }) {
   const [darkMode, setDarkMode] = useState(true);
 
   const fileInputRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const recognitionRef = useRef(null);
 
   useEffect(() => {
     setMounted(true);
@@ -69,9 +78,106 @@ export default function GuestPage({ params }) {
     }
   };
 
+  // Gestion de l'enregistrement vocal + Retranscription texte robuste
+  const startRecording = async () => {
+    audioChunksRef.current = [];
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      alert("⚠️ Votre navigateur ne supporte pas la retranscription vocale. Utilisez Google Chrome, Microsoft Edge ou Safari.");
+    } else {
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'fr-FR';
+        recognition.interimResults = true;
+        recognition.continuous = true;
+
+        recognition.onresult = (event) => {
+          let transcript = "";
+          for (let i = 0; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          setGuestMsg(transcript);
+        };
+
+        recognition.onerror = (event) => {
+          console.error("Erreur SpeechRecognition :", event.error);
+          if (event.error === 'not-allowed') {
+            showNotification("❌ Accès au micro refusé pour la retranscription.");
+          } else {
+            showNotification(`⚠️ Erreur vocale : ${event.error}`);
+          }
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+      } catch (e) {
+        console.error("Exception au démarrage de la reco vocale :", e);
+      }
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') 
+        ? 'audio/webm' 
+        : MediaRecorder.isTypeSupported('audio/mp4') 
+          ? 'audio/mp4' 
+          : '';
+
+      const options = mimeType ? { mimeType } : {};
+      const mediaRecorder = new MediaRecorder(stream, options);
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: mimeType || 'audio/webm' });
+        setAudioBlob(blob);
+        setAudioUrl(URL.createObjectURL(blob));
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setRecording(true);
+      showNotification("🎙️ Enregistrement & retranscription en cours...");
+    } catch (err) {
+      console.error("Erreur accès micro (MediaRecorder) :", err);
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      alert("Impossible d'accéder au microphone. Vérifiez vos autorisations.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && recording) {
+      mediaRecorderRef.current.stop();
+      setRecording(false);
+
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+
+      showNotification("🎙️ Enregistrement terminé !");
+    }
+  };
+
+  const clearAudio = () => {
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+    }
+    setAudioBlob(null);
+    setAudioUrl(null);
+  };
+
   const handlePhotoUpload = async (e) => {
     e.preventDefault();
-    
     const fileInput = fileInputRef.current;
     if (!fileInput || !fileInput.files || fileInput.files.length === 0) return;
     
@@ -118,7 +224,6 @@ export default function GuestPage({ params }) {
         const url = await getDownloadURL(storageRef);
         
         const targetCollection = isVideo ? "videos" : "photos";
-        
         await addDoc(collection(db, "events", eventId, targetCollection), { 
           url, 
           createdAt: serverTimestamp() 
@@ -156,23 +261,50 @@ export default function GuestPage({ params }) {
 
   const handleGuestbookSubmit = async (e) => {
     e.preventDefault();
-    if (!guestMsg.trim() || !guestName.trim()) return;
+    if (!guestName.trim() || (!guestMsg.trim() && !audioBlob)) return;
     
     setLoading(true);
     try {
+      let uploadedAudioUrl = null;
+
+      if (audioBlob) {
+        const extension = audioBlob.type.includes('mp4') ? 'mp4' : 'webm';
+        const audioRef = ref(storage, `events/${eventId}/audio/${Date.now()}_${guestName.trim()}.${extension}`);
+        await uploadBytes(audioRef, audioBlob);
+        uploadedAudioUrl = await getDownloadURL(audioRef);
+      }
+
       await addDoc(collection(db, "events", eventId, "guestbook"), { 
-        message: guestMsg.trim(), 
+        message: guestMsg.trim() || "🎙️ Mémo vocal laissé dans le Grimoire", 
         author: guestName.trim(), 
+        audioUrl: uploadedAudioUrl,
         createdAt: serverTimestamp() 
       });
-      showNotification("📖 Mot signé !");
+
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+
+      showNotification("📖 Mot signé et enregistré !");
       setGuestMsg("");
       setGuestName("");
+      setAudioBlob(null);
+      setAudioUrl(null);
     } catch (err) { 
       console.error("Erreur livre d'or :", err); 
+      alert("Une erreur est survenue lors de l'envoi.");
     }
     setLoading(false);
   };
+
+  // Sécurité anti-hydratation pour bloquer les erreurs de nœuds du DOM
+  if (!mounted) {
+    return (
+      <main className="min-h-screen bg-[#0f071e] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+      </main>
+    );
+  }
 
   return (
     <main className={`min-h-screen flex flex-col items-center px-6 py-12 font-sans relative transition-colors duration-300 ${
@@ -181,8 +313,9 @@ export default function GuestPage({ params }) {
         : 'bg-[#f4f4f6] text-slate-900 selection:bg-orange-500 selection:text-white'
     }`}>
       
-      {/* BOUTON SWITCH MODE CLAIR / SOMBRE (FIXÉ EN HAUT À DROITE) */}
+      {/* BOUTON SWITCH MODE CLAIR / SOMBRE */}
       <button 
+        key="theme-toggle-btn"
         onClick={() => setDarkMode(!darkMode)}
         className={`fixed top-6 right-6 z-50 flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all shadow-md border cursor-pointer ${
           darkMode 
@@ -191,8 +324,8 @@ export default function GuestPage({ params }) {
         }`}
         aria-label="Changer le mode d'affichage"
       >
-        {darkMode ? <Sun size={15} /> : <Moon size={15} />}
-        <span>{darkMode ? "Mode Clair" : "Mode Sombre"}</span>
+        {darkMode ? <Sun key="sun-icon" size={15} /> : <Moon key="moon-icon" size={15} />}
+        <span key="theme-label">{darkMode ? "Mode Clair" : "Mode Sombre"}</span>
       </button>
 
       {/* BACKGROUND EFFECTS */}
@@ -332,8 +465,6 @@ export default function GuestPage({ params }) {
               <input 
                 type="file" 
                 ref={fileInputRef}
-                id="photoUpload"
-                name="photoUpload"
                 accept="image/*,video/*"
                 multiple
                 onChange={(e) => setFile(e.target.files && e.target.files.length > 0 ? e.target.files[0] : null)} 
@@ -341,7 +472,7 @@ export default function GuestPage({ params }) {
                 disabled={loading}
               />
               <Camera size={32} className="text-orange-500 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-              <span className="text-xs font-bold uppercase tracking-wider block">
+              <span key="upload-label-text" className="text-xs font-bold uppercase tracking-wider block">
                 {file ? (
                   fileInputRef.current?.files && fileInputRef.current.files.length > 1 
                     ? `${fileInputRef.current.files.length} fichiers sélectionnés` 
@@ -352,34 +483,36 @@ export default function GuestPage({ params }) {
 
             {file && (
               <button 
+                key="publish-media-btn"
                 type="submit" 
                 disabled={loading} 
                 className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-bold uppercase text-xs tracking-wider shadow-lg shadow-orange-500/20 hover:brightness-105 active:scale-98 transition-all cursor-pointer"
               >
                 {loading ? (
-                  <span className="flex items-center justify-center gap-2">
+                  <span key="loading-state" className="flex items-center justify-center gap-2">
                     <Loader2 size={16} className="animate-spin" /> Envoi en cours...
                   </span>
                 ) : (
-                  "Publier sur le mur 🚀"
+                  <span key="ready-state">Publier sur le mur 🚀</span>
                 )}
               </button>
             )}
           </form>
         </section>
 
-        {/* SECTION LIVRE D'OR */}
+        {/* SECTION LIVRE D'OR (TEXTE + MÉMO VOCAL) */}
         <section className={`rounded-3xl p-8 backdrop-blur-xl shadow-xl transition-all duration-300 ${
           darkMode 
             ? 'bg-[#170c2c]/80 border border-white/10 shadow-2xl' 
             : 'bg-[#eaeaea]/90 border border-slate-300/80 shadow-slate-300/30'
         }`}>
           <h2 className={`text-lg font-black italic uppercase tracking-tight mb-5 flex items-center gap-2.5 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-            <BookOpen size={20} className="text-amber-400" /> Livre d'or
+            <BookOpen size={20} className="text-amber-400" /> Livre d'or & Mémo Vocal
           </h2>
           <form onSubmit={handleGuestbookSubmit} className="space-y-4">
             <input 
               type="text" 
+              required
               placeholder="Ton nom / signature" 
               value={guestName} 
               onChange={(e) => setGuestName(e.target.value)} 
@@ -389,22 +522,68 @@ export default function GuestPage({ params }) {
                   : 'bg-[#f4f4f6] border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-orange-500'
               }`}
             />
+            
             <textarea 
-              placeholder="Laissez un petit mot pour le livre d'or..." 
+              placeholder="Laissez un petit mot écrit ou parlez pour le transcrire ici..." 
               value={guestMsg} 
               onChange={(e) => setGuestMsg(e.target.value)} 
-              className={`w-full border p-3.5 rounded-xl outline-none transition text-xs font-medium h-24 resize-none ${
+              className={`w-full border p-3.5 rounded-xl outline-none transition text-xs font-medium h-28 resize-none ${
                 darkMode 
                   ? 'bg-white/[0.04] border-white/10 text-white placeholder:text-slate-500 focus:border-orange-500' 
                   : 'bg-[#f4f4f6] border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-orange-500'
               }`}
             />
+
+            {/* Enregistreur Vocal Intégré avec clés de stabilisation */}
+            <div className={`border rounded-2xl p-4 flex flex-col items-center gap-3 ${
+              darkMode ? 'bg-white/[0.02] border-white/10' : 'bg-white/50 border-slate-300'
+            }`}>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                <Mic size={14} /> Optionnel : Laisser un mémo vocal 🎙️
+              </span>
+
+              {!recording && !audioUrl && (
+                <button
+                  key="btn-start"
+                  type="button"
+                  onClick={startRecording}
+                  className="flex items-center gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:brightness-105 active:scale-95 text-white px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-md transition-all cursor-pointer"
+                >
+                  <Mic size={15} /> Enregistrer la voix
+                </button>
+              )}
+
+              {recording && (
+                <button
+                  key="btn-stop"
+                  type="button"
+                  onClick={stopRecording}
+                  className="flex items-center gap-2 bg-red-600 hover:bg-red-700 animate-pulse text-white px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-md transition-all cursor-pointer"
+                >
+                  <Square size={15} /> Arrêter l'enregistrement
+                </button>
+              )}
+
+              {audioUrl && (
+                <div key="audio-preview-box" className="flex flex-col items-center gap-2 w-full">
+                  <audio src={audioUrl} controls className="w-full h-8 accent-orange-500" />
+                  <button
+                    type="button"
+                    onClick={clearAudio}
+                    className="text-[10px] uppercase tracking-wider text-red-400 hover:underline font-bold cursor-pointer"
+                  >
+                    Effacer et recommencer l'audio
+                  </button>
+                </div>
+              )}
+            </div>
+
             <button 
               type="submit" 
-              disabled={loading || !guestMsg.trim() || !guestName.trim()} 
+              disabled={loading || !guestName.trim() || (!guestMsg.trim() && !audioBlob)} 
               className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-bold uppercase text-xs tracking-wider shadow-lg shadow-orange-500/20 hover:brightness-105 active:scale-98 transition-all cursor-pointer disabled:opacity-40 disabled:hover:scale-100 disabled:shadow-none"
             >
-              {loading ? "Envoi..." : "Envoyer et signer"}
+              {loading ? "Envoi en cours..." : "Envoyer et signer le livre d'or"}
             </button>
           </form>
         </section>
@@ -454,7 +633,7 @@ export default function GuestPage({ params }) {
 
       {/* NOTIFICATION TOAST */}
       {notify.show && (
-        <div className="fixed bottom-8 z-[100] animate-bounce">
+        <div key="toast-notification" className="fixed bottom-8 z-[100] animate-bounce">
           <div className={`flex items-center gap-3 px-6 py-3.5 rounded-2xl border backdrop-blur-xl shadow-xl ${
             darkMode 
               ? 'border-orange-500/30 bg-[#170c2c]/95 text-white shadow-2xl' 
@@ -469,6 +648,7 @@ export default function GuestPage({ params }) {
       {/* MODAL QR CODE */}
       {showModalQR && (
         <div 
+          key="modal-qr-overlay"
           className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-6" 
           onClick={() => setShowModalQR(false)}
         >

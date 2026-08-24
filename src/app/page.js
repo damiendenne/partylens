@@ -1,14 +1,18 @@
 "use client";
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Camera, Music, Check, ArrowRight, Sparkles, MessageSquareText, LayoutGrid, ShieldCheck, Zap, Sun, Moon, Mic } from 'lucide-react';
+import { Camera, Music, Check, ArrowRight, Sparkles, MessageSquareText, LayoutGrid, ShieldCheck, Zap, Sun, Moon, Mic, QrCode, Download, Smartphone, Disc, Image as ImageIcon, UserPlus, Sliders } from 'lucide-react';
 
 export default function HomePage() {
   const [darkMode, setDarkMode] = useState(true);
+  const [activeStep, setActiveStep] = useState(0);
 
-  // Optionnel : Récupérer la préférence ou garder sombre par défaut
+  // Auto-défilement du tutoriel toutes les 6 secondes (sur 8 étapes)
   useEffect(() => {
-    // Tu peux aussi lier ça au localStorage si tu veux
+    const interval = setInterval(() => {
+      setActiveStep((prev) => (prev + 1) % 8);
+    }, 6000);
+    return () => clearInterval(interval);
   }, []);
 
   const plans = [
@@ -41,6 +45,82 @@ export default function HomePage() {
       ],
       isUsb: true,
       href: "/register?plan=pro"
+    }
+  ];
+
+  // Tutoriel détaillé en 8 étapes (de la découverte à la clé USB)
+  const tutorialSteps = [
+    {
+      step: "01",
+      title: "1. Découverte de la plateforme",
+      subtitle: "Page d'accueil & Exploration",
+      desc: "Arrivez sur la page d'accueil de PartyLens, découvrez les fonctionnalités clés, consultez les tarifs transparents et testez le mode clair/sombre selon vos préférences, vous pouvez vous connecté ou vous inscrire simplement en choisissant votre forfait avec ou sans clé usb.",
+      icon: <Sparkles className="w-5 h-5 text-orange-500" />,
+      image: "/tuto-etape1.png",
+      badge: "Étape 1 : Découverte"
+    },
+    {
+      step: "02",
+      title: "2. Inscription & Choix du forfait",
+      subtitle: "Création de compte sécurisée",
+      desc: "Sélectionnez votre formule (Forfait Unique à 9.99€ ou Forfait Clé USB à 24.99€) puis créez votre compte organisateur en quelques secondes.",
+      icon: <UserPlus className="w-5 h-5 text-amber-500" />,
+      image: "/tuto-etape2.png",
+      badge: "Étape 2 : Inscription"
+    },
+    {
+      step: "03",
+      title: "3. Création de votre événement",
+      subtitle: "Tableau de bord régie",
+      desc: "Nommez votre soirée, indiquez la date, le lieu et configurez votre espace événementiel depuis votre tableau de bord régie dédié.",
+      icon: <Sliders className="w-5 h-5 text-orange-500" />,
+      image: "/tuto-etape3.png",
+      badge: "Étape 3 : Configuration"
+    },
+    {
+      step: "04",
+      title: "4. Personnalisation des cadres & thèmes",
+      subtitle: "Design unique pour vos photos",
+      desc: "Choisissez parmi nos cadres de photobooth ou/et fond de diaporama aux couleurs de votre mariage ou anniversaire.",
+      icon: <LayoutGrid className="w-5 h-5 text-amber-500" />,
+      image: "/tuto-etape4.png",
+      badge: "Étape 4 : Personnalisation"
+    },
+    {
+      step: "05",
+      title: "5. Génération du QR Code & lien",
+      subtitle: "Prêt à être imprimé",
+      desc: "Téléchargez votre QR code unique et votre lien d'accès sécurisé à disposer sur les tables, les menus ou le bar de la salle.",
+      icon: <QrCode className="w-5 h-5 text-orange-500" />,
+      image: "/tuto-etape5.png",
+      badge: "Étape 5 : Diffusion"
+    },
+    {
+      step: "06",
+      title: "6. Connexion instantanée des invités",
+      subtitle: "Zéro application à télécharger",
+      desc: "Vos invités flashent simplement le QR code avec l'appareil photo de leur smartphone pour entrer directement dans l'album de la soirée.",
+      icon: <Smartphone className="w-5 h-5 text-amber-500" />,
+      image: "/tuto-etape6.png",
+      badge: "Étape 6 : Connexion invités"
+    },
+    {
+      step: "07",
+      title: "7. Animation live de la soirée",
+      subtitle: "Photos, Voix, Défis & Musique",
+      desc: "Partagez des photos illimitées, laissez des messages vocaux sur le livre d'or retranscrit, relevez des défis et suggérez des titres au DJ en direct.",
+      icon: <Mic className="w-5 h-5 text-orange-500" />,
+      image: "/tuto-etape7.png",
+      badge: "Étape 7 : Soirée en direct"
+    },
+    {
+      step: "08",
+      title: "8. Récupération des souvenirs",
+      subtitle: "Galerie HD & Clé USB souvenir",
+      desc: "Diffusez le diaporama live sur vidéoprojecteur, téléchargez l'intégralité des fichiers en HD ou recevez votre clé USB à la maison si tu l'a acheté sur ton.",
+      icon: <Download className="w-5 h-5 text-amber-500" />,
+      image: "/tuto-etape8.png",
+      badge: "Étape 8 : Souvenirs finaux"
     }
   ];
 
@@ -83,7 +163,7 @@ export default function HomePage() {
           className="w-[420px] max-w-[90vw] h-auto mb-6 drop-shadow-md" 
         />
         
-        {/* SLOGAN (PLUS GROS) */}
+        {/* SLOGAN */}
         <p className={`text-lg md:text-xl mb-10 max-w-xl text-center font-semibold leading-relaxed ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
           L'interactivité ultime de votre événement. Zéro application à télécharger pour vos invités.
         </p>
@@ -102,8 +182,8 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {/* BADGE DÉPLACÉ EN DESSOUS DES BOUTONS */}
-        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold mb-24 shadow-sm ${
+        {/* BADGE */}
+        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold mb-20 shadow-sm ${
           darkMode 
             ? 'bg-white/5 border border-white/10 text-orange-400' 
             : 'bg-[#eaeaea] border border-slate-300 text-slate-700'
@@ -111,39 +191,106 @@ export default function HomePage() {
           <Zap size={14} className="text-orange-500" /> Plateforme interactive pour mariages, anniversaires & soirées
         </div>
 
-        {/* SECTION COMMENT ÇA MARCHE */}
-        <div className={`w-full mb-24 rounded-3xl p-8 md:p-12 backdrop-blur-xl shadow-xl ${
-          darkMode 
-            ? 'bg-[#170c2c]/80 border border-white/10 shadow-2xl' 
-            : 'bg-[#eaeaea]/80 border border-slate-300/80 shadow-slate-300/30'
-        }`}>
-          <div className="text-center max-w-xl mx-auto mb-14">
-            <h2 className={`text-2xl md:text-3xl font-extrabold tracking-tight mb-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Comment ça fonctionne ?</h2>
-            <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>Un parcours fluide, pensé pour vos invités comme pour vous.</p>
+        {/* SECTION TUTORIEL DÉTAILLÉ EN 8 ÉTAPES AVEC VISUELS */}
+        <div className="w-full mb-24">
+          <div className="text-center max-w-xl mx-auto mb-12">
+            <h2 className={`text-2xl md:text-3xl font-extrabold tracking-tight mb-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+              Guide complet : De l'inscription aux souvenirs
+            </h2>
+            <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+              Suivez les 8 étapes du parcours organisateur et invité pour comprendre l'expérience de bout en bout.
+            </p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-            <div className={`p-6 rounded-2xl flex flex-col justify-between shadow-sm ${darkMode ? 'bg-white/[0.02] border border-white/5' : 'bg-[#f4f4f6] border border-slate-300/60'}`}>
-              <div>
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm mb-5 ${darkMode ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' : 'bg-orange-50 text-orange-600 border border-orange-200/60'}`}>01</div>
-                <h4 className={`font-bold text-sm mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Générez votre QR Code</h4>
-                <p className={`text-xs leading-relaxed ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>Choisissez votre formule et récupérez instantanément le QR Code unique de votre événement dans votre espace.</p>
+
+          {/* SÉLECTEUR DES 8 ÉTAPES (GRID DE NAVIGATION) */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 mb-6">
+            {tutorialSteps.map((item, index) => (
+              <button
+                key={index}
+                onClick={() => setActiveStep(index)}
+                className={`p-2.5 rounded-xl text-left transition-all flex flex-col justify-between border ${
+                  activeStep === index
+                    ? darkMode
+                      ? 'bg-gradient-to-br from-orange-500/20 to-purple-600/20 border-orange-500/60 shadow-md shadow-orange-950/30'
+                      : 'bg-orange-50 border-orange-300 shadow-sm'
+                    : darkMode
+                      ? 'bg-[#170c2c]/40 border-white/10 hover:border-white/20'
+                      : 'bg-[#eaeaea]/60 border-slate-300 hover:bg-[#eaeaea]'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
+                    activeStep === index 
+                      ? 'bg-orange-500 text-white' 
+                      : darkMode ? 'bg-white/10 text-slate-400' : 'bg-slate-300 text-slate-700'
+                  }`}>
+                    {item.step}
+                  </span>
+                  {item.icon}
+                </div>
+                <h4 className={`text-[10px] font-bold tracking-tight line-clamp-1 ${activeStep === index ? (darkMode ? 'text-white' : 'text-slate-900') : (darkMode ? 'text-slate-400' : 'text-slate-600')}`}>
+                  {item.title.replace(/^[0-9]+\.\s*/, '')}
+                </h4>
+              </button>
+            ))}
+          </div>
+
+          {/* CONTENEUR DE L'ÉTAPE ACTIVE AVEC VISUEL ET DESCRIPTIF */}
+          <div className={`rounded-3xl p-6 md:p-10 border backdrop-blur-xl transition-all shadow-2xl grid grid-cols-1 md:grid-cols-12 gap-8 items-center ${
+            darkMode ? 'bg-[#170c2c]/90 border-white/10' : 'bg-[#eaeaea]/90 border-slate-300/80'
+          }`}>
+            {/* Colonne Texte */}
+            <div className="md:col-span-6 space-y-4 text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                <Sparkles size={12} /> {tutorialSteps[activeStep].badge}
               </div>
-            </div>
-            
-            <div className={`p-6 rounded-2xl flex flex-col justify-between shadow-sm ${darkMode ? 'bg-white/[0.02] border border-white/5' : 'bg-[#f4f4f6] border border-slate-300/60'}`}>
-              <div>
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm mb-5 ${darkMode ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-amber-50 text-amber-600 border border-amber-200/60'}`}>02</div>
-                <h4 className={`font-bold text-sm mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Les invités participent</h4>
-                <p className={`text-xs leading-relaxed ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>Ils flashent le code avec leur smartphone pour accéder aux photos, photobooth, livre d'or et demandes DJ.</p>
+              <h3 className={`text-xl md:text-2xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                {tutorialSteps[activeStep].title}
+              </h3>
+              <p className={`text-xs font-bold uppercase tracking-wide ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>
+                {tutorialSteps[activeStep].subtitle}
+              </p>
+              <p className={`text-xs md:text-sm leading-relaxed ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                {tutorialSteps[activeStep].desc}
+              </p>
+
+              <div className="pt-4 flex items-center gap-3">
+                <button 
+                  onClick={() => setActiveStep((prev) => (prev + 1) % 8)}
+                  className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border ${
+                    darkMode 
+                      ? 'bg-white/10 text-white border-white/10 hover:bg-white/20' 
+                      : 'bg-[#dedede] text-slate-800 border-slate-300 hover:bg-[#d4d4d4]'
+                  }`}
+                >
+                  <span>Étape suivante ({activeStep + 1}/8)</span>
+                  <ArrowRight size={14} />
+                </button>
               </div>
             </div>
 
-            <div className={`p-6 rounded-2xl flex flex-col justify-between shadow-sm ${darkMode ? 'bg-white/[0.02] border border-white/5' : 'bg-[#f4f4f6] border border-slate-300/60'}`}>
-              <div>
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm mb-5 ${darkMode ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' : 'bg-purple-50 text-purple-700 border border-purple-200/60'}`}>03</div>
-                <h4 className={`font-bold text-sm mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Profitez des souvenirs</h4>
-                <p className={`text-xs leading-relaxed ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>Diffusion live automatique sur écran géant ou vidéoprojecteur, et téléchargement intégral de l'album.</p>
+            {/* Colonne Visuel (Intégration des photos du site) */}
+            <div className={`md:col-span-6 rounded-2xl border flex flex-col items-center justify-center relative overflow-hidden min-h-[280px] group ${
+              darkMode ? 'bg-black/50 border-white/10' : 'bg-white border-slate-300 shadow-inner'
+            }`}>
+              {/* Simulation d'une fenêtre de navigateur */}
+              <div className="absolute top-0 inset-x-0 h-8 bg-black/20 backdrop-blur-md px-4 flex items-center justify-between border-b border-white/5 z-10">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-green-500/80"></span>
+                </div>
+                <span className="text-[10px] text-slate-400 font-mono tracking-wider">partylens.fr</span>
+                <span className="text-[10px] text-orange-400 font-bold px-2 py-0.5 rounded bg-orange-500/10">Étape {activeStep + 1}/8</span>
+              </div>
+
+              {/* CONTENEUR DE L'IMAGE DU SITE */}
+              <div className="w-full h-full pt-8 flex items-center justify-center p-4">
+                <img 
+                  src={tutorialSteps[activeStep].image} 
+                  alt="Aperçu PartyLens" 
+                  className="w-full h-full object-cover rounded-xl shadow-lg border border-white/10" 
+                />
               </div>
             </div>
           </div>
@@ -248,7 +395,7 @@ export default function HomePage() {
 
         {/* TRUST BANNER */}
         <div className={`w-full rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left shadow-sm ${
-          darkMode ? 'bg-white/[0.02] border border-white/10' : 'bg-[#eaeaea]/80 border border-slate-300/80'
+          darkMode ? 'bg-white/[0.02] border border-white/10' : 'bg-eaeaea border border-slate-300'
         }`}>
           <div className="flex items-center gap-4">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
