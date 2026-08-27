@@ -10,6 +10,17 @@ export default function RootLayout({ children }) {
 
   return (
     <html lang="fr" className="h-full antialiased">
+      <head>
+        <title>PartyLens — Animation photo interactive pour vos événements</title>
+        <meta name="description" content="PartyLens transforme vos événements en expériences interactives avec photobooth, galerie photo, livre d’or et animations live." />
+        <meta property="og:title" content="PartyLens — Animation photo interactive" />
+        <meta property="og:description" content="Photobooth, galerie et animations live pour des souvenirs inoubliables." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://partylens.fr" />
+        <meta property="og:image" content="https://partylens.fr/logo-partylens.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href="https://partylens.fr" />
+      </head>
       <body className="min-h-full flex flex-col relative bg-[#030005]">
         
         {!isPhotobooth && (
