@@ -26,6 +26,10 @@ export async function POST(req) {
   // --- TRAITEMENT DU PREMIER PAIEMENT (CHECKOUT) ---
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
+    const eventMarker = adminDb.collection('stripeWebhookEvents').doc(event.id);
+    const marker = await eventMarker.get();
+    if (marker.exists) return NextResponse.json({ received: true, duplicate: true });
+    await eventMarker.create({ type: event.type, createdAt: admin.firestore.FieldValue.serverTimestamp() });
     const userId = session.client_reference_id;
     const customerEmail = session.customer_details?.email || session.customer_email;
 

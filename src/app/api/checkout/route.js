@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { Resend } from 'resend';
+import { requireUser, unauthorized } from '@/lib/apiAuth';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req) {
   try {
+    const authUser = await requireUser(req);
+    if (!authUser) return unauthorized();
     const body = await req.json();
 
     const {
@@ -29,7 +32,7 @@ export async function POST(req) {
       usb: "price_1TTRIK0kxrnMCRhvZZGwImVJ",         
     };
 
-    if (!userId) {
+    if (!userId || userId !== authUser.uid) {
       return NextResponse.json({ error: "Utilisateur manquant." }, { status: 400 });
     }
 
@@ -61,10 +64,10 @@ export async function POST(req) {
     let finalSuccessUrl = `https://partylens.fr/admin?success=true&session_id={CHECKOUT_SESSION_ID}`;
     let finalCancelUrl = `https://partylens.fr/admin?canceled=true`;
     
-    if (customSuccessUrl) {
+    if (customSuccessUrl && customSuccessUrl.startsWith('https://partylens.fr/')) {
       finalSuccessUrl = customSuccessUrl + (customSuccessUrl.includes('?') ? '&' : '?') + "session_id={CHECKOUT_SESSION_ID}";
     }
-    if (customCancelUrl) {
+    if (customCancelUrl && customCancelUrl.startsWith('https://partylens.fr/')) {
       finalCancelUrl = customCancelUrl;
     }
 

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { db, auth } from '@/lib/firebase';
 import { collection, query, onSnapshot, doc, getDoc } from 'firebase/firestore';
@@ -15,19 +15,15 @@ export default function GaleriePage() {
   const [loading, setLoading] = useState(true);
   const [photos, setPhotos] = useState([]);
   const [videos, setVideos] = useState([]);
-  const [mediaItems, setMediaItems] = useState([]);
   const [eventName, setEventName] = useState("");
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const saved = localStorage.getItem('partylens_dark_mode');
+    return saved === null ? true : JSON.parse(saved);
+  });
 
   // Gestion du mode jour/nuit avec localStorage
-  useEffect(() => {
-    const savedMode = localStorage.getItem('partylens_dark_mode');
-    if (savedMode !== null) {
-      setDarkMode(JSON.parse(savedMode));
-    }
-  }, []);
-
   const toggleDarkMode = () => {
     const newMode = !darkMode;
     setDarkMode(newMode);
@@ -43,7 +39,13 @@ export default function GaleriePage() {
       try {
         const eventDoc = await getDoc(doc(db, "events", eventId));
         if (eventDoc.exists()) {
-          setEventName(eventDoc.data().eventName);
+          const event = eventDoc.data();
+          const allowed = event.userId === user.uid || (Array.isArray(event.collaborators) && event.collaborators.includes(user.uid));
+          if (!allowed) { router.push('/admin'); return; }
+          setEventName(event.eventName);
+        } else {
+          router.push('/admin');
+          return;
         }
 
         // Écoute des Photos
@@ -71,22 +73,16 @@ export default function GaleriePage() {
     return () => unsubAuth();
   }, [eventId, router]);
 
-  // Fusion et Tri sécurisé par date
-  useEffect(() => {
-    const combined = [...photos, ...videos].sort((a, b) => {
-      const dateA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : Date.now();
-      const dateB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : Date.now();
+  const mediaItems = useMemo(() => [...photos, ...videos].sort((a, b) => {
+      const dateA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : 0;
+      const dateB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : 0;
       return dateB - dateA;
-    });
-    setMediaItems(combined);
-    
-    if (photos.length > 0 || videos.length > 0 || !loading) {
-      setLoading(false);
-    }
-    
+    }), [photos, videos]);
+
+  useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 2000);
     return () => clearTimeout(timer);
-  }, [photos, videos]);
+  }, []);
 
   const downloadSingleMedia = async (url, index, isVideo) => {
     try {

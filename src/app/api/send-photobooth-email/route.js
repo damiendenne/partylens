@@ -7,17 +7,28 @@ export async function POST(request) {
   try {
     const { email, photoUrl, eventId } = await request.json();
 
-    if (!email || !photoUrl) {
+    if (!email || !photoUrl || !/^\S+@\S+\.\S+$/.test(email) || email.length > 254) {
       return NextResponse.json(
         { error: "Paramètres manquants (email ou photoUrl)" }, 
         { status: 400 }
       );
     }
 
+    let parsedUrl;
+    try { parsedUrl = new URL(photoUrl); } catch { return NextResponse.json({ error: "URL photo invalide" }, { status: 400 }); }
+    const allowedHost = /(^|\.)firebasestorage\.app$|(^|\.)appspot\.com$/.test(parsedUrl.hostname);
+    if (parsedUrl.protocol !== 'https:' || !allowedHost) {
+      return NextResponse.json({ error: "Source photo non autorisée" }, { status: 400 });
+    }
+
     // 1. Télécharger l'image depuis la source (ex: Firebase Storage)
     const imageResponse = await fetch(photoUrl);
     if (!imageResponse.ok) {
       throw new Error("Impossible de récupérer l'image depuis l'URL fournie");
+    }
+    const contentLength = Number(imageResponse.headers.get('content-length') || 0);
+    if (contentLength > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: "Photo trop volumineuse" }, { status: 413 });
     }
     const arrayBuffer = await imageResponse.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);

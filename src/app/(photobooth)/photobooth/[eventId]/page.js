@@ -316,7 +316,7 @@ export default function PhotoboothPage({ params }) {
   };
 
   const startChallengeProcess = () => {
-    const randomIndex = Math.floor(Math.random() * FUN_CHALLENGES.length);
+    const randomIndex = crypto.getRandomValues(new Uint32Array(1))[0] % FUN_CHALLENGES.length;
     setCurrentChallenge(FUN_CHALLENGES[randomIndex]);
 
     let timeLeft = 15;

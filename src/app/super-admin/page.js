@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import {
   collection,
   query,
@@ -44,12 +45,6 @@ const PRICES = {
   gold_annual: 990,
   frame: 0.99,
   usb: 15
-};
-
-// Identifiants administrateurs
-const ADMIN_CREDENTIALS = {
-  email: "contact@partylens.fr",
-  password: "DdNt12122015@"
 };
 
 const getShippingInfo = (event, user) => {
@@ -154,11 +149,11 @@ export default function SuperAdmin() {
   const [notify, setNotify] = useState({ show: false, msg: "" });
 
   useEffect(() => {
-    const authStatus = sessionStorage.getItem("partylens_admin_auth");
-    if (authStatus === "true") {
-      setIsAuthenticated(true);
-    }
-    setAuthLoading(false);
+    return onAuthStateChanged(auth, async (user) => {
+      const tokenResult = user ? await user.getIdTokenResult() : null;
+      setIsAuthenticated(Boolean(user && tokenResult?.claims?.admin === true));
+      setAuthLoading(false);
+    });
   }, []);
 
   useEffect(() => {
@@ -193,18 +188,14 @@ export default function SuperAdmin() {
     };
   }, [isAuthenticated]);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError("");
     setSubmittingLogin(true);
-
-    if (
-      emailInput.trim() === ADMIN_CREDENTIALS.email &&
-      passwordInput === ADMIN_CREDENTIALS.password
-    ) {
-      sessionStorage.setItem("partylens_admin_auth", "true");
+    try {
+      await signInWithEmailAndPassword(auth, emailInput.trim(), passwordInput);
       setIsAuthenticated(true);
-    } else {
+    } catch {
       setLoginError("Identifiants incorrects.");
     }
     setSubmittingLogin(false);

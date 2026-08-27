@@ -7,7 +7,7 @@ export async function POST(req) {
   try {
     const { email, eventName, trackingNumber } = await req.json();
 
-    if (!email || !trackingNumber) {
+    if (!email || !trackingNumber || !/^\S+@\S+\.\S+$/.test(email) || String(trackingNumber).length > 100 || String(eventName || '').length > 200) {
       return NextResponse.json(
         { error: "Paramètres manquants (email ou trackingNumber)" },
         { status: 400 }

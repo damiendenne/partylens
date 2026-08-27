@@ -17,16 +17,13 @@ export default function DJDashboard() {
   const [userData, setUserData] = useState(null);
   const [requests, setRequests] = useState([]);
   const [photos, setPhotos] = useState([]);
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const saved = localStorage.getItem('partylens_dark_mode');
+    return saved === null ? true : JSON.parse(saved);
+  });
 
   // Gestion du mode jour/nuit avec localStorage
-  useEffect(() => {
-    const savedMode = localStorage.getItem('partylens_dark_mode');
-    if (savedMode !== null) {
-      setDarkMode(JSON.parse(savedMode));
-    }
-  }, []);
-
   const toggleDarkMode = () => {
     const newMode = !darkMode;
     setDarkMode(newMode);
@@ -60,7 +57,14 @@ export default function DJDashboard() {
           router.push('/admin');
           return;
         }
-        setEventData(eventDoc.data());
+        const event = eventDoc.data();
+        const isOwner = event.userId === user.uid;
+        const isCollaborator = Array.isArray(event.collaborators) && event.collaborators.includes(user.uid);
+        if (!isOwner && !isCollaborator) {
+          router.push('/admin');
+          return;
+        }
+        setEventData(event);
 
         const qMusic = query(collection(db, "events", eventId, "musicRequests"), orderBy("createdAt", "desc"));
         unsubMusic = onSnapshot(qMusic, (snap) => setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() }))));

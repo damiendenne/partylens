@@ -1,19 +1,15 @@
 "use client";
 import { usePathname } from "next/navigation";
-import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
-
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
   const isPhotobooth = pathname.includes("/photobooth");
 
   return (
-    <html lang="fr" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="fr" className="h-full antialiased">
       <body className="min-h-full flex flex-col relative bg-[#030005]">
         
         {!isPhotobooth && (

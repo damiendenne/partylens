@@ -13,6 +13,7 @@ export default function GuestPage({ params }) {
   const eventId = unwrappedParams.eventId;
 
   const [file, setFile] = useState(null);
+  const [fileCount, setFileCount] = useState(0);
   const [song, setSong] = useState("");
   const [artist, setArtist] = useState("");
   const [guestMsg, setGuestMsg] = useState(""); 
@@ -198,8 +199,8 @@ export default function GuestPage({ params }) {
 
       let imageCompression = null;
       try {
-        const module = await import('browser-image-compression');
-        imageCompression = module.default;
+        const compressionModule = await import('browser-image-compression');
+        imageCompression = compressionModule.default;
       } catch (err) {
         console.warn("Module de compression indisponible :", err);
       }
@@ -467,15 +468,15 @@ export default function GuestPage({ params }) {
                 ref={fileInputRef}
                 accept="image/*,video/*"
                 multiple
-                onChange={(e) => setFile(e.target.files && e.target.files.length > 0 ? e.target.files[0] : null)} 
+                onChange={(e) => { setFileCount(e.target.files?.length || 0); setFile(e.target.files && e.target.files.length > 0 ? e.target.files[0] : null); }}
                 className="hidden" 
                 disabled={loading}
               />
               <Camera size={32} className="text-orange-500 mx-auto mb-2 group-hover:scale-110 transition-transform" />
               <span key="upload-label-text" className="text-xs font-bold uppercase tracking-wider block">
                 {file ? (
-                  fileInputRef.current?.files && fileInputRef.current.files.length > 1 
-                    ? `${fileInputRef.current.files.length} fichiers sélectionnés` 
+                  fileCount > 1
+                    ? `${fileCount} fichiers sélectionnés`
                     : file.name
                 ) : "Cliquez pour ajouter photo ou vidéo"}
               </span>

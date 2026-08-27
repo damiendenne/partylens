@@ -64,7 +64,7 @@ export default function PlanSelection() {
 
       const response = await fetch("/api/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${await user.getIdToken()}` },
         body: JSON.stringify({
           planId: planId,
           billingCycle: billingCycle,
