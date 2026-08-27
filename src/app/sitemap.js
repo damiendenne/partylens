@@ -1,5 +1,5 @@
 export default function sitemap() {
-  const base = 'https://partylens.fr';
+  const base = 'https://www.partylens.fr';
   const paths = ['/', '/avis', '/contact', '/legal'];
   return paths.map((path) => ({
     url: `${base}${path}`,

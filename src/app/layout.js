@@ -16,16 +16,16 @@ export default function RootLayout({ children }) {
         <meta property="og:title" content="PartyLens — Animation photo interactive" />
         <meta property="og:description" content="Photobooth, galerie et animations live pour des souvenirs inoubliables." />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://partylens.fr" />
-        <meta property="og:image" content="https://partylens.fr/logo-partylens.png" />
+        <meta property="og:url" content="https://www.partylens.fr" />
+        <meta property="og:image" content="https://www.partylens.fr/logo-partylens.png" />
         <meta name="twitter:card" content="summary_large_image" />
-        <link rel="canonical" href="https://partylens.fr" />
+        <link rel="canonical" href="https://www.partylens.fr" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org',
           '@type': 'Organization',
           name: 'PartyLens France',
-          url: 'https://partylens.fr',
-          logo: 'https://partylens.fr/logo-partylens.png',
+          url: 'https://www.partylens.fr',
+          logo: 'https://www.partylens.fr/logo-partylens.png',
           description: 'Animation photo interactive et photobooth pour événements en France',
           telephone: '+33787016077',
           email: 'contact@partylens.fr',
