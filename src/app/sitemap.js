@@ -1,6 +1,6 @@
 export default function sitemap() {
   const base = 'https://partylens.fr';
-  const paths = ['/', '/avis', '/contact', '/legal', '/login', '/register'];
+  const paths = ['/', '/avis', '/contact', '/legal'];
   return paths.map((path) => ({
     url: `${base}${path}`,
     lastModified: new Date(),
