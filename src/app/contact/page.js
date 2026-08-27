@@ -1,11 +1,14 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Mail, User, Send, Loader2, Phone, ArrowLeft, CheckCircle, Sun, Moon } from 'lucide-react';
 
 export default function ContactPage() {
+  useEffect(() => {
+    document.title = 'PartyLens France - Nous contacter';
+  }, []);
   const router = useRouter();
   const [darkMode, setDarkMode] = useState(true);
   const [loading, setLoading] = useState(false);
