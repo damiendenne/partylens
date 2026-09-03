@@ -18,7 +18,7 @@ export async function POST(request) {
 
     let parsedUrl;
     try { parsedUrl = new URL(photoUrl); } catch { return NextResponse.json({ error: "URL photo invalide" }, { status: 400 }); }
-    const allowedHost = /(^|\.)firebasestorage\.app$|(^|\.)appspot\.com$/.test(parsedUrl.hostname);
+    const allowedHost = /(^|\.)firebasestorage\.app$|(^|\.)firebasestorage\.googleapis\.com$|(^|\.)storage\.googleapis\.com$|(^|\.)appspot\.com$/.test(parsedUrl.hostname);
     if (parsedUrl.protocol !== 'https:' || !allowedHost) {
       return NextResponse.json({ error: "Source photo non autorisée" }, { status: 400 });
     }
