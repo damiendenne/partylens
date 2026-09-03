@@ -170,22 +170,22 @@ export default function HomePage() {
 
         {/* DOUBLE APPEL À L'ACTION (CTA) */}
         <div className="w-full max-w-2xl flex flex-col sm:flex-row gap-4 mb-8">
-          <Link href="/register?demo=true" className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white py-3.5 px-6 rounded-xl font-bold tracking-wide text-xs shadow-lg shadow-orange-500/20 hover:brightness-105 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
-            <Sparkles size={16} /> Créer un test gratuit
+          <Link href="/register?demo=true" className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white py-5 px-6 rounded-xl font-bold tracking-wide text-base shadow-lg shadow-orange-500/20 hover:brightness-105 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+            <Sparkles size={20} /> Créer un test gratuit
           </Link>
-          <Link href="/register" className={`flex-1 py-3.5 px-6 rounded-xl font-bold tracking-wide text-xs transition-all flex items-center justify-center gap-2 shadow-sm ${
+          <Link href="/register" className={`flex-1 py-5 px-6 rounded-xl font-bold tracking-wide text-base transition-all flex items-center justify-center gap-2 shadow-sm ${
             darkMode
               ? 'bg-pink-500/15 text-pink-200 border border-pink-400/30 hover:bg-pink-500/25'
               : 'bg-pink-100 text-pink-700 border border-pink-300 hover:bg-pink-200'
           }`}>
-            Inscription <ArrowRight size={16} />
+            Inscription <ArrowRight size={20} />
           </Link>
-          <Link href="/login" className={`flex-1 py-3.5 px-6 rounded-xl font-bold tracking-wide text-xs transition-all flex items-center justify-center gap-2 shadow-sm ${
+          <Link href="/login" className={`flex-1 py-5 px-6 rounded-xl font-bold tracking-wide text-base transition-all flex items-center justify-center gap-2 shadow-sm ${
             darkMode 
               ? 'bg-white/[0.04] text-white border border-white/10 hover:bg-white/[0.08]' 
               : 'bg-[#eaeaea] text-slate-700 border border-slate-300 hover:bg-[#dedede]'
           }`}>
-            Espace Organisateur / DJ <ArrowRight size={16} />
+            Espace Organisateur / DJ <ArrowRight size={20} />
           </Link>
         </div>
 
