@@ -71,6 +71,8 @@ function RegisterContent({ darkMode }) {
         plan: "", 
         createdAt: new Date()
       });
+      const idToken = await auth.currentUser?.getIdToken();
+      fetch('/api/send-welcome-email', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` }, body: JSON.stringify({ email, name: '' }) }).catch(() => {});
 
       window.location.href = isStandalone ? '/admin/plan-selection' : '/admin';
     } catch (err) {

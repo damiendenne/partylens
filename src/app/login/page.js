@@ -87,6 +87,14 @@ function LoginContent({ darkMode }) {
           createdAt: new Date()
         });
 
+        // Send the branded welcome email without blocking account creation.
+        const idToken = await auth.currentUser?.getIdToken();
+        fetch('/api/send-welcome-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+          body: JSON.stringify({ email, name: '' })
+        }).catch(() => {});
+
         if (role === 'dj') {
           window.location.href = '/admin';
         } else {
