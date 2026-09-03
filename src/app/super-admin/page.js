@@ -197,14 +197,16 @@ export default function SuperAdmin() {
       if (authResponse.ok) setAuthEmails((await authResponse.json()).users || []);
       if (resendResponse.ok) setResendEmails((await resendResponse.json()).users || []);
     };
-    const timer = setTimeout(loadExternalEmails, 500);
+    const unsubExternalAuth = onAuthStateChanged(auth, (user) => {
+      if (user) loadExternalEmails();
+    });
 
     return () => {
       unsubEvents();
       unsubUsers();
       unsubFeedbacks();
       unsubPhotoboothEmails();
-      clearTimeout(timer);
+      unsubExternalAuth();
     };
   }, [isAuthenticated]);
 
