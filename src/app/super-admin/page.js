@@ -617,15 +617,6 @@ export default function SuperAdmin() {
 
         {activeTab === "emails" && (
           <div className="grid gap-4 animate-in fade-in">
-            <form onSubmit={async (e) => { e.preventDefault(); setEmailSending(true); setEmailSent(''); try { const token = await auth.currentUser.getIdToken(); const recipients = [...new Set(emailRecipients.split(',').map((v) => v.trim().toLowerCase()).filter(Boolean))]; const response = await fetch('/api/admin/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ recipients, subject: emailSubject, message: emailMessage }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error); setEmailSent(`${recipients.length} destinataire(s) traité(s).`); setEmailSubject(''); setEmailMessage(''); } catch (err) { setEmailSent(`Erreur : ${err.message}`); } finally { setEmailSending(false); } }} className={`p-6 rounded-3xl border grid gap-3 ${darkMode ? 'bg-[#170c2c]/80 border-white/20' : 'bg-white border-slate-300'}`}>
-              <h2 className="text-xl font-black uppercase">Envoyer un e-mail</h2>
-              <input value={emailRecipients} onChange={(e) => setEmailRecipients(e.target.value)} placeholder="Destinataire" required className="rounded-xl px-4 py-3 text-slate-900" />
-              <label className="flex items-center gap-2 text-xs font-bold"><input type="checkbox" checked={isPromoEmail} onChange={(e) => { setIsPromoEmail(e.target.checked); if (e.target.checked) { setEmailSubject('Une animation inoubliable pour vos prochains événements'); setEmailMessage(`Bonjour,\n\nNous sommes PartyLens France, spécialisés dans l’animation photo et le photobooth pour mariages, anniversaires et événements.\n\nNous serions ravis de vous accompagner pour créer des souvenirs uniques et faire participer tous vos invités.\n\nContactez-nous pour découvrir nos formules.\n\nÀ bientôt,\nL’équipe PartyLens`); } }} /> Message promotionnel (modèle prérempli)</label>
-              <input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} placeholder="Objet" maxLength={200} required className="rounded-xl px-4 py-3 text-slate-900" />
-              <textarea value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)} placeholder="Votre message" rows={5} required className="rounded-xl px-4 py-3 text-slate-900" />
-              <button disabled={emailSending} className="rounded-xl px-5 py-3 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-black uppercase text-xs">{emailSending ? 'Envoi...' : 'Envoyer à tous les contacts'}</button>
-              {emailSent && <p className="text-xs font-bold">{emailSent}</p>}
-            </form>
             <div className={`p-6 rounded-3xl border ${darkMode ? 'bg-[#170c2c]/80 border-white/20 text-white' : 'bg-white border-slate-300 text-slate-900'}`}>
               <h2 className="text-xl font-black uppercase">Contacts collectés</h2>
               <p className="text-xs opacity-70 mt-1">Comptes inscrits et adresses saisies dans le photobooth.</p>
