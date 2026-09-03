@@ -151,6 +151,7 @@ export default function SuperAdmin() {
   const [emailSubject, setEmailSubject] = useState('');
   const [emailMessage, setEmailMessage] = useState('');
   const [emailRecipients, setEmailRecipients] = useState('');
+  const [isPromoEmail, setIsPromoEmail] = useState(false);
   const [emailSending, setEmailSending] = useState(false);
   const [emailSent, setEmailSent] = useState('');
   const [loading, setLoading] = useState(true);
@@ -617,7 +618,8 @@ export default function SuperAdmin() {
           <div className="grid gap-4 animate-in fade-in">
             <form onSubmit={async (e) => { e.preventDefault(); setEmailSending(true); setEmailSent(''); try { const token = await auth.currentUser.getIdToken(); const recipients = [...new Set(emailRecipients.split(',').map((v) => v.trim().toLowerCase()).filter(Boolean))]; const response = await fetch('/api/admin/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ recipients, subject: emailSubject, message: emailMessage }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error); setEmailSent(`${recipients.length} destinataire(s) traité(s).`); setEmailSubject(''); setEmailMessage(''); } catch (err) { setEmailSent(`Erreur : ${err.message}`); } finally { setEmailSending(false); } }} className={`p-6 rounded-3xl border grid gap-3 ${darkMode ? 'bg-[#170c2c]/80 border-white/20' : 'bg-white border-slate-300'}`}>
               <h2 className="text-xl font-black uppercase">Envoyer un e-mail</h2>
-              <input value={emailRecipients} onChange={(e) => setEmailRecipients(e.target.value)} placeholder="Destinataires (séparés par des virgules)" required className="rounded-xl px-4 py-3 text-slate-900" />
+              <input value={emailRecipients} onChange={(e) => setEmailRecipients(e.target.value)} placeholder="Destinataire" required className="rounded-xl px-4 py-3 text-slate-900" />
+              <label className="flex items-center gap-2 text-xs font-bold"><input type="checkbox" checked={isPromoEmail} onChange={(e) => { setIsPromoEmail(e.target.checked); if (e.target.checked) { setEmailSubject('Une animation inoubliable pour vos prochains événements'); setEmailMessage(`Bonjour,\n\nNous sommes PartyLens France, spécialisés dans l’animation photo et le photobooth pour mariages, anniversaires et événements.\n\nNous serions ravis de vous accompagner pour créer des souvenirs uniques et faire participer tous vos invités.\n\nContactez-nous pour découvrir nos formules.\n\nÀ bientôt,\nL’équipe PartyLens`); } }} /> Message promotionnel (modèle prérempli)</label>
               <input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} placeholder="Objet" maxLength={200} required className="rounded-xl px-4 py-3 text-slate-900" />
               <textarea value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)} placeholder="Votre message" rows={5} required className="rounded-xl px-4 py-3 text-slate-900" />
               <button disabled={emailSending} className="rounded-xl px-5 py-3 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-black uppercase text-xs">{emailSending ? 'Envoi...' : 'Envoyer à tous les contacts'}</button>
@@ -639,7 +641,7 @@ export default function SuperAdmin() {
             ]).values()].sort((a, b) => (b.date?.seconds || 0) - (a.date?.seconds || 0)).map((item) => (
               <div key={item.email} className={`flex items-center justify-between gap-4 p-5 rounded-2xl border ${darkMode ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-900'}`}>
                 <div><Mail size={16} className="inline mr-3 text-orange-400" /><span className="font-bold">{item.email}</span></div>
-                <span className="text-[10px] uppercase font-black opacity-60">{item.source}</span>
+                <div className="flex items-center gap-3"><span className="text-[10px] uppercase font-black opacity-60">{item.source}</span><button type="button" onClick={() => { setEmailRecipients(item.email); setEmailSubject('Une animation inoubliable pour vos prochains événements'); setEmailMessage(`Bonjour,\n\nNous sommes PartyLens France, spécialisés dans l’animation photo et le photobooth pour événements.\n\nÀ bientôt,\nL’équipe PartyLens\n\nPartyLens France — ${new Date().getFullYear()}\ncontact@partylens.fr — 07 87 01 60 77`); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="rounded-lg px-3 py-2 bg-orange-500 text-white text-[10px] font-black uppercase">Écrire</button></div>
               </div>
             ))}
           </div>
