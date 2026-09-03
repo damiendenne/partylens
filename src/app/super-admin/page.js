@@ -594,7 +594,10 @@ export default function SuperAdmin() {
               <p className="text-xs opacity-70 mt-1">Comptes inscrits et adresses saisies dans le photobooth.</p>
             </div>
             {[...new Map([
-              ...users.filter((u) => u.email).map((u) => [u.email.toLowerCase(), { email: u.email, source: 'Compte inscrit', date: u.createdAt }]),
+              ...users.filter((u) => u.email || u.Email || u.mail || u.eMail).map((u) => {
+                const email = u.email || u.Email || u.mail || u.eMail;
+                return [String(email).toLowerCase(), { email: String(email), source: 'Compte inscrit', date: u.createdAt }];
+              }),
               ...photoboothEmails.map((e) => [e.email.toLowerCase(), { email: e.email, source: 'Photobooth', date: e.createdAt }])
             ]).values()].sort((a, b) => (b.date?.seconds || 0) - (a.date?.seconds || 0)).map((item) => (
               <div key={item.email} className={`flex items-center justify-between gap-4 p-5 rounded-2xl border ${darkMode ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-900'}`}>
