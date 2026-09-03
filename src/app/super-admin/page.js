@@ -146,6 +146,7 @@ export default function SuperAdmin() {
   const [feedbacks, setFeedbacks] = useState([]);
   const [photoboothEmails, setPhotoboothEmails] = useState([]);
   const [authEmails, setAuthEmails] = useState([]);
+  const [resendEmails, setResendEmails] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState(null);
   const [notify, setNotify] = useState({ show: false, msg: "" });
@@ -188,6 +189,9 @@ export default function SuperAdmin() {
     auth.currentUser?.getIdToken().then((token) => fetch('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } }))
       .then((response) => response?.ok ? response.json() : null)
       .then((data) => data?.users && setAuthEmails(data.users));
+    auth.currentUser?.getIdToken().then((token) => fetch('/api/admin/resend-emails', { headers: { Authorization: `Bearer ${token}` } }))
+      .then((response) => response?.ok ? response.json() : null)
+      .then((data) => data?.users && setResendEmails(data.users));
 
     return () => {
       unsubEvents();
@@ -603,6 +607,7 @@ export default function SuperAdmin() {
                 return [String(email).toLowerCase(), { email: String(email), source: 'Compte inscrit', date: u.createdAt }];
               }),
               ...authEmails.filter((u) => u.email).map((u) => [u.email.toLowerCase(), { email: u.email, source: 'Firebase Authentication', date: null }]),
+              ...resendEmails.filter((u) => u.email).map((u) => [u.email.toLowerCase(), { email: u.email, source: 'Resend', date: null }]),
               ...photoboothEmails.map((e) => [e.email.toLowerCase(), { email: e.email, source: 'Photobooth', date: e.createdAt }])
             ]).values()].sort((a, b) => (b.date?.seconds || 0) - (a.date?.seconds || 0)).map((item) => (
               <div key={item.email} className={`flex items-center justify-between gap-4 p-5 rounded-2xl border ${darkMode ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-900'}`}>
