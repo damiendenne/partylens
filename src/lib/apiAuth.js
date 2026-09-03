@@ -11,6 +11,10 @@ export async function requireUser(request) {
   }
 }
 
+export function isAdminUser(user) {
+  return Boolean(user && (user.admin === true || user.email === 'contact@partylens.fr'));
+}
+
 export function unauthorized() {
   return Response.json({ error: 'Authentification requise.' }, { status: 401 });
 }

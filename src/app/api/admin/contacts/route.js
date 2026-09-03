@@ -1,9 +1,9 @@
 import { admin, adminDb } from '@/lib/firebaseAdmin';
-import { requireUser, unauthorized } from '@/lib/apiAuth';
+import { requireUser, unauthorized, isAdminUser } from '@/lib/apiAuth';
 
 export async function GET(request) {
   const user = await requireUser(request);
-  if (!user || user.admin !== true) return unauthorized();
+  if (!isAdminUser(user)) return unauthorized();
   const [usersSnap, photoSnap] = await Promise.all([
     adminDb.collection('users').get(),
     adminDb.collection('photoboothEmails').get()

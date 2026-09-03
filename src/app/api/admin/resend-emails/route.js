@@ -1,8 +1,8 @@
-import { requireUser, unauthorized } from '@/lib/apiAuth';
+import { requireUser, unauthorized, isAdminUser } from '@/lib/apiAuth';
 
 export async function GET(request) {
   const user = await requireUser(request);
-  if (!user || user.admin !== true) return unauthorized();
+  if (!isAdminUser(user)) return unauthorized();
   const response = await fetch('https://api.resend.com/emails?limit=100', {
     headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
     cache: 'no-store'
