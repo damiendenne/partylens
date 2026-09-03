@@ -4,7 +4,7 @@ import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { Loader2, MapPin, Phone, Lock, Mail, Hash, ArrowRight, Sun, Moon } from 'lucide-react';
+import { Loader2, MapPin, Phone, Lock, Mail, User, Music, Hash, ArrowRight, Sun, Moon } from 'lucide-react';
 import Link from 'next/link';
 
 // 1. Contenu du formulaire recevant l'état darkMode
