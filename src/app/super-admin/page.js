@@ -144,6 +144,7 @@ export default function SuperAdmin() {
   const [events, setEvents] = useState([]);
   const [users, setUsers] = useState([]);
   const [feedbacks, setFeedbacks] = useState([]);
+  const [photoboothEmails, setPhotoboothEmails] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState(null);
   const [notify, setNotify] = useState({ show: false, msg: "" });
@@ -180,11 +181,15 @@ export default function SuperAdmin() {
         setFeedbacks(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       }
     );
+    const unsubPhotoboothEmails = onSnapshot(collection(db, "photoboothEmails"), (snap) => {
+      setPhotoboothEmails(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    });
 
     return () => {
       unsubEvents();
       unsubUsers();
       unsubFeedbacks();
+      unsubPhotoboothEmails();
     };
   }, [isAuthenticated]);
 
@@ -506,7 +511,8 @@ export default function SuperAdmin() {
               { id: "djs", label: "DJS", icon: <ShieldCheck size={14} /> },
               { id: "soirees", label: "SOIRÉES", icon: <Calendar size={14} /> },
               { id: "logistique", label: "LOGISTIQUE", icon: <Truck size={14} /> },
-              { id: "avis", label: "AVIS", icon: <MessageSquare size={14} /> }
+              { id: "avis", label: "AVIS", icon: <MessageSquare size={14} /> },
+              { id: "emails", label: "EMAILS", icon: <Mail size={14} /> }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -576,6 +582,24 @@ export default function SuperAdmin() {
                 >
                   Répondre par Email
                 </a>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === "emails" && (
+          <div className="grid gap-4 animate-in fade-in">
+            <div className={`p-6 rounded-3xl border ${darkMode ? 'bg-[#170c2c]/80 border-white/20 text-white' : 'bg-white border-slate-300 text-slate-900'}`}>
+              <h2 className="text-xl font-black uppercase">Contacts collectés</h2>
+              <p className="text-xs opacity-70 mt-1">Comptes inscrits et adresses saisies dans le photobooth.</p>
+            </div>
+            {[...new Map([
+              ...users.filter((u) => u.email).map((u) => [u.email.toLowerCase(), { email: u.email, source: 'Compte inscrit', date: u.createdAt }]),
+              ...photoboothEmails.map((e) => [e.email.toLowerCase(), { email: e.email, source: 'Photobooth', date: e.createdAt }])
+            ]).values()].sort((a, b) => (b.date?.seconds || 0) - (a.date?.seconds || 0)).map((item) => (
+              <div key={item.email} className={`flex items-center justify-between gap-4 p-5 rounded-2xl border ${darkMode ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-900'}`}>
+                <div><Mail size={16} className="inline mr-3 text-orange-400" /><span className="font-bold">{item.email}</span></div>
+                <span className="text-[10px] uppercase font-black opacity-60">{item.source}</span>
               </div>
             ))}
           </div>

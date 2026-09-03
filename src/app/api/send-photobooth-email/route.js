@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import { adminDb } from '@/lib/firebaseAdmin';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -13,6 +14,7 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+    await adminDb.collection('photoboothEmails').doc(email.toLowerCase()).set({ email: email.toLowerCase(), eventId: eventId || null, createdAt: new Date() }, { merge: true });
 
     let parsedUrl;
     try { parsedUrl = new URL(photoUrl); } catch { return NextResponse.json({ error: "URL photo invalide" }, { status: 400 }); }
