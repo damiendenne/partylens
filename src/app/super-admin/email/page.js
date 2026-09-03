@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 
+export const dynamic = 'force-dynamic';
+
 const promoText = (code) => `Bonjour,\n\nBienvenue chez PartyLens ! Merci d’avoir utilisé notre service. Nous avons le plaisir de vous compter parmi nos clients fidèles et de vous offrir un code promo pour votre première soirée créée sur https://www.partylens.fr.\n\nVotre code promo :\n${code || '[VOTRE CODE PROMO]'}\n\nÀ saisir lors du paiement sécurisé Stripe.\n\nDécouvrez PartyLens : https://www.partylens.fr\n\nVotre avis nous intéresse ! Partagez votre expérience : https://g.page/r/Cb87GtRdn0tqEBM/review\n\nJe reste à votre disposition pour toute question.\n\nDamien\nVotre conseiller PartyLens`;
 
 export default function AdminEmailPage() {
