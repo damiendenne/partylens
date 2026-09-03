@@ -147,6 +147,7 @@ export default function SuperAdmin() {
   const [photoboothEmails, setPhotoboothEmails] = useState([]);
   const [authEmails, setAuthEmails] = useState([]);
   const [resendEmails, setResendEmails] = useState([]);
+  const [serverContacts, setServerContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState(null);
   const [notify, setNotify] = useState({ show: false, msg: "" });
@@ -194,12 +195,15 @@ export default function SuperAdmin() {
         fetch('/api/admin/users', { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }),
         fetch('/api/admin/resend-emails', { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' })
       ]);
+      const contactsResponse = await fetch('/api/admin/contacts', { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
+      if (contactsResponse.ok) setServerContacts((await contactsResponse.json()).contacts || []);
       if (authResponse.ok) setAuthEmails((await authResponse.json()).users || []);
       if (resendResponse.ok) setResendEmails((await resendResponse.json()).users || []);
     };
     const unsubExternalAuth = onAuthStateChanged(auth, (user) => {
       if (user) loadExternalEmails();
     });
+    auth.currentUser?.getIdToken(true).then((token) => fetch('/api/admin/contacts', { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' })).then((r) => r.ok ? r.json() : null).then((d) => d?.contacts && setServerContacts(d.contacts));
 
     return () => {
       unsubEvents();
@@ -617,6 +621,7 @@ export default function SuperAdmin() {
               }),
               ...authEmails.filter((u) => u.email).map((u) => [u.email.toLowerCase(), { email: u.email, source: 'Firebase Authentication', date: null }]),
               ...resendEmails.filter((u) => u.email).map((u) => [u.email.toLowerCase(), { email: u.email, source: 'Resend', date: null }]),
+              ...serverContacts.map((u) => [u.email.toLowerCase(), { ...u, date: null }]),
               ...photoboothEmails.map((e) => [e.email.toLowerCase(), { email: e.email, source: 'Photobooth', date: e.createdAt }])
             ]).values()].sort((a, b) => (b.date?.seconds || 0) - (a.date?.seconds || 0)).map((item) => (
               <div key={item.email} className={`flex items-center justify-between gap-4 p-5 rounded-2xl border ${darkMode ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-900'}`}>
