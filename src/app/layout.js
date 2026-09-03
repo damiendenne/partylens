@@ -13,6 +13,12 @@ export default function RootLayout({ children }) {
       <head>
         <title>PartyLens France — Animation photo interactive pour vos événements</title>
         <meta name="description" content="PartyLens transforme vos événements en expériences interactives avec photobooth, galerie photo, livre d’or et animations live." />
+        <meta name="keywords" content="photobooth, animation photo, borne photo, événement, mariage, anniversaire, soirée, galerie photo, livre d'or numérique, QR code, animation événementielle, France" />
+        <meta name="author" content="PartyLens France" />
+        <meta name="robots" content="index, follow, max-image-preview:large" />
+        <meta name="googlebot" content="index, follow" />
+        <meta name="theme-color" content="#030005" />
+        <meta httpEquiv="content-language" content="fr-FR" />
         <meta property="og:title" content="PartyLens — Animation photo interactive" />
         <meta property="og:description" content="Photobooth, galerie et animations live pour des souvenirs inoubliables." />
         <meta property="og:type" content="website" />
@@ -26,10 +32,27 @@ export default function RootLayout({ children }) {
           name: 'PartyLens France',
           url: 'https://www.partylens.fr',
           logo: 'https://www.partylens.fr/logo-partylens.png',
-          description: 'Animation photo interactive et photobooth pour événements en France',
+          description: 'Animation photo interactive, photobooth, galerie photo et livre d’or numérique pour mariages, anniversaires et événements en France',
           telephone: '+33787016077',
           email: 'contact@partylens.fr',
           address: { '@type': 'PostalAddress', addressCountry: 'FR' }
+        }) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'WebSite',
+          name: 'PartyLens France',
+          url: 'https://www.partylens.fr',
+          inLanguage: 'fr-FR',
+          potentialAction: { '@type': 'SearchAction', target: 'https://www.partylens.fr/?q={search_term_string}', 'query-input': 'required name=search_term_string' }
+        }) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'Service',
+          name: 'Animation photobooth PartyLens',
+          provider: { '@type': 'Organization', name: 'PartyLens France', url: 'https://www.partylens.fr' },
+          areaServed: { '@type': 'Country', name: 'France' },
+          serviceType: 'Animation photo événementielle',
+          description: 'Photobooth, galerie photo live, QR code, livre d’or audio et animations interactives pour événements.'
         }) }} />
       </head>
       <body className="min-h-full flex flex-col relative bg-[#030005]">
