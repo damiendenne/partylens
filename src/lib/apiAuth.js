@@ -12,7 +12,7 @@ export async function requireUser(request) {
 }
 
 export function isAdminUser(user) {
-  return Boolean(user && (user.admin === true || user.email === 'contact@partylens.fr'));
+  return Boolean(user && (user.admin === true || user.email === 'damiendenne.nicolastual@outlook.fr'));
 }
 
 export function unauthorized() {
