@@ -76,7 +76,14 @@ function RegisterContent({ darkMode }) {
 
       window.location.href = isStandalone ? '/admin/plan-selection' : '/admin';
     } catch (err) {
-      alert("Erreur lors de l'inscription : " + err.message);
+      const message = err?.code === 'auth/email-already-in-use'
+        ? 'Cette adresse e-mail est déjà inscrite. Utilisez la page Connexion ou une autre adresse.'
+        : err?.code === 'auth/invalid-email'
+          ? 'Veuillez saisir une adresse e-mail valide.'
+          : err?.code === 'auth/weak-password'
+            ? 'Le mot de passe doit contenir au moins 6 caractères.'
+            : err.message;
+      alert("Erreur lors de l'inscription : " + message);
     } finally {
       setLoading(false);
     }
