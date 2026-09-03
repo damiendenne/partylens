@@ -539,7 +539,8 @@ export default function SuperAdmin() {
               { id: "soirees", label: "SOIRÉES", icon: <Calendar size={14} /> },
               { id: "logistique", label: "LOGISTIQUE", icon: <Truck size={14} /> },
               { id: "avis", label: "AVIS", icon: <MessageSquare size={14} /> },
-              { id: "emails", label: "EMAILS", icon: <Mail size={14} /> }
+              { id: "emails", label: "EMAILS", icon: <Mail size={14} /> },
+              { id: "boite-mail", label: "BOÎTE MAIL", icon: <Mail size={14} /> }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -644,6 +645,15 @@ export default function SuperAdmin() {
                 <div className="flex items-center gap-3"><span className="text-[10px] uppercase font-black opacity-60">{item.source}</span><button type="button" onClick={() => router.push(`/super-admin/email?to=${encodeURIComponent(item.email)}`)} className="rounded-lg px-3 py-2 bg-orange-500 text-white text-[10px] font-black uppercase">Écrire</button><button type="button" onClick={() => router.push(`/super-admin/email?to=${encodeURIComponent(item.email)}&promo=1`)} className="rounded-lg px-3 py-2 bg-pink-500 text-white text-[10px] font-black uppercase">Promo</button></div>
               </div>
             ))}
+          </div>
+        )}
+
+        {activeTab === "boite-mail" && (
+          <div className={`rounded-3xl border p-8 text-center animate-in fade-in ${darkMode ? 'bg-[#170c2c]/80 border-white/20 text-white' : 'bg-white border-slate-300 text-slate-900'}`}>
+            <Mail size={48} className="mx-auto mb-4 text-orange-400" />
+            <h2 className="text-2xl font-black uppercase mb-2">Boîte mail PartyLens</h2>
+            <p className="opacity-70 mb-6">Ouvre ta messagerie Zimbra OVH pour consulter tous tes e-mails et les réponses clients.</p>
+            <a href="https://zimbra1.mail.ovh.net/modern/" target="_blank" rel="noopener noreferrer" className="inline-block rounded-xl px-8 py-4 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-black uppercase text-xs no-underline">Ouvrir contact@partylens.fr</a>
           </div>
         )}
 
