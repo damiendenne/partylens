@@ -186,18 +186,25 @@ export default function SuperAdmin() {
     const unsubPhotoboothEmails = onSnapshot(collection(db, "photoboothEmails"), (snap) => {
       setPhotoboothEmails(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
-    auth.currentUser?.getIdToken().then((token) => fetch('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } }))
-      .then((response) => response?.ok ? response.json() : null)
-      .then((data) => data?.users && setAuthEmails(data.users));
-    auth.currentUser?.getIdToken().then((token) => fetch('/api/admin/resend-emails', { headers: { Authorization: `Bearer ${token}` } }))
-      .then((response) => response?.ok ? response.json() : null)
-      .then((data) => data?.users && setResendEmails(data.users));
+    const loadExternalEmails = async () => {
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
+      const token = await currentUser.getIdToken(true);
+      const [authResponse, resendResponse] = await Promise.all([
+        fetch('/api/admin/users', { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }),
+        fetch('/api/admin/resend-emails', { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' })
+      ]);
+      if (authResponse.ok) setAuthEmails((await authResponse.json()).users || []);
+      if (resendResponse.ok) setResendEmails((await resendResponse.json()).users || []);
+    };
+    const timer = setTimeout(loadExternalEmails, 500);
 
     return () => {
       unsubEvents();
       unsubUsers();
       unsubFeedbacks();
       unsubPhotoboothEmails();
+      clearTimeout(timer);
     };
   }, [isAuthenticated]);
 
