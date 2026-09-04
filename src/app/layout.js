@@ -3,10 +3,12 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
+import LyjyAd from "@/components/LyjyAd";
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
   const isPhotobooth = pathname.includes("/photobooth");
+  const isSuperAdmin = pathname.startsWith("/super-admin");
 
   return (
     <html lang="fr" className="h-full antialiased">
@@ -56,6 +58,7 @@ export default function RootLayout({ children }) {
         }) }} />
       </head>
       <body className="min-h-full flex flex-col relative bg-[#030005]">
+        {!isSuperAdmin && <LyjyAd />}
         
         {!isPhotobooth && (
           <div className="bg-blobs" aria-hidden="true">
