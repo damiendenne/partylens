@@ -3,6 +3,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
+import "./lyjy-ad.css";
 import LyjyAd from "@/components/LyjyAd";
 
 export default function RootLayout({ children }) {
