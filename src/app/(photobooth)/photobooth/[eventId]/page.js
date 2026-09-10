@@ -364,7 +364,12 @@ export default function PhotoboothPage({ params }) {
 
     if (!ctx) return;
 
+    // Les caméras de téléphone sous-exposent souvent les soirées sombres.
+    // On corrige légèrement la lumière de la photo finale, sans appliquer
+    // le filtre au cadre qui sera ajouté ensuite.
+    ctx.filter = "brightness(1.28) contrast(1.06) saturate(1.04)";
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    ctx.filter = "none";
 
     if (frameUrl) {
       const img = await loadImage(frameUrl);
