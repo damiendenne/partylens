@@ -206,6 +206,13 @@ function AdminContent() {
             phone: shippingData.phone
           }
         : null
+      ,guestOptions: {
+        photobooth: true,
+        gallery: true,
+        guestbook: true,
+        mediaUpload: true,
+        musicRequests: true
+      }
     };
   };
 
@@ -308,6 +315,21 @@ function AdminContent() {
     } catch (e) {
       console.error(e);
       alert("Erreur lors du masquage.");
+    }
+  };
+
+  const handleToggleGuestOption = async (eventId, option, enabled) => {
+    try {
+      await updateDoc(doc(db, "events", eventId), {
+        [`guestOptions.${option}`]: enabled
+      });
+      setMyEvents((events) => events.map((event) => event.id === eventId
+        ? { ...event, guestOptions: { ...(event.guestOptions || {}), [option]: enabled } }
+        : event
+      ));
+    } catch (e) {
+      console.error(e);
+      alert("Impossible de modifier cette option.");
     }
   };
 
@@ -572,6 +594,32 @@ function AdminContent() {
                         <EyeOff size={12} /> MASQUER
                       </button>
                     )}
+                  </div>
+
+                  <div className={`w-full rounded-2xl border p-4 ${darkMode ? 'border-white/10 bg-white/[0.03]' : 'border-slate-300 bg-white/60'}`}>
+                    <p className="mb-3 text-[9px] font-black uppercase tracking-widest text-orange-400">Options page invités</p>
+                    <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+                      {[
+                        ['photobooth', 'Photobooth'],
+                        ['gallery', 'Galerie'],
+                        ['guestbook', "Livre d’or"],
+                        ['mediaUpload', 'Ajout médias'],
+                        ['musicRequests', 'Demandes DJ']
+                      ].map(([key, label]) => {
+                        const checked = event.guestOptions?.[key] !== false;
+                        return (
+                          <label key={key} className="flex cursor-pointer items-center gap-2 text-[9px] font-bold uppercase">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => handleToggleGuestOption(event.id, key, e.target.checked)}
+                              className="h-4 w-4 accent-orange-500"
+                            />
+                            <span>{label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               ))}

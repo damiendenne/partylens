@@ -33,6 +33,9 @@ export default function GuestPage({ params }) {
   const [showModalQR, setShowModalQR] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
 
+  const guestOptions = eventData?.guestOptions || {};
+  const optionEnabled = (key) => guestOptions[key] !== false;
+
   const fileInputRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -405,15 +408,15 @@ export default function GuestPage({ params }) {
           </button>
 
           <div className="flex flex-col gap-3">
-            <Link
+            {optionEnabled('photobooth') && <Link
               href={`/photobooth/${eventId}`}
               className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-bold uppercase tracking-wider text-xs no-underline flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 hover:brightness-105 active:scale-98 transition-all"
             >
               <Sparkles size={16} /> Photobooth Live
-            </Link>
+            </Link>}
 
             <div className="flex gap-3 w-full">
-              <Link
+              {optionEnabled('gallery') && <Link
                 href={`/event/${eventId}/gallery`}
                 className={`flex-1 py-3.5 rounded-xl font-bold uppercase text-[11px] tracking-wider no-underline flex items-center justify-center gap-2 border transition-all active:scale-95 shadow-sm ${
                   darkMode 
@@ -422,8 +425,8 @@ export default function GuestPage({ params }) {
                 }`}
               >
                 <ImageIcon size={14} className="text-orange-500" /> Galerie
-              </Link>
-              <Link
+              </Link>}
+              {optionEnabled('guestbook') && <Link
                 href={`/event/${eventId}/guestbook`}
                 className={`flex-1 py-3.5 rounded-xl font-bold uppercase text-[11px] tracking-wider no-underline flex items-center justify-center gap-2 border transition-all active:scale-95 shadow-sm ${
                   darkMode 
@@ -432,7 +435,7 @@ export default function GuestPage({ params }) {
                 }`}
               >
                 <BookOpen size={14} className="text-amber-400" /> Livre d'or
-              </Link>
+              </Link>}
             </div>
 
             <button
@@ -449,7 +452,7 @@ export default function GuestPage({ params }) {
         </section>
 
         {/* SECTION MÉDIAS EN DIRECT */}
-        <section className={`rounded-3xl p-8 backdrop-blur-xl shadow-xl transition-all duration-300 ${
+        {optionEnabled('mediaUpload') && <section className={`rounded-3xl p-8 backdrop-blur-xl shadow-xl transition-all duration-300 ${
           darkMode 
             ? 'bg-[#170c2c]/80 border border-white/10 shadow-2xl' 
             : 'bg-[#eaeaea]/90 border border-slate-300/80 shadow-slate-300/30'
@@ -499,10 +502,10 @@ export default function GuestPage({ params }) {
               </button>
             )}
           </form>
-        </section>
+        </section>}
 
         {/* SECTION LIVRE D'OR (TEXTE + MÉMO VOCAL) */}
-        <section className={`rounded-3xl p-8 backdrop-blur-xl shadow-xl transition-all duration-300 ${
+        {optionEnabled('guestbook') && <section className={`rounded-3xl p-8 backdrop-blur-xl shadow-xl transition-all duration-300 ${
           darkMode 
             ? 'bg-[#170c2c]/80 border border-white/10 shadow-2xl' 
             : 'bg-[#eaeaea]/90 border border-slate-300/80 shadow-slate-300/30'
@@ -536,7 +539,7 @@ export default function GuestPage({ params }) {
             />
 
             {/* Enregistreur Vocal Intégré avec clés de stabilisation */}
-            <div className={`border rounded-2xl p-4 flex flex-col items-center gap-3 ${
+              {optionEnabled('guestbook') && <div className={`border rounded-2xl p-4 flex flex-col items-center gap-3 ${
               darkMode ? 'bg-white/[0.02] border-white/10' : 'bg-white/50 border-slate-300'
             }`}>
               <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
@@ -577,7 +580,7 @@ export default function GuestPage({ params }) {
                   </button>
                 </div>
               )}
-            </div>
+            </div>}
 
             <button 
               type="submit" 
@@ -587,10 +590,10 @@ export default function GuestPage({ params }) {
               {loading ? "Envoi en cours..." : "Envoyer et signer le livre d'or"}
             </button>
           </form>
-        </section>
-
+        </section>}
+        
         {/* SECTION DEMANDER UN TITRE */}
-        <section className={`rounded-3xl p-8 backdrop-blur-xl shadow-xl transition-all duration-300 ${
+        {optionEnabled('musicRequests') && <section className={`rounded-3xl p-8 backdrop-blur-xl shadow-xl transition-all duration-300 ${
           darkMode 
             ? 'bg-[#170c2c]/80 border border-white/10 shadow-2xl' 
             : 'bg-[#eaeaea]/90 border border-slate-300/80 shadow-slate-300/30'
@@ -629,7 +632,7 @@ export default function GuestPage({ params }) {
               {loading ? "Envoi..." : "Envoyer au DJ"}
             </button>
           </form>
-        </section>
+        </section>}
       </div>
 
       {/* NOTIFICATION TOAST */}
