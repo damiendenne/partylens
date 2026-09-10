@@ -351,7 +351,7 @@ export default function PhotoboothPage({ params }) {
     // Flash écran : sur mobile, la lumière blanche doit apparaître avant la
     // capture pour éclairer le visage avec la caméra frontale.
     setFlash(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     const video = videoRef.current;
 
@@ -372,7 +372,7 @@ export default function PhotoboothPage({ params }) {
     // Les caméras de téléphone sous-exposent souvent les soirées sombres.
     // On corrige légèrement la lumière de la photo finale, sans appliquer
     // le filtre au cadre qui sera ajouté ensuite.
-    ctx.filter = "brightness(2.4) contrast(1.01) saturate(1.08)";
+    ctx.filter = "brightness(3) contrast(1) saturate(1.1)";
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     ctx.filter = "none";
     setFlash(false);
@@ -689,7 +689,7 @@ export default function PhotoboothPage({ params }) {
         </div>
       )}
 
-      {flash && <div className="absolute inset-0 bg-white z-50 animate-pulse" />}
+      {flash && <div className="absolute inset-0 bg-white z-50" />}
 
       {step === 'live' && countdown === null && challengeTimer === null && (
         <div className="absolute bottom-10 w-full flex justify-center items-center gap-6 z-40">
