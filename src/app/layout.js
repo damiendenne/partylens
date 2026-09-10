@@ -59,7 +59,7 @@ export default function RootLayout({ children }) {
         }) }} />
       </head>
       <body className="min-h-full flex flex-col relative bg-[#030005]">
-        {!isSuperAdmin && <LyjyAd />}
+        {!isSuperAdmin && !isPhotobooth && <LyjyAd />}
         
         {!isPhotobooth && (
           <div className="bg-blobs" aria-hidden="true">
