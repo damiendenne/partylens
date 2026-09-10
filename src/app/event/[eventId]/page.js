@@ -414,7 +414,7 @@ export default function GuestPage({ params }) {
 
             <div className="flex gap-3 w-full">
               <Link
-                href={`/admin/${eventId}/galerie`}
+                href={`/event/${eventId}/gallery`}
                 className={`flex-1 py-3.5 rounded-xl font-bold uppercase text-[11px] tracking-wider no-underline flex items-center justify-center gap-2 border transition-all active:scale-95 shadow-sm ${
                   darkMode 
                     ? 'bg-white/[0.04] hover:bg-white/10 border-white/10 text-white' 

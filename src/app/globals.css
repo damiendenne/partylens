@@ -16,6 +16,13 @@ body {
   overflow-x: hidden;
 }
 
+/* Le bouton flottant recouvre les actions des formulaires sur petits écrans. */
+@media (max-width: 639px) {
+  .contact-floating {
+    display: none;
+  }
+}
+
 /* Effet de Verre Premium (Réutilisable sur tout le site) */
 .glass-card {
   background: var(--glass-bg);
