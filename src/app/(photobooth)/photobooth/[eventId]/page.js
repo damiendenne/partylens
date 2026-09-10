@@ -372,7 +372,7 @@ export default function PhotoboothPage({ params }) {
     // Les caméras de téléphone sous-exposent souvent les soirées sombres.
     // On corrige légèrement la lumière de la photo finale, sans appliquer
     // le filtre au cadre qui sera ajouté ensuite.
-    ctx.filter = "brightness(3) contrast(1) saturate(1.1)";
+    ctx.filter = "brightness(4) contrast(1) saturate(1.1)";
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     ctx.filter = "none";
     setFlash(false);
@@ -489,6 +489,14 @@ export default function PhotoboothPage({ params }) {
           className="absolute inset-0 w-full h-full object-cover pointer-events-none z-10"
           alt="Cadre"
         />
+      )}
+
+      {step === 'live' && countdown === null && challengeTimer === null && !flash && (
+        <div className="absolute top-16 inset-x-4 z-40 flex justify-center pointer-events-none">
+          <div className="max-w-[520px] rounded-full border border-amber-300/50 bg-black/70 px-4 py-2 text-center text-[10px] font-black uppercase tracking-wider text-amber-200 shadow-lg backdrop-blur-md md:text-xs">
+            Pour une photo plus lumineuse : désactivez la luminosité automatique et mettez l’écran au maximum.
+          </div>
+        </div>
       )}
 
       {step === 'captured' && (
