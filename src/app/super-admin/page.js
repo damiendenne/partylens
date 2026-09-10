@@ -17,7 +17,7 @@ import {
 } from 'firebase/firestore';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import jsPDF from 'jspdf';
+import { buildGuestbookPdf } from '@/lib/guestbookPdf';
 import {
   CheckCircle,
   Truck,
@@ -298,24 +298,7 @@ export default function SuperAdmin() {
       const guestbookMessages = guestbookSnapshot.docs.map((docSnap) => docSnap.data());
 
       if (guestbookMessages.length > 0) {
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        pdf.setFontSize(22);
-        pdf.text("Livre d'or", 20, 25);
-        pdf.setFontSize(11);
-        pdf.text(event.eventName || 'PartyLens', 20, 33);
-
-        let y = 48;
-        guestbookMessages.forEach((message, index) => {
-          if (y > 270) {
-            pdf.addPage();
-            y = 25;
-          }
-          const author = message.author || 'Invité';
-          const text = message.message || message.text || '(Message vocal)';
-          const lines = pdf.splitTextToSize(`${index + 1}. ${author} : ${text}`, 170);
-          pdf.text(lines, 20, y);
-          y += Math.max(10, lines.length * 6);
-        });
+        const pdf = buildGuestbookPdf(event.eventName, guestbookMessages);
         folder.file('livre_d_or.pdf', pdf.output('arraybuffer'));
       }
 

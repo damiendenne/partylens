@@ -7,7 +7,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import Link from 'next/link';
 import { ArrowLeft, Download, Image as ImageIcon, Loader2, BookOpen, Play, Sun, Moon } from 'lucide-react';
 import JSZip from 'jszip'; 
-import jsPDF from 'jspdf';
+import { buildGuestbookPdf } from '@/lib/guestbookPdf';
 
 export default function GaleriePage() {
   const { eventId } = useParams();
@@ -128,19 +128,7 @@ export default function GaleriePage() {
       const guestbookMessages = guestbookSnapshot.docs.map((docSnap) => docSnap.data());
 
       if (guestbookMessages.length > 0) {
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        pdf.setFontSize(22);
-        pdf.text("Livre d'or", 20, 25);
-        pdf.setFontSize(11);
-        pdf.text(eventName || 'PartyLens', 20, 33);
-        let y = 48;
-        guestbookMessages.forEach((message, index) => {
-          if (y > 270) { pdf.addPage(); y = 25; }
-          const text = message.message || message.text || '(Message vocal)';
-          const lines = pdf.splitTextToSize(`${index + 1}. ${message.author || 'Invité'} : ${text}`, 170);
-          pdf.text(lines, 20, y);
-          y += Math.max(10, lines.length * 6);
-        });
+        const pdf = buildGuestbookPdf(eventName, guestbookMessages);
         imgFolder.file('livre_d_or.pdf', pdf.output('arraybuffer'));
       }
 
