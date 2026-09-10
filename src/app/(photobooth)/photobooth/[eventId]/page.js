@@ -348,12 +348,17 @@ export default function PhotoboothPage({ params }) {
   };
 
   const capturePhoto = async () => {
+    // Flash écran : sur mobile, la lumière blanche doit apparaître avant la
+    // capture pour éclairer le visage avec la caméra frontale.
     setFlash(true);
-    setTimeout(() => setFlash(false), 200);
+    await new Promise((resolve) => setTimeout(resolve, 550));
 
     const video = videoRef.current;
 
-    if (!video) return;
+    if (!video || !video.videoWidth || !video.videoHeight) {
+      setFlash(false);
+      return;
+    }
 
     const canvas = document.createElement("canvas");
 
@@ -370,6 +375,7 @@ export default function PhotoboothPage({ params }) {
     ctx.filter = "brightness(1.28) contrast(1.06) saturate(1.04)";
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     ctx.filter = "none";
+    setFlash(false);
 
     if (frameUrl) {
       const img = await loadImage(frameUrl);
