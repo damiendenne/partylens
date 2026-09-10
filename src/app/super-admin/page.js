@@ -17,6 +17,7 @@ import {
 } from 'firebase/firestore';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import jsPDF from 'jspdf';
 import {
   CheckCircle,
   Truck,
@@ -282,12 +283,6 @@ export default function SuperAdmin() {
       const photosColRef = collection(db, "events", event.id, "photos");
       const querySnapshot = await getDocs(photosColRef);
 
-      if (querySnapshot.empty) {
-        alert("Aucune photo !");
-        setDownloadingId(null);
-        return;
-      }
-
       const downloadPromises = querySnapshot.docs.map(async (docSnap, index) => {
         const photoData = docSnap.data();
         if (photoData.url) {
@@ -298,6 +293,44 @@ export default function SuperAdmin() {
       });
 
       await Promise.all(downloadPromises);
+
+      const guestbookSnapshot = await getDocs(collection(db, "events", event.id, "guestbook"));
+      const guestbookMessages = guestbookSnapshot.docs.map((docSnap) => docSnap.data());
+
+      if (guestbookMessages.length > 0) {
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        pdf.setFontSize(22);
+        pdf.text("Livre d'or", 20, 25);
+        pdf.setFontSize(11);
+        pdf.text(event.eventName || 'PartyLens', 20, 33);
+
+        let y = 48;
+        guestbookMessages.forEach((message, index) => {
+          if (y > 270) {
+            pdf.addPage();
+            y = 25;
+          }
+          const author = message.author || 'Invité';
+          const text = message.message || message.text || '(Message vocal)';
+          const lines = pdf.splitTextToSize(`${index + 1}. ${author} : ${text}`, 170);
+          pdf.text(lines, 20, y);
+          y += Math.max(10, lines.length * 6);
+        });
+        folder.file('livre_d_or.pdf', pdf.output('arraybuffer'));
+      }
+
+      await Promise.all(guestbookMessages.filter((message) => message.audioUrl).map(async (message, index) => {
+        const response = await fetch(message.audioUrl);
+        const blob = await response.blob();
+        folder.file(`audio/livre_d_or_${index + 1}.webm`, blob);
+      }));
+
+      if (querySnapshot.empty && guestbookMessages.length === 0) {
+        alert("Aucune photo ni message dans cette soirée !");
+        setDownloadingId(null);
+        return;
+      }
+
       const content = await zip.generateAsync({ type: "blob" });
       saveAs(content, `PartyLens_${event.eventName}.zip`);
 

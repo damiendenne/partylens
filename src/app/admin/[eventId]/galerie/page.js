@@ -2,11 +2,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { db, auth } from '@/lib/firebase';
-import { collection, query, onSnapshot, doc, getDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, getDoc, getDocs } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import Link from 'next/link';
 import { ArrowLeft, Download, Image as ImageIcon, Loader2, BookOpen, Play, Sun, Moon } from 'lucide-react';
 import JSZip from 'jszip'; 
+import jsPDF from 'jspdf';
 
 export default function GaleriePage() {
   const { eventId } = useParams();
@@ -103,7 +104,6 @@ export default function GaleriePage() {
   };
 
   const downloadAllMedia = async () => {
-    if (mediaItems.length === 0) return;
     setIsDownloadingAll(true);
     
     try {
@@ -123,6 +123,38 @@ export default function GaleriePage() {
       });
 
       await Promise.all(fetchPromises);
+
+      const guestbookSnapshot = await getDocs(collection(db, "events", eventId, "guestbook"));
+      const guestbookMessages = guestbookSnapshot.docs.map((docSnap) => docSnap.data());
+
+      if (guestbookMessages.length > 0) {
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        pdf.setFontSize(22);
+        pdf.text("Livre d'or", 20, 25);
+        pdf.setFontSize(11);
+        pdf.text(eventName || 'PartyLens', 20, 33);
+        let y = 48;
+        guestbookMessages.forEach((message, index) => {
+          if (y > 270) { pdf.addPage(); y = 25; }
+          const text = message.message || message.text || '(Message vocal)';
+          const lines = pdf.splitTextToSize(`${index + 1}. ${message.author || 'Invité'} : ${text}`, 170);
+          pdf.text(lines, 20, y);
+          y += Math.max(10, lines.length * 6);
+        });
+        imgFolder.file('livre_d_or.pdf', pdf.output('arraybuffer'));
+      }
+
+      await Promise.all(guestbookMessages.filter((message) => message.audioUrl).map(async (message, index) => {
+        const response = await fetch(message.audioUrl);
+        const blob = await response.blob();
+        imgFolder.file(`audio/livre_d_or_${index + 1}.webm`, blob);
+      }));
+
+      if (mediaItems.length === 0 && guestbookMessages.length === 0) {
+        alert("Aucun souvenir à télécharger !");
+        return;
+      }
+
       const zipContent = await zip.generateAsync({ type: 'blob' });
 
       const zipUrl = window.URL.createObjectURL(zipContent);
