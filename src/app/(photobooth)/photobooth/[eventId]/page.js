@@ -234,7 +234,10 @@ export default function PhotoboothPage({ params }) {
 
   useEffect(() => {
     const loadAllFrames = async () => {
-      const urls = [];
+      const urls = [{
+        number: 27,
+        url: '/photobooth-frames/27.png'
+      }];
 
       for (let index = 1; index <= 26; index += 1) {
         try {
