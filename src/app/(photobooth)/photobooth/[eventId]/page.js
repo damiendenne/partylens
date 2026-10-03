@@ -198,7 +198,7 @@ export default function PhotoboothPage({ params }) {
   const [countdown, setCountdown] = useState(null);
   const [eventData, setEventData] = useState(null);
 
-  const [selectedFrameNumber, setSelectedFrameNumber] = useState(1);
+  const [selectedFrameNumber, setSelectedFrameNumber] = useState(0);
   const [frameUrl, setFrameUrl] = useState(null);
   const [frameUrls, setFrameUrls] = useState([]);
   const [showFrameSelector, setShowFrameSelector] = useState(false);
@@ -252,13 +252,18 @@ export default function PhotoboothPage({ params }) {
       }
 
       setFrameUrls(urls);
-      setFrameUrl(urls[0]?.url || null);
+      setFrameUrl(null);
     };
 
     loadAllFrames();
   }, []);
 
   useEffect(() => {
+    if (selectedFrameNumber === 0) {
+      setFrameUrl(null);
+      return;
+    }
+
     const selectedFrame = frameUrls.find((frame) => frame.number === selectedFrameNumber);
 
     if (selectedFrame) {
@@ -649,6 +654,23 @@ export default function PhotoboothPage({ params }) {
               <div className={`mx-auto flex max-w-[720px] gap-2 overflow-x-auto rounded-full px-4 py-3 backdrop-blur-2xl border shadow-[0_20px_50px_rgba(0,0,0,0.8)] ${
                 darkMode ? 'bg-[#170c2c]/95 border-white/20' : 'bg-[#eaeaea]/95 border-slate-300'
               }`}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedFrameNumber(0);
+                    setFrameUrl(null);
+                    setShowFrameSelector(false);
+                  }}
+                  className={`relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 transition-transform cursor-pointer ${
+                    selectedFrameNumber === 0
+                      ? "scale-110 border-orange-400 bg-white/10 text-orange-300 shadow-[0_0_15px_rgba(249,115,22,0.6)]"
+                      : darkMode ? "border-white/30 bg-white/5 text-white hover:border-white/60" : "border-slate-300 bg-white text-slate-700 hover:border-slate-500"
+                  }`}
+                  aria-label="Aucun cadre"
+                >
+                  <X size={22} />
+                </button>
+
                 {frameUrls.map((frame) => (
                   <button
                     key={frame.number}
