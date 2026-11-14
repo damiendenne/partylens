@@ -192,6 +192,7 @@ export default function PhotoboothPage({ params }) {
 
   const videoRef = useRef(null);
   const segmentationRef = useRef(null);
+  const backgroundImageRef = useRef(null);
 
   const [darkMode, setDarkMode] = useState(true);
   const [step, setStep] = useState("live");
@@ -212,6 +213,15 @@ export default function PhotoboothPage({ params }) {
   const [emailInput, setEmailInput] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [backgroundMode, setBackgroundMode] = useState(false);
+  const [backgroundReady, setBackgroundReady] = useState(false);
+  const [segmentationReady, setSegmentationReady] = useState(false);
+
+  useEffect(() => {
+    const background = new Image();
+    background.onload = () => { backgroundImageRef.current = background; setBackgroundReady(true); };
+    background.onerror = () => setBackgroundReady(false);
+    background.src = '/photobooth-backgrounds/blue-gold-balloons.png';
+  }, []);
 
   useEffect(() => {
     const script = document.createElement('script');
@@ -222,9 +232,10 @@ export default function PhotoboothPage({ params }) {
       const segmentation = new window.SelfieSegmentation({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}` });
       segmentation.setOptions({ modelSelection: 1 });
       segmentationRef.current = segmentation;
+      setSegmentationReady(true);
     };
     document.body.appendChild(script);
-    return () => { segmentationRef.current?.close(); segmentationRef.current = null; script.remove(); };
+    return () => { segmentationRef.current?.close(); segmentationRef.current = null; setSegmentationReady(false); script.remove(); };
   }, []);
 
   useEffect(() => {
@@ -416,8 +427,8 @@ export default function PhotoboothPage({ params }) {
     // On corrige légèrement la lumière de la photo finale, sans appliquer
     // le filtre au cadre qui sera ajouté ensuite.
     ctx.filter = "brightness(4) contrast(1) saturate(1.1)";
-    if (backgroundMode && segmentationRef.current) {
-      const background = await loadImage('/photobooth-backgrounds/blue-gold-balloons.png');
+    if (backgroundMode && segmentationRef.current && backgroundImageRef.current) {
+      const background = backgroundImageRef.current;
       const segmentationResult = await new Promise((resolve) => {
         const segmentation = segmentationRef.current;
         segmentation.onResults((result) => resolve(result));
@@ -718,7 +729,7 @@ export default function PhotoboothPage({ params }) {
             <div className="absolute bottom-28 left-4 z-[9999] pointer-events-auto rounded-3xl border border-white/20 bg-[#170c2c]/95 p-4 shadow-2xl backdrop-blur-2xl">
               <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-white/70">Choisir un fond</p>
               <button type="button" onClick={() => { setBackgroundMode(false); setShowBackgroundSelector(false); }} className={`mr-2 rounded-xl border px-3 py-2 text-[10px] font-black uppercase ${!backgroundMode ? 'border-orange-400 text-orange-300' : 'border-white/20 text-white'}`}>Aucun</button>
-              <button type="button" onClick={() => { setBackgroundMode(true); setShowBackgroundSelector(false); }} className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-[10px] font-black uppercase ${backgroundMode ? 'border-orange-400 text-orange-300' : 'border-white/20 text-white'}`}><img src="/photobooth-backgrounds/blue-gold-balloons.png" alt="Fond bleu et or" className="h-8 w-12 rounded object-cover" /> Bleu or</button>
+              <button type="button" disabled={!backgroundReady || !segmentationReady} onClick={() => { setBackgroundMode(true); setShowBackgroundSelector(false); }} className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-[10px] font-black uppercase disabled:cursor-wait disabled:opacity-50 ${backgroundMode ? 'border-orange-400 text-orange-300' : 'border-white/20 text-white'}`}><img src="/photobooth-backgrounds/blue-gold-balloons.png" alt="Fond bleu et or" className="h-8 w-12 rounded object-cover" /> {backgroundReady && segmentationReady ? 'Bleu or' : 'Chargement...'}</button>
             </div>
           )}
 
