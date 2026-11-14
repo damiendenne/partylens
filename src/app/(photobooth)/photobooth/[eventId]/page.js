@@ -5,6 +5,7 @@ import { X, Maximize2, Images, Mail, ArrowRight, CheckCircle2, Shuffle, Sun, Moo
 import { db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, addDoc, serverTimestamp, doc, onSnapshot } from "firebase/firestore";
+import { SelfieSegmentation } from "@mediapipe/selfie_segmentation";
 
 // Liste riche de 200 défis collectifs, drôles et décalés
 const FUN_CHALLENGES = [
@@ -191,6 +192,7 @@ export default function PhotoboothPage({ params }) {
   const eventId = resolvedParams.eventId;
 
   const videoRef = useRef(null);
+  const segmentationRef = useRef(null);
 
   const [darkMode, setDarkMode] = useState(true);
   const [step, setStep] = useState("live");
@@ -209,6 +211,14 @@ export default function PhotoboothPage({ params }) {
   const [capturedPhotoUrl, setCapturedPhotoUrl] = useState(null);
   const [emailInput, setEmailInput] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [backgroundMode, setBackgroundMode] = useState(true);
+
+  useEffect(() => {
+    const segmentation = new SelfieSegmentation({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}` });
+    segmentation.setOptions({ modelSelection: 1 });
+    segmentationRef.current = segmentation;
+    return () => { segmentation.close(); segmentationRef.current = null; };
+  }, []);
 
   useEffect(() => {
     if (!eventId) return;
@@ -399,7 +409,26 @@ export default function PhotoboothPage({ params }) {
     // On corrige légèrement la lumière de la photo finale, sans appliquer
     // le filtre au cadre qui sera ajouté ensuite.
     ctx.filter = "brightness(4) contrast(1) saturate(1.1)";
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    if (backgroundMode && segmentationRef.current) {
+      const background = await loadImage('/photobooth-backgrounds/blue-gold-balloons.png');
+      const segmentationResult = await new Promise((resolve) => {
+        const segmentation = segmentationRef.current;
+        segmentation.onResults((result) => resolve(result));
+        segmentation.send({ image: video }).catch(() => resolve(null));
+      });
+      if (background && segmentationResult?.segmentationMask) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        ctx.globalCompositeOperation = 'destination-in';
+        ctx.drawImage(segmentationResult.segmentationMask, 0, 0, canvas.width, canvas.height);
+        ctx.globalCompositeOperation = 'destination-over';
+        ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+        ctx.globalCompositeOperation = 'source-over';
+      } else {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      }
+    } else {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    }
     ctx.filter = "none";
     setFlash(false);
 
