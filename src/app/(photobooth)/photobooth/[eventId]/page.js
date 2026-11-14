@@ -237,6 +237,15 @@ export default function PhotoboothPage({ params }) {
       const urls = [{
         number: 27,
         url: '/photobooth-frames/27.png'
+      }, {
+        number: 28,
+        url: '/photobooth-frames/28.png'
+      }, {
+        number: 29,
+        url: '/photobooth-frames/29.png'
+      }, {
+        number: 30,
+        url: '/photobooth-frames/30.png'
       }];
 
       for (let index = 1; index <= 26; index += 1) {

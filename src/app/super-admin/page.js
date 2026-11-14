@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { db, auth } from '@/lib/firebase';
+import { db, auth, storage } from '@/lib/firebase';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import {
   collection,
@@ -10,14 +10,17 @@ import {
   onSnapshot,
   orderBy,
   doc,
+  addDoc,
   updateDoc,
   getDocs,
   writeBatch,
   deleteDoc
 } from 'firebase/firestore';
 import JSZip from 'jszip';
+import jsPDF from 'jspdf';
 import { saveAs } from 'file-saver';
 import { buildGuestbookPdf } from '@/lib/guestbookPdf';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
   CheckCircle,
   Truck,
@@ -37,6 +40,7 @@ import {
   ArrowRight,
   Sun,
   Moon
+  ,ShoppingBag
 } from 'lucide-react';
 
 const PRICES = {
@@ -149,6 +153,11 @@ export default function SuperAdmin() {
   const [authEmails, setAuthEmails] = useState([]);
   const [resendEmails, setResendEmails] = useState([]);
   const [serverContacts, setServerContacts] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [productForm, setProductForm] = useState({ name: '', description: '', price: '', images: [], active: true, customizable: false });
+  const [productImageFiles, setProductImageFiles] = useState([]);
+  const [productSaving, setProductSaving] = useState(false);
   const [emailSubject, setEmailSubject] = useState('');
   const [emailMessage, setEmailMessage] = useState('');
   const [emailRecipients, setEmailRecipients] = useState('');
@@ -194,6 +203,16 @@ export default function SuperAdmin() {
     const unsubPhotoboothEmails = onSnapshot(collection(db, "photoboothEmails"), (snap) => {
       setPhotoboothEmails(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
+    const unsubProducts = onSnapshot(
+      query(collection(db, "products"), orderBy("createdAt", "desc")),
+      (snap) => setProducts(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+      (error) => console.error('Erreur accès boutique super-admin:', error)
+    );
+    const unsubOrders = onSnapshot(
+      query(collection(db, "orders"), orderBy("createdAt", "desc")),
+      (snap) => setOrders(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+      (error) => console.error('Erreur accès commandes super-admin:', error)
+    );
     const loadExternalEmails = async () => {
       const currentUser = auth.currentUser;
       if (!currentUser) return;
@@ -217,9 +236,72 @@ export default function SuperAdmin() {
       unsubUsers();
       unsubFeedbacks();
       unsubPhotoboothEmails();
+      unsubProducts();
+      unsubOrders();
       unsubExternalAuth();
     };
   }, [isAuthenticated]);
+
+  const saveProduct = async (event) => {
+    event.preventDefault();
+    if (!productForm.name.trim() || !productForm.price) return;
+    setProductSaving(true);
+    try {
+      const imageUrls = await Promise.all(productImageFiles.map(async (file, index) => {
+        const imageRef = ref(storage, `products/${Date.now()}_${index}_${file.name}`);
+        await uploadBytes(imageRef, file);
+        return getDownloadURL(imageRef);
+      }));
+      await addDoc(collection(db, 'products'), {
+        name: productForm.name.trim(),
+        description: productForm.description.trim(),
+        price: Number(productForm.price),
+        imageUrls,
+        imageUrl: imageUrls[0] || '',
+        active: productForm.active,
+        customizable: productForm.customizable,
+        createdAt: new Date()
+      });
+      setProductForm({ name: '', description: '', price: '', images: [], active: true, customizable: false });
+      setProductImageFiles([]);
+      setNotify({ show: true, msg: 'ARTICLE AJOUTÉ' });
+      setTimeout(() => setNotify({ show: false, msg: '' }), 2500);
+    } finally {
+      setProductSaving(false);
+    }
+  };
+
+  const toggleProduct = async (product) => {
+    await updateDoc(doc(db, 'products', product.id), { active: !product.active });
+  };
+
+  const deleteProduct = async (product) => {
+    if (!confirm(`Supprimer « ${product.name} » ?`)) return;
+    await deleteDoc(doc(db, 'products', product.id));
+  };
+
+  const updateOrderStatus = async (order, status) => {
+    const token = await auth.currentUser?.getIdToken();
+    const response = await fetch('/api/admin/orders/status', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ orderId: order.id, status }) });
+    if (!response.ok) throw new Error('Impossible de modifier le statut de la commande.');
+  };
+
+  const downloadOrderInvoice = async (order) => {
+    const pdf = new jsPDF();
+    try {
+      const blob = await fetch('/logo-partylens.png').then((response) => response.blob());
+      const logo = await new Promise((resolve) => { const reader = new FileReader(); reader.onloadend = () => resolve(reader.result); reader.readAsDataURL(blob); });
+      pdf.addImage(logo, 'PNG', 20, 14, 48, 18);
+    } catch {}
+    pdf.setDrawColor(245, 104, 32); pdf.line(20, 38, 190, 38);
+    pdf.setTextColor(30, 30, 30); pdf.setFontSize(20); pdf.text('FACTURE', 20, 55);
+    pdf.setFontSize(10); pdf.text(pdf.splitTextToSize(`N° commande : ${order.id}`, 88), 20, 65); pdf.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 20, 80); pdf.text(`Statut : ${(order.status || 'pending').toUpperCase()}`, 20, 87);
+    pdf.setFontSize(11); pdf.setFont(undefined, 'bold'); pdf.text('PARTYLENS FRANCE', 125, 55); pdf.setFont(undefined, 'normal'); pdf.setFontSize(9); pdf.text('SIRET : 10456039600012', 125, 63); pdf.text('contact@partylens.fr', 125, 70); pdf.text('07 87 01 60 77', 125, 77);
+    pdf.setFillColor(245, 247, 250); pdf.rect(20, 92, 170, 30, 'F'); pdf.setTextColor(30, 30, 30); pdf.setFontSize(10); pdf.setFont(undefined, 'bold'); pdf.text('CLIENT', 27, 102); pdf.setFont(undefined, 'normal'); pdf.text(order.customerName || 'Client PartyLens', 27, 110); pdf.text(order.email || '', 27, 117); pdf.text(order.customerAddress || 'Adresse non renseignée', 105, 110);
+    pdf.setFillColor(35, 17, 59); pdf.rect(20, 135, 170, 10, 'F'); pdf.setTextColor(255, 255, 255); pdf.setFontSize(9); pdf.text('ARTICLE', 27, 142); pdf.text('QTE', 127, 142); pdf.text('TOTAL TTC', 158, 142);
+    let y = 155; pdf.setTextColor(30, 30, 30); (order.items || []).forEach((item) => { pdf.setFontSize(10); pdf.setFont(undefined, 'bold'); pdf.text(String(item.name || 'Article').slice(0, 45), 27, y); pdf.setFont(undefined, 'normal'); pdf.text(String(item.quantity || 1), 127, y); pdf.text(`${(Number(item.price) * Number(item.quantity)).toFixed(2)} EUR`, 158, y); y += 8; if (item.customization) { pdf.setFontSize(8); pdf.setTextColor(100, 100, 100); pdf.text(`Personnalisation : ${String(item.customization).slice(0, 80)}`, 32, y); pdf.setTextColor(30, 30, 30); y += 8; } pdf.setDrawColor(220, 220, 220); pdf.line(20, y, 190, y); y += 8; });
+    pdf.setFontSize(14); pdf.setFont(undefined, 'bold'); pdf.text(`TOTAL TTC : ${(Number(order.amountTotal || 0) / 100).toFixed(2)} EUR`, 120, y + 8); pdf.save(`facture-partylens-${order.id}.pdf`);
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -557,6 +639,8 @@ export default function SuperAdmin() {
               { id: "avis", label: "AVIS", icon: <MessageSquare size={14} /> },
               { id: "emails", label: "EMAILS", icon: <Mail size={14} /> },
               { id: "boite-mail", label: "BOÎTE MAIL", icon: <Mail size={14} /> }
+              ,{ id: "boutique", label: "BOUTIQUE", icon: <ShoppingBag size={14} /> }
+              ,{ id: "commandes", label: "COMMANDES", icon: <ShoppingBag size={14} /> }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -661,6 +745,56 @@ export default function SuperAdmin() {
             <h2 className="text-2xl font-black uppercase mb-2">Boîte mail PartyLens</h2>
             <p className="opacity-70 mb-6">Ouvre ta messagerie Zimbra OVH pour consulter tous tes e-mails et les réponses clients.</p>
             <a href="https://zimbra1.mail.ovh.net/modern/" target="_blank" rel="noopener noreferrer" className="inline-block rounded-xl px-8 py-4 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-black uppercase text-xs no-underline">Ouvrir contact@partylens.fr</a>
+          </div>
+        )}
+
+        {activeTab === "boutique" && (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[360px_1fr] animate-in fade-in">
+            <form onSubmit={saveProduct} className={`rounded-3xl border p-6 ${darkMode ? 'bg-[#170c2c]/80 border-white/20' : 'bg-white border-slate-300'}`}>
+              <h2 className="mb-5 text-xl font-black uppercase">Ajouter un article</h2>
+              <div className="space-y-3">
+                <input required placeholder="Nom de l’article" value={productForm.name} onChange={(e) => setProductForm({ ...productForm, name: e.target.value })} className={`w-full rounded-xl border p-3 text-sm outline-none ${darkMode ? 'border-white/10 bg-white/5' : 'border-slate-300 bg-white'}`} />
+                <textarea placeholder="Description" value={productForm.description} onChange={(e) => setProductForm({ ...productForm, description: e.target.value })} className={`h-24 w-full rounded-xl border p-3 text-sm outline-none ${darkMode ? 'border-white/10 bg-white/5' : 'border-slate-300 bg-white'}`} />
+                <input required type="number" min="0" step="0.01" placeholder="Prix en €" value={productForm.price} onChange={(e) => setProductForm({ ...productForm, price: e.target.value })} className={`w-full rounded-xl border p-3 text-sm outline-none ${darkMode ? 'border-white/10 bg-white/5' : 'border-slate-300 bg-white'}`} />
+                <label className={`block cursor-pointer rounded-xl border border-dashed p-4 text-center text-xs font-bold uppercase ${darkMode ? 'border-white/20 bg-white/5' : 'border-slate-300 bg-white'}`}>
+                  Ajouter plusieurs images depuis le PC
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => setProductImageFiles(Array.from(e.target.files || []))} />
+                  {productImageFiles.length > 0 && <span className="mt-2 block text-orange-400">{productImageFiles.length} image(s) sélectionnée(s)</span>}
+                </label>
+                <label className="flex items-center gap-2 text-xs font-bold uppercase"><input type="checkbox" checked={productForm.active} onChange={(e) => setProductForm({ ...productForm, active: e.target.checked })} className="h-4 w-4 accent-orange-500" /> Visible dans la boutique</label>
+                <label className="flex items-center gap-2 text-xs font-bold uppercase"><input type="checkbox" checked={productForm.customizable} onChange={(e) => setProductForm({ ...productForm, customizable: e.target.checked })} className="h-4 w-4 accent-orange-500" /> Article personnalisable</label>
+                <button disabled={productSaving} className="w-full rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 p-3 text-xs font-black uppercase text-white">{productSaving ? 'Enregistrement...' : 'Ajouter l’article'}</button>
+              </div>
+            </form>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {products.length === 0 && <p className="opacity-60">Aucun article pour le moment.</p>}
+              {products.map((product) => (
+                <div key={product.id} className={`rounded-3xl border p-5 ${darkMode ? 'bg-[#170c2c]/80 border-white/20' : 'bg-white border-slate-300'}`}>
+                  {(product.imageUrls?.length ? product.imageUrls : product.imageUrl ? [product.imageUrl] : []).length > 0 && <div className="mb-4 grid grid-cols-2 gap-2">{(product.imageUrls?.length ? product.imageUrls : [product.imageUrl]).map((url) => <img key={url} src={url} alt="" className="h-24 w-full rounded-xl object-cover" />)}</div>}
+                  <div className="flex items-start justify-between gap-3"><div><h3 className="font-black uppercase">{product.name}</h3><p className="mt-1 text-xs opacity-70">{product.description}</p>{product.customizable && <span className="mt-2 inline-block rounded-full bg-orange-500/15 px-2 py-1 text-[9px] font-black uppercase text-orange-400">Personnalisable</span>}</div><strong className="text-orange-400">{Number(product.price).toFixed(2)} €</strong></div>
+                  <div className="mt-4 flex items-center justify-between"><button type="button" onClick={() => toggleProduct(product)} className="rounded-lg border border-orange-500/30 px-3 py-2 text-[10px] font-black uppercase text-orange-400">{product.active ? 'Masquer' : 'Publier'}</button><button type="button" onClick={() => deleteProduct(product)} className="rounded-lg border border-red-500/30 px-3 py-2 text-[10px] font-black uppercase text-red-400">Supprimer</button></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "commandes" && (
+          <div className="grid gap-4 animate-in fade-in">
+            <div className={`rounded-3xl border p-6 ${darkMode ? 'border-white/20 bg-[#170c2c]/80' : 'border-slate-300 bg-white'}`}>
+              <h2 className="text-2xl font-black uppercase">Commandes boutique</h2>
+              <p className="mt-1 text-xs opacity-70">Retrouve ici les commandes payées via Stripe.</p>
+            </div>
+            {orders.length === 0 ? <p className="opacity-60">Aucune commande payée.</p> : orders.map((order) => (
+              <div key={order.id} className={`rounded-3xl border p-6 ${darkMode ? 'border-white/20 bg-[#170c2c]/80' : 'border-slate-300 bg-white'}`}>
+                <div className="flex flex-wrap justify-between gap-3">
+                  <div><h3 className="font-black uppercase">{order.customerName || order.email || 'Client'}</h3><p className="text-xs opacity-70">{order.email}</p></div>
+                  <strong className="text-orange-400">{(Number(order.amountTotal || 0) / 100).toFixed(2)} €</strong>
+                </div>
+                <div className="mt-4 space-y-1 text-sm">{(order.items || []).map((item, index) => <p key={`${order.id}-${index}`}>{item.name} × {item.quantity}</p>)}</div>
+                <div className="mt-4 flex flex-wrap items-center gap-3"><label className="text-[10px] font-black uppercase opacity-70">Statut</label><select value={order.status || 'paid'} onChange={(e) => updateOrderStatus(order, e.target.value)} className="rounded-lg border border-orange-500/30 bg-black/20 px-3 py-2 text-xs font-black uppercase text-orange-300"><option value="pending">En attente</option><option value="paid">Payée</option><option value="processing">En préparation</option><option value="shipped">Expédiée</option><option value="delivered">Livrée</option><option value="cancelled">Annulée</option></select><button type="button" onClick={() => downloadOrderInvoice(order)} className="rounded-lg bg-orange-500 px-4 py-2 text-[10px] font-black uppercase text-white">Télécharger la facture PDF</button></div>
+              </div>
+            ))}
           </div>
         )}
 

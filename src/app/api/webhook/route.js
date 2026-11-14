@@ -102,6 +102,24 @@ export async function POST(req) {
       }
 
       // 3. Achat d'un forfait ou pack (UNIQUE / PRO)
+      else if (purchaseType === 'product_order') {
+        let items = [];
+        try { items = JSON.parse(session.metadata?.items || '[]'); } catch (error) { console.error('Panier Stripe illisible:', error.message); }
+        const paidOrder = {
+          userId,
+          email: customerEmail || '',
+          customerName: session.metadata?.customerName || '',
+          amountTotal: session.amount_total || 0,
+          currency: session.currency || 'eur',
+          stripeSessionId: session.id,
+          status: 'paid',
+          createdAt: admin.firestore.FieldValue.serverTimestamp()
+        };
+        if (items.length) paidOrder.items = items;
+        await adminDb.collection('orders').doc(session.id).set(paidOrder, { merge: true });
+      }
+
+      // 4. Achat d'un forfait ou pack (UNIQUE / PRO)
       else {
         const cleanPlanName = planName ? planName.trim().toUpperCase() : 'UNIQUE';
 

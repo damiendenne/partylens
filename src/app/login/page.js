@@ -11,6 +11,7 @@ function LoginContent({ darkMode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isDemo = searchParams.get('demo') === 'true';
+  const redirectAfterAuth = searchParams.get('redirect');
 
   const [isRegister, setIsRegister] = useState(false); 
   const [loading, setLoading] = useState(false);
@@ -95,7 +96,9 @@ function LoginContent({ darkMode }) {
           body: JSON.stringify({ email, name: '' })
         }).catch(() => {});
 
-        if (role === 'dj') {
+        if (redirectAfterAuth) {
+          window.location.href = redirectAfterAuth;
+        } else if (role === 'dj') {
           window.location.href = '/admin';
         } else {
           if (isDemo) {
@@ -110,7 +113,9 @@ function LoginContent({ darkMode }) {
         
         if (userDoc.exists()) {
           const data = userDoc.data();
-          if (data.role === 'dj') {
+          if (redirectAfterAuth) {
+            window.location.href = redirectAfterAuth;
+          } else if (data.role === 'dj') {
             window.location.href = '/admin';
           } else {
             if (data.isStandalone && !data.plan) {
