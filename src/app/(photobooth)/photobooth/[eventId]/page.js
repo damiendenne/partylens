@@ -5,7 +5,6 @@ import { X, Maximize2, Images, Mail, ArrowRight, CheckCircle2, Shuffle, Sun, Moo
 import { db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, addDoc, serverTimestamp, doc, onSnapshot } from "firebase/firestore";
-import { SelfieSegmentation } from "@mediapipe/selfie_segmentation";
 
 // Liste riche de 200 défis collectifs, drôles et décalés
 const FUN_CHALLENGES = [
@@ -214,10 +213,17 @@ export default function PhotoboothPage({ params }) {
   const [backgroundMode, setBackgroundMode] = useState(true);
 
   useEffect(() => {
-    const segmentation = new SelfieSegmentation({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}` });
-    segmentation.setOptions({ modelSelection: 1 });
-    segmentationRef.current = segmentation;
-    return () => { segmentation.close(); segmentationRef.current = null; };
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js';
+    script.async = true;
+    script.onload = () => {
+      if (!window.SelfieSegmentation) return;
+      const segmentation = new window.SelfieSegmentation({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}` });
+      segmentation.setOptions({ modelSelection: 1 });
+      segmentationRef.current = segmentation;
+    };
+    document.body.appendChild(script);
+    return () => { segmentationRef.current?.close(); segmentationRef.current = null; script.remove(); };
   }, []);
 
   useEffect(() => {
