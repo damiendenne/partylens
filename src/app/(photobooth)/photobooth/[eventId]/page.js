@@ -260,20 +260,17 @@ export default function PhotoboothPage({ params }) {
         url: '/photobooth-frames/34.png'
       }];
 
-      for (let index = 1; index <= 26; index += 1) {
-        try {
-          const framePath = `photobooth-frames/${index}.png`;
-          const frameRef = ref(storage, framePath);
-          const url = await getDownloadURL(frameRef);
-
-          urls.push({
-            number: index,
-            url
+      const storedFrames = await Promise.all(Array.from({ length: 26 }, (_, offset) => {
+        const index = offset + 1;
+        return getDownloadURL(ref(storage, `photobooth-frames/${index}.png`))
+          .then((url) => ({ number: index, url }))
+          .catch((error) => {
+            console.error(`Cadre ${index} introuvable :`, error);
+            return null;
           });
-        } catch (error) {
-          console.error(`Cadre ${index} introuvable :`, error);
-        }
-      }
+      }));
+
+      urls.push(...storedFrames.filter(Boolean));
 
       setFrameUrls(urls);
       setFrameUrl(null);
