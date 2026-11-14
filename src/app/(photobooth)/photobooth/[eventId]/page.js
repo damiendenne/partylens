@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState, use } from "react";
-import { X, Maximize2, Images, Mail, ArrowRight, CheckCircle2, Shuffle, Sun, Moon, Palette } from "lucide-react";
+import { X, Maximize2, Images, Mail, ArrowRight, CheckCircle2, Shuffle, Sun, Moon } from "lucide-react";
 import { db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, addDoc, serverTimestamp, doc, onSnapshot } from "firebase/firestore";
@@ -191,8 +191,6 @@ export default function PhotoboothPage({ params }) {
   const eventId = resolvedParams.eventId;
 
   const videoRef = useRef(null);
-  const segmentationRef = useRef(null);
-  const backgroundImageRef = useRef(null);
 
   const [darkMode, setDarkMode] = useState(true);
   const [step, setStep] = useState("live");
@@ -204,7 +202,6 @@ export default function PhotoboothPage({ params }) {
   const [frameUrl, setFrameUrl] = useState(null);
   const [frameUrls, setFrameUrls] = useState([]);
   const [showFrameSelector, setShowFrameSelector] = useState(false);
-  const [showBackgroundSelector, setShowBackgroundSelector] = useState(false);
 
   const [currentChallenge, setCurrentChallenge] = useState(null);
   const [challengeTimer, setChallengeTimer] = useState(null);
@@ -212,31 +209,6 @@ export default function PhotoboothPage({ params }) {
   const [capturedPhotoUrl, setCapturedPhotoUrl] = useState(null);
   const [emailInput, setEmailInput] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
-  const [backgroundMode, setBackgroundMode] = useState(false);
-  const [backgroundReady, setBackgroundReady] = useState(false);
-  const [segmentationReady, setSegmentationReady] = useState(false);
-
-  useEffect(() => {
-    const background = new Image();
-    background.onload = () => { backgroundImageRef.current = background; setBackgroundReady(true); };
-    background.onerror = () => setBackgroundReady(false);
-    background.src = '/photobooth-backgrounds/blue-gold-balloons.png';
-  }, []);
-
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js';
-    script.async = true;
-    script.onload = () => {
-      if (!window.SelfieSegmentation) return;
-      const segmentation = new window.SelfieSegmentation({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}` });
-      segmentation.setOptions({ modelSelection: 1 });
-      segmentationRef.current = segmentation;
-      setSegmentationReady(true);
-    };
-    document.body.appendChild(script);
-    return () => { segmentationRef.current?.close(); segmentationRef.current = null; setSegmentationReady(false); script.remove(); };
-  }, []);
 
   useEffect(() => {
     if (!eventId) return;
@@ -427,26 +399,7 @@ export default function PhotoboothPage({ params }) {
     // On corrige légèrement la lumière de la photo finale, sans appliquer
     // le filtre au cadre qui sera ajouté ensuite.
     ctx.filter = "brightness(4) contrast(1) saturate(1.1)";
-    if (backgroundMode && segmentationRef.current && backgroundImageRef.current) {
-      const background = backgroundImageRef.current;
-      const segmentationResult = await new Promise((resolve) => {
-        const segmentation = segmentationRef.current;
-        segmentation.onResults((result) => resolve(result));
-        segmentation.send({ image: video }).catch(() => resolve(null));
-      });
-      if (background && segmentationResult?.segmentationMask) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        ctx.globalCompositeOperation = 'destination-in';
-        ctx.drawImage(segmentationResult.segmentationMask, 0, 0, canvas.width, canvas.height);
-        ctx.globalCompositeOperation = 'destination-over';
-        ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
-        ctx.globalCompositeOperation = 'source-over';
-      } else {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      }
-    } else {
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    }
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     ctx.filter = "none";
     setFlash(false);
 
@@ -715,23 +668,8 @@ export default function PhotoboothPage({ params }) {
               <Images size={20} className="text-orange-500" />
               Cadres
             </button>
-            <button
-              type="button"
-              onClick={() => setShowBackgroundSelector(!showBackgroundSelector)}
-              className={`flex items-center gap-2 rounded-full px-4 py-3 text-sm font-black uppercase tracking-wider backdrop-blur-xl transition-all cursor-pointer shadow-xl active:scale-95 border ${backgroundMode ? 'bg-orange-500 text-white border-orange-300' : darkMode ? 'bg-white/10 hover:bg-white/25 text-white border-white/20 hover:border-orange-400' : 'bg-[#eaeaea] hover:bg-[#dedede] text-slate-800 border-slate-300 hover:border-orange-500'}`}
-            >
-              <Palette size={20} className="text-orange-500" />
-              Fonds
-            </button>
           </div>
 
-          {showBackgroundSelector && (
-            <div className="absolute bottom-28 left-4 z-[9999] pointer-events-auto rounded-3xl border border-white/20 bg-[#170c2c]/95 p-4 shadow-2xl backdrop-blur-2xl">
-              <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-white/70">Choisir un fond</p>
-              <button type="button" onClick={() => { setBackgroundMode(false); setShowBackgroundSelector(false); }} className={`mr-2 rounded-xl border px-3 py-2 text-[10px] font-black uppercase ${!backgroundMode ? 'border-orange-400 text-orange-300' : 'border-white/20 text-white'}`}>Aucun</button>
-              <button type="button" disabled={!backgroundReady || !segmentationReady} onClick={() => { setBackgroundMode(true); setShowBackgroundSelector(false); }} className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-[10px] font-black uppercase disabled:cursor-wait disabled:opacity-50 ${backgroundMode ? 'border-orange-400 text-orange-300' : 'border-white/20 text-white'}`}><img src="/photobooth-backgrounds/blue-gold-balloons.png" alt="Fond bleu et or" className="h-8 w-12 rounded object-cover" /> {backgroundReady && segmentationReady ? 'Bleu or' : 'Chargement...'}</button>
-            </div>
-          )}
 
           {showFrameSelector && (
             <div className="absolute bottom-28 left-0 right-0 z-[9999] pointer-events-auto px-4">
