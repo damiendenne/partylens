@@ -246,6 +246,18 @@ export default function PhotoboothPage({ params }) {
       }, {
         number: 30,
         url: '/photobooth-frames/30.png'
+      }, {
+        number: 31,
+        url: '/photobooth-frames/31.png'
+      }, {
+        number: 32,
+        url: '/photobooth-frames/32.png'
+      }, {
+        number: 33,
+        url: '/photobooth-frames/33.png'
+      }, {
+        number: 34,
+        url: '/photobooth-frames/34.png'
       }];
 
       for (let index = 1; index <= 26; index += 1) {
