@@ -1,10 +1,63 @@
 "use client";
 
-import { useRef, useEffect, useState, use } from "react";
+import { useRef, useEffect, useState, use, useCallback } from "react";
 import { X, Maximize2, Images, Mail, ArrowRight, CheckCircle2, Shuffle, Sun, Moon } from "lucide-react";
 import { db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { collection, addDoc, serverTimestamp, doc, onSnapshot } from "firebase/firestore";
+import { setDoc, serverTimestamp, doc, onSnapshot } from "firebase/firestore";
+
+const PHOTO_QUEUE_DB = "partylens-photobooth-queue";
+const PHOTO_QUEUE_STORE = "photos";
+
+function openPhotoQueue() {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined" || !window.indexedDB) {
+      reject(new Error("Stockage local indisponible"));
+      return;
+    }
+    const request = window.indexedDB.open(PHOTO_QUEUE_DB, 1);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(PHOTO_QUEUE_STORE)) {
+        request.result.createObjectStore(PHOTO_QUEUE_STORE, { keyPath: "id" });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error("Impossible d'ouvrir le stockage local"));
+  });
+}
+
+async function savePhotoLocally(photo) {
+  const database = await openPhotoQueue();
+  await new Promise((resolve, reject) => {
+    const transaction = database.transaction(PHOTO_QUEUE_STORE, "readwrite");
+    transaction.objectStore(PHOTO_QUEUE_STORE).put(photo);
+    transaction.oncomplete = resolve;
+    transaction.onerror = () => reject(transaction.error);
+  });
+  database.close();
+}
+
+async function getQueuedPhotos(eventId) {
+  const database = await openPhotoQueue();
+  const photos = await new Promise((resolve, reject) => {
+    const request = database.transaction(PHOTO_QUEUE_STORE, "readonly").objectStore(PHOTO_QUEUE_STORE).getAll();
+    request.onsuccess = () => resolve(request.result.filter((photo) => photo.eventId === eventId));
+    request.onerror = () => reject(request.error);
+  });
+  database.close();
+  return photos;
+}
+
+async function removeQueuedPhoto(id) {
+  const database = await openPhotoQueue();
+  await new Promise((resolve, reject) => {
+    const transaction = database.transaction(PHOTO_QUEUE_STORE, "readwrite");
+    transaction.objectStore(PHOTO_QUEUE_STORE).delete(id);
+    transaction.oncomplete = resolve;
+    transaction.onerror = () => reject(transaction.error);
+  });
+  database.close();
+}
 
 // Liste riche de 200 défis collectifs, drôles et décalés
 const FUN_CHALLENGES = [
@@ -222,6 +275,45 @@ export default function PhotoboothPage({ params }) {
       window.removeEventListener('offline', updateConnection);
     };
   }, []);
+
+  const flushPhotoQueue = useCallback(async () => {
+    if (!eventId || !navigator.onLine) return;
+    try {
+      const queuedPhotos = await getQueuedPhotos(eventId);
+      for (const queuedPhoto of queuedPhotos) {
+        const storageRef = ref(storage, `events/${eventId}/photos/${queuedPhoto.id}.jpg`);
+        let uploadError = null;
+        for (let attempt = 1; attempt <= 3; attempt += 1) {
+          try {
+            await uploadBytes(storageRef, queuedPhoto.blob);
+            uploadError = null;
+            break;
+          } catch (error) {
+            uploadError = error;
+            if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 1200));
+          }
+        }
+        if (uploadError) continue;
+        const url = await getDownloadURL(storageRef);
+        await setDoc(doc(db, "events", eventId, "photos", queuedPhoto.id), {
+          url,
+          frameNumber: queuedPhoto.frameNumber,
+          createdAt: queuedPhoto.createdAt,
+          type: "photo"
+        }, { merge: true });
+        await removeQueuedPhoto(queuedPhoto.id);
+      }
+    } catch (error) {
+      console.error("Erreur de synchronisation des photos locales:", error);
+    }
+  }, [eventId]);
+
+  useEffect(() => {
+    flushPhotoQueue();
+    const handleOnline = () => flushPhotoQueue();
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [flushPhotoQueue]);
 
   useEffect(() => {
     if (!eventId) return;
@@ -445,7 +537,16 @@ export default function PhotoboothPage({ params }) {
 
       setIsUploading(true);
       try {
-        const fileName = `events/${eventId}/photos/${Date.now()}.jpg`;
+        const photoId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        await savePhotoLocally({
+          id: photoId,
+          eventId,
+          blob,
+          frameNumber: selectedFrameNumber,
+          createdAt: new Date()
+        });
+
+        const fileName = `events/${eventId}/photos/${photoId}.jpg`;
         const storageRef = ref(storage, fileName);
 
         let uploadError = null;
@@ -470,12 +571,13 @@ export default function PhotoboothPage({ params }) {
         const url = await getDownloadURL(storageRef);
         setCapturedPhotoUrl(url);
 
-        await addDoc(collection(db, "events", eventId, "photos"), {
+        await setDoc(doc(db, "events", eventId, "photos", photoId), {
           url,
           frameNumber: selectedFrameNumber,
           createdAt: serverTimestamp(),
           type: "photo"
         });
+        await removeQueuedPhoto(photoId);
 
         setStep("captured");
 
