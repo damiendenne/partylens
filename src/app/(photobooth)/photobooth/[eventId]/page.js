@@ -209,6 +209,19 @@ export default function PhotoboothPage({ params }) {
   const [capturedPhotoUrl, setCapturedPhotoUrl] = useState(null);
   const [emailInput, setEmailInput] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+
+  useEffect(() => {
+    const updateConnection = () => setIsOnline(navigator.onLine);
+    updateConnection();
+    window.addEventListener('online', updateConnection);
+    window.addEventListener('offline', updateConnection);
+    return () => {
+      window.removeEventListener('online', updateConnection);
+      window.removeEventListener('offline', updateConnection);
+    };
+  }, []);
 
   useEffect(() => {
     if (!eventId) return;
@@ -324,6 +337,10 @@ export default function PhotoboothPage({ params }) {
   };
 
   const startPhotoProcess = () => {
+    if (!navigator.onLine || !isOnline) {
+      alert("Connexion internet indisponible. La photo n'a pas été prise.");
+      return;
+    }
     let timeLeft = 10;
 
     setCountdown(timeLeft);
@@ -342,6 +359,10 @@ export default function PhotoboothPage({ params }) {
   };
 
   const startChallengeProcess = () => {
+    if (!navigator.onLine || !isOnline) {
+      alert("Connexion internet indisponible. La photo n'a pas été prise.");
+      return;
+    }
     const randomIndex = crypto.getRandomValues(new Uint32Array(1))[0] % FUN_CHALLENGES.length;
     setCurrentChallenge(FUN_CHALLENGES[randomIndex]);
 
@@ -374,6 +395,14 @@ export default function PhotoboothPage({ params }) {
   };
 
   const capturePhoto = async () => {
+    if (!navigator.onLine || !isOnline) {
+      setCountdown(null);
+      setChallengeTimer(null);
+      setCurrentChallenge(null);
+      alert("Connexion internet perdue. La photo n'a pas été prise.");
+      return;
+    }
+
     // Flash écran : sur mobile, la lumière blanche doit apparaître avant la
     // capture pour éclairer le visage avec la caméra frontale.
     setFlash(true);
@@ -414,11 +443,29 @@ export default function PhotoboothPage({ params }) {
     canvas.toBlob(async (blob) => {
       if (!blob) return;
 
+      setIsUploading(true);
       try {
         const fileName = `events/${eventId}/photos/${Date.now()}.jpg`;
         const storageRef = ref(storage, fileName);
 
-        await uploadBytes(storageRef, blob);
+        let uploadError = null;
+        for (let attempt = 1; attempt <= 3; attempt += 1) {
+          if (!navigator.onLine) {
+            uploadError = new Error("Connexion internet perdue");
+            break;
+          }
+          try {
+            await uploadBytes(storageRef, blob);
+            uploadError = null;
+            break;
+          } catch (error) {
+            uploadError = error;
+            if (attempt < 3) {
+              await new Promise((resolve) => setTimeout(resolve, attempt * 1200));
+            }
+          }
+        }
+        if (uploadError) throw uploadError;
 
         const url = await getDownloadURL(storageRef);
         setCapturedPhotoUrl(url);
@@ -438,6 +485,10 @@ export default function PhotoboothPage({ params }) {
 
       } catch (error) {
         console.error("Erreur upload:", error);
+        setStep("live");
+        alert("La photo n'a pas pu être enregistrée. Vérifie la connexion puis réessaie.");
+      } finally {
+        setIsUploading(false);
       }
     }, "image/jpeg");
   };
@@ -758,6 +809,7 @@ export default function PhotoboothPage({ params }) {
           <button
             type="button"
             onClick={startChallengeProcess}
+            disabled={isUploading || !isOnline}
             className="flex flex-col items-center justify-center w-16 h-16 bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-400 rounded-full border-2 border-amber-300 hover:scale-105 shadow-[0_0_25px_rgba(245,158,11,0.6)] transition-all cursor-pointer text-white"
             aria-label="Lancer un défi aléatoire"
           >
@@ -768,6 +820,7 @@ export default function PhotoboothPage({ params }) {
           <button
             type="button"
             onClick={startPhotoProcess}
+            disabled={isUploading || !isOnline}
             className="w-20 h-20 bg-white rounded-full border-4 border-orange-500 hover:scale-105 shadow-[0_0_35px_rgba(249,115,22,0.8)] transition-transform cursor-pointer"
             aria-label="Prendre une photo"
           />
